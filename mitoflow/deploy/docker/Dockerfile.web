@@ -1,0 +1,72 @@
+# MitoFlow Web - Production Docker Image
+FROM python:3.11-slim-bookworm
+
+LABEL maintainer="MitoFlow Team"
+LABEL description="MitoFlow Web - Plant Mitochondrial Genome Annotation Platform"
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build dependencies
+    gcc \
+    g++ \
+    make \
+    cmake \
+    # Bioinformatics tools
+    ncbi-blast+ \
+    hmmer \
+    # tRNA annotation
+    trnascan-se \
+    aragorn \
+    # rRNA annotation
+    barrnap \
+    # Utilities
+    wget \
+    curl \
+    unzip \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install tRNAscan-SE data files
+RUN tRNAscan-SE -h || true
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e "." && \
+    pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    python-multipart \
+    streamlit \
+    requests \
+    celery \
+    redis
+
+# Copy web application
+COPY deploy/web/backend/ ./backend/
+COPY deploy/web/frontend/ ./frontend/
+
+# Create directories for uploads and results
+RUN mkdir -p /app/uploads /app/results
+
+# Expose ports
+EXPOSE 8000 8501
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Default command (can be overridden)
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # Redis for task queue and caching
+  redis:
+    image: redis:7-alpine
+    container_name: mitoflow-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - mitoflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Backend API
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.web
+    container_name: mitoflow-api
+    restart: unless-stopped
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 2
+    volumes:
+      - uploads:/app/uploads
+      - results:/app/results
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MAX_WORKERS=2
+    networks:
+      - mitoflow-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Celery worker for background tasks
+  worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.web
+    container_name: mitoflow-worker
+    restart: unless-stopped
+    command: celery -A backend.celery worker --loglevel=info --concurrency=2
+    volumes:
+      - uploads:/app/uploads
+      - results:/app/results
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - mitoflow-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+
+  # Streamlit frontend
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.web
+    container_name: mitoflow-frontend
+    restart: unless-stopped
+    command: streamlit run frontend/app.py --server.port=8501 --server.address=0.0.0.0
+    environment:
+      - API_URL=http://api:8000
+    networks:
+      - mitoflow-network
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mitoflow-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - uploads:/app/uploads:ro
+      - results:/app/results:ro
+    networks:
+      - mitoflow-network
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+volumes:
+  redis_data:
+  uploads:
+  results:
+
+networks:
+  mitoflow-network:
+    driver: bridge

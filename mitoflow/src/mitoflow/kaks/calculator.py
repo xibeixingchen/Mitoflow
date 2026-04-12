@@ -1,8 +1,7 @@
 """Ka/Ks (dN/dS) selection pressure analysis for plant mitochondrial genes.
 
-Supports two calculation engines:
-1. KaKs_Calculator-3.0 (preferred, C++ external tool, multiple methods)
-2. Pure Python NG86+JC fallback
+Uses KaKs_Calculator-3.0 (C++ external tool) with multiple methods:
+MA (Model Average), NG, LWL, LPB, GY, YN, ALL.
 
 Plant mitochondria considerations:
   - Use standard genetic code (NCBI Table 1), NOT Table 2.
@@ -10,20 +9,17 @@ Plant mitochondria considerations:
   - When Ks ≈ 0, Ka/Ks is undefined and marked "NA".
   - RNA-editing-corrected sequences should be used when available.
 
-References:
-  Nei M, Gojobori T (1986) Mol Biol Evol 3:418-426.
+Reference:
   Zhang Z (2022) KaKs_Calculator 3.0. Genomics Proteomics Bioinformatics 20(3):536-540.
 """
 
 from __future__ import annotations
 
 import logging
-import math
 import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
-from itertools import permutations
 from pathlib import Path
 from typing import Optional
 
@@ -95,16 +91,11 @@ class KaKsResult:
     ks: float = 0.0
     kaks_ratio: float = 0.0
 
-    s_sites: float = 0.0        # synonymous sites
-    n_sites: float = 0.0        # nonsynonymous sites
-    s_diffs: float = 0.0        # synonymous differences
-    n_diffs: float = 0.0        # nonsynonymous differences
-
     alignment_codons: int = 0   # number of valid codon pairs compared
     identity_pct: float = 0.0
 
     selection: str = "NA"       # purifying | neutral | positive | NA
-    method: str = "Nei-Gojobori"
+    method: str = "KaKs_Calculator-MA"
     category: str = ""
 
     def classify_selection(self, threshold_purifying: float = 1.0) -> str:
@@ -162,337 +153,7 @@ class KaKsBatchResult:
 
 
 # ===================================================================
-# Core algorithm — Nei-Gojobori (1986)
-# ===================================================================
-
-def _count_syn_sites_for_codon(codon: str) -> float:
-    """Count the number of synonymous sites in a single codon (0–3).
-
-    For each of the 3 positions, consider the 3 possible point mutations.
-    A mutation is synonymous if the encoded amino acid does not change.
-    The synonymous fraction at each position = (# syn mutations) / 3.
-    Sum across the 3 positions gives the total synonymous sites for the
-    codon (range 0 to 3).  Nonsynonymous sites = 3 − synonymous sites.
-
-    Mutations to stop codons are excluded from both counts
-    (they are neither synonymous nor nonsynonymous — they are nonsense).
-    """
-    aa = CODON_TABLE.get(codon)
-    if not aa or aa == "*":
-        return 0.0
-
-    s = 0.0
-    for pos in range(3):
-        syn_at_pos = 0
-        nonsense_at_pos = 0
-        for base in "ACGT":
-            if base == codon[pos]:
-                continue
-            mutant = codon[:pos] + base + codon[pos + 1:]
-            mut_aa = CODON_TABLE.get(mutant)
-            if not mut_aa or mut_aa == "*":
-                nonsense_at_pos += 1
-                continue
-            if mut_aa == aa:
-                syn_at_pos += 1
-        # Denominator is (3 - nonsense) to exclude nonsense mutations,
-        # but the classic NG86 simply uses 3.
-        # Here we follow the original: fraction = syn_at_pos / 3
-        s += syn_at_pos / 3.0
-    return s
-
-
-def _count_diffs_with_pathways(codon_a: str, codon_b: str) -> tuple[float, float]:
-    """Count synonymous and nonsynonymous differences between two codons.
-
-    When codons differ at 1 position, classification is straightforward.
-    When they differ at 2 or 3 positions, all possible evolutionary
-    pathways (permutations of the mutating positions) are enumerated.
-    Each step along a pathway is classified as synonymous or
-    nonsynonymous.  The counts are averaged over all valid pathways
-    (pathways that pass through a stop codon are discarded).
-
-    Returns:
-        (synonymous_diffs, nonsynonymous_diffs) — may be fractional.
-    """
-    diff_positions = [i for i in range(3) if codon_a[i] != codon_b[i]]
-    n_diffs = len(diff_positions)
-
-    if n_diffs == 0:
-        return 0.0, 0.0
-
-    # --- Single difference: no pathway ambiguity ---
-    if n_diffs == 1:
-        aa_a = CODON_TABLE.get(codon_a)
-        aa_b = CODON_TABLE.get(codon_b)
-        if aa_a == aa_b:
-            return 1.0, 0.0   # synonymous
-        else:
-            return 0.0, 1.0   # nonsynonymous
-
-    # --- 2 or 3 differences: enumerate all pathways ---
-    total_sd = 0.0
-    total_nd = 0.0
-    valid_paths = 0
-
-    for perm in permutations(diff_positions):
-        current = list(codon_a)
-        sd = 0.0
-        nd = 0.0
-        path_valid = True
-
-        for pos in perm:
-            old_aa = CODON_TABLE.get("".join(current))
-            current[pos] = codon_b[pos]
-            new_aa = CODON_TABLE.get("".join(current))
-
-            # Discard pathway if it passes through a stop codon
-            if not old_aa or not new_aa or new_aa == "*":
-                path_valid = False
-                break
-
-            if old_aa == new_aa:
-                sd += 1
-            else:
-                nd += 1
-
-        if path_valid:
-            total_sd += sd
-            total_nd += nd
-            valid_paths += 1
-
-    if valid_paths > 0:
-        return total_sd / valid_paths, total_nd / valid_paths
-
-    # All pathways pass through a stop — treat all diffs as nonsynonymous
-    return 0.0, float(n_diffs)
-
-
-def _count_sites_and_diffs(
-    seq_a: str,
-    seq_b: str,
-) -> tuple[float, float, float, float]:
-    """Count synonymous/nonsynonymous sites and differences.
-
-    Nei-Gojobori (1986) procedure:
-      1. For each codon pair, compute S (synonymous sites) for both
-         codons independently, then average.  N = 3 − S.
-      2. Count synonymous and nonsynonymous differences, averaging
-         over all possible evolutionary pathways when codons differ
-         at more than one position.
-
-    Returns:
-        (total_S_sites, total_N_sites, total_S_diffs, total_N_diffs)
-    """
-    s_sites = 0.0
-    n_sites = 0.0
-    s_diffs = 0.0
-    n_diffs = 0.0
-
-    for i in range(0, len(seq_a) - 2, 3):
-        codon_a = seq_a[i:i + 3]
-        codon_b = seq_b[i:i + 3]
-
-        if len(codon_a) < 3 or len(codon_b) < 3:
-            break
-
-        # Skip codons with gaps or ambiguous bases
-        if any(c in codon_a for c in "N-") or any(c in codon_b for c in "N-"):
-            continue
-
-        aa_a = CODON_TABLE.get(codon_a)
-        aa_b = CODON_TABLE.get(codon_b)
-        if not aa_a or not aa_b or aa_a == "*" or aa_b == "*":
-            continue
-
-        # --- Sites: average of both codons ---
-        s_a = _count_syn_sites_for_codon(codon_a)
-        s_b = _count_syn_sites_for_codon(codon_b)
-        s_avg = (s_a + s_b) / 2.0
-        n_avg = 3.0 - s_avg
-
-        s_sites += s_avg
-        n_sites += n_avg
-
-        # --- Differences: pathway enumeration ---
-        if codon_a != codon_b:
-            sd, nd = _count_diffs_with_pathways(codon_a, codon_b)
-            s_diffs += sd
-            n_diffs += nd
-
-    return s_sites, n_sites, s_diffs, n_diffs
-
-
-def _jukes_cantor(p: float) -> float:
-    """Jukes-Cantor correction: d = −3/4 × ln(1 − 4/3 × p).
-
-    Returns:
-        Corrected substitution rate.  Returns 10.0 when saturated.
-    """
-    if p <= 0.0:
-        return 0.0
-    if p >= 0.75:
-        return 10.0  # saturation — effectively infinite
-    try:
-        return -0.75 * math.log(1.0 - 4.0 / 3.0 * p)
-    except ValueError:
-        return 10.0
-
-
-def _jukes_cantor_variance(p: float, n_sites: float) -> float:
-    """Variance of Jukes-Cantor corrected distance.
-
-    Var(d) = p × (1 − p) / [(1 − 4p/3)² × n]
-    """
-    if n_sites <= 0 or p <= 0 or p >= 0.75:
-        return 0.0
-    denom = (1.0 - 4.0 / 3.0 * p) ** 2 * n_sites
-    if denom <= 0:
-        return 0.0
-    return p * (1.0 - p) / denom
-
-
-# ===================================================================
-# Public API — single pair
-# ===================================================================
-
-def calculate_kaks(
-    seq_a: str,
-    seq_b: str,
-    gene_name: str = "",
-    species_a: str = "A",
-    species_b: str = "B",
-) -> KaKsResult:
-    """Calculate Ka/Ks for a pair of codon-aligned CDS sequences.
-
-    Args:
-        seq_a: CDS nucleotide sequence of species A (no stop codon).
-        seq_b: CDS nucleotide sequence of species B (no stop codon).
-        gene_name: Gene name for labelling.
-        species_a: Label for species A.
-        species_b: Label for species B.
-
-    Returns:
-        Populated KaKsResult.
-    """
-    seq_a = seq_a.upper().replace("U", "T")
-    seq_b = seq_b.upper().replace("U", "T")
-
-    # Strip trailing stop codon if present
-    for stop in ("TAA", "TAG", "TGA"):
-        if seq_a.endswith(stop):
-            seq_a = seq_a[:-3]
-        if seq_b.endswith(stop):
-            seq_b = seq_b[:-3]
-
-    # Ensure equal length, trim to codon boundary
-    min_len = min(len(seq_a), len(seq_b))
-    codon_len = (min_len // 3) * 3
-    seq_a = seq_a[:codon_len]
-    seq_b = seq_b[:codon_len]
-
-    result = KaKsResult(
-        gene=gene_name,
-        species_a=species_a,
-        species_b=species_b,
-        category=_gene_category(gene_name),
-    )
-
-    if codon_len < 9:  # need at least 3 codons
-        result.selection = "NA"
-        return result
-
-    # Core NG86 calculation
-    s_sites, n_sites, s_diffs, n_diffs = _count_sites_and_diffs(seq_a, seq_b)
-
-    result.s_sites = round(s_sites, 2)
-    result.n_sites = round(n_sites, 2)
-    result.s_diffs = round(s_diffs, 2)
-    result.n_diffs = round(n_diffs, 2)
-    result.alignment_codons = codon_len // 3
-
-    # Nucleotide-level identity
-    matches = sum(1 for a, b in zip(seq_a, seq_b) if a == b)
-    result.identity_pct = round(matches / codon_len * 100, 1) if codon_len else 0.0
-
-    # Ka with JC correction
-    if n_sites > 0:
-        pn = n_diffs / n_sites
-        result.ka = round(_jukes_cantor(pn), 6)
-
-    # Ks with JC correction
-    if s_sites > 0:
-        ps = s_diffs / s_sites
-        result.ks = round(_jukes_cantor(ps), 6)
-
-    # Ka/Ks ratio
-    if result.ks > 1e-6:
-        result.kaks_ratio = round(result.ka / result.ks, 4)
-    elif result.ka > 1e-6:
-        result.kaks_ratio = float("inf")
-    else:
-        result.kaks_ratio = 0.0  # both zero — identical sequences
-
-    result.selection = result.classify_selection()
-
-    return result
-
-
-# ===================================================================
-# GenBank CDS extraction
-# ===================================================================
-
-def _extract_cds_from_genbank(gbk_path: Path) -> dict[str, str]:
-    """Extract gene_name → CDS nucleotide sequence from a GenBank file.
-
-    Handles multi-record GenBank files (multi-chromosome mitogenomes).
-    Skips CDS features without a gene name or with extraction errors.
-
-    Returns:
-        Dict mapping gene name (lowercase) to CDS sequence (uppercase,
-        stop codon removed).
-    """
-    from Bio import SeqIO
-
-    genes: dict[str, str] = {}
-
-    for record in SeqIO.parse(str(gbk_path), "genbank"):
-        for feat in record.features:
-            if feat.type != "CDS":
-                continue
-
-            # Get gene name
-            name = ""
-            for key in ("gene", "locus_tag", "product"):
-                if key in feat.qualifiers:
-                    name = feat.qualifiers[key][0]
-                    break
-            if not name:
-                continue
-
-            try:
-                cds = str(feat.extract(record.seq)).upper()
-            except Exception:
-                continue
-
-            # Validate: must be multiple of 3
-            if len(cds) < 9:
-                continue
-
-            # Remove trailing stop codon
-            if len(cds) % 3 == 0:
-                last = cds[-3:]
-                if CODON_TABLE.get(last) == "*":
-                    cds = cds[:-3]
-
-            # Use lowercase key for case-insensitive matching
-            genes[name.lower()] = cds
-
-    return genes
-
-
-# ===================================================================
-# Pairwise alignment
+# Pairwise alignment (used for CDS alignment before AXT generation)
 # ===================================================================
 
 def _align_cds_pair(seq_a: str, seq_b: str) -> tuple[str, str]:
@@ -602,128 +263,6 @@ def _parse_fasta_string(text: str) -> list[str]:
 
 
 # ===================================================================
-# Public API — GenBank pair
-# ===================================================================
-
-def calculate_kaks_from_genbank(
-    genbank_a: Path,
-    genbank_b: Path,
-    species_a: str = "",
-    species_b: str = "",
-    min_identity: float = 30.0,
-) -> KaKsBatchResult:
-    """Calculate Ka/Ks for all shared protein-coding genes between two
-    GenBank files.
-
-    Args:
-        genbank_a: GenBank file for species A.
-        genbank_b: GenBank file for species B.
-        species_a: Display name for species A.
-        species_b: Display name for species B.
-        min_identity: Minimum nucleotide identity (%) to keep a result.
-
-    Returns:
-        KaKsBatchResult containing per-gene Ka/Ks values.
-    """
-    batch = KaKsBatchResult()
-
-    genes_a = _extract_cds_from_genbank(Path(genbank_a))
-    genes_b = _extract_cds_from_genbank(Path(genbank_b))
-
-    if not genes_a:
-        batch.warnings.append(f"No CDS found in {genbank_a}")
-        return batch
-    if not genes_b:
-        batch.warnings.append(f"No CDS found in {genbank_b}")
-        return batch
-
-    shared = sorted(set(genes_a.keys()) & set(genes_b.keys()))
-    if not shared:
-        batch.warnings.append("No shared genes found between the two species")
-        return batch
-
-    logger.info(f"Calculating Ka/Ks for {len(shared)} shared genes")
-    pair_key = f"{species_a}_vs_{species_b}"
-
-    for gene in shared:
-        # Protein-guided codon alignment
-        aligned_a, aligned_b = _align_cds_pair(genes_a[gene], genes_b[gene])
-
-        result = calculate_kaks(
-            aligned_a,
-            aligned_b,
-            gene_name=gene,
-            species_a=species_a,
-            species_b=species_b,
-        )
-
-        # Filter by identity
-        if result.identity_pct < min_identity:
-            logger.debug(
-                f"Skipping {gene}: identity {result.identity_pct:.1f}% "
-                f"< threshold {min_identity}%"
-            )
-            continue
-
-        batch.results.append(result)
-        batch.per_gene.setdefault(gene, []).append(result)
-        batch.per_species_pair.setdefault(pair_key, []).append(result)
-
-    return batch
-
-
-# ===================================================================
-# Public API — batch (query vs multiple references)
-# ===================================================================
-
-def batch_kaks(
-    query_gbk: Path,
-    reference_gbks: list[Path],
-    query_name: str = "query",
-    reference_names: Optional[list[str]] = None,
-    output_dir: Optional[Path] = None,
-    min_identity: float = 30.0,
-) -> list[KaKsBatchResult]:
-    """Calculate Ka/Ks between a query and multiple reference species.
-
-    Args:
-        query_gbk: Query GenBank file path.
-        reference_gbks: List of reference GenBank file paths.
-        query_name: Display name for the query species.
-        reference_names: Display names for reference species.
-        output_dir: If provided, write results to TSV files.
-        min_identity: Minimum nucleotide identity (%) to keep a result.
-
-    Returns:
-        List of KaKsBatchResult, one per reference.
-    """
-    all_results = []
-
-    for i, ref_gbk in enumerate(reference_gbks):
-        ref_name = (
-            reference_names[i]
-            if reference_names and i < len(reference_names)
-            else Path(ref_gbk).stem
-        )
-        logger.info(f"Comparing {query_name} vs {ref_name}")
-
-        batch = calculate_kaks_from_genbank(
-            query_gbk,
-            ref_gbk,
-            species_a=query_name,
-            species_b=ref_name,
-            min_identity=min_identity,
-        )
-        all_results.append(batch)
-        logger.info(batch.summary())
-
-    if output_dir:
-        write_kaks_tables(all_results, Path(output_dir))
-
-    return all_results
-
-
-# ===================================================================
 # Output
 # ===================================================================
 
@@ -750,8 +289,7 @@ def write_kaks_tables(
         header = (
             "gene\tcategory\tspecies_a\tspecies_b\t"
             "Ka\tKs\tKa_Ks\t"
-            "S_sites\tN_sites\tS_diffs\tN_diffs\t"
-            "codons\tidentity_pct\tselection\n"
+            "codons\tidentity_pct\tmethod\tselection\n"
         )
         fh.write(header)
         for batch in results:
@@ -760,10 +298,8 @@ def write_kaks_tables(
                 fh.write(
                     f"{r.gene}\t{r.category}\t{r.species_a}\t{r.species_b}\t"
                     f"{r.ka:.6f}\t{r.ks:.6f}\t{ratio_str}\t"
-                    f"{r.s_sites:.2f}\t{r.n_sites:.2f}\t"
-                    f"{r.s_diffs:.2f}\t{r.n_diffs:.2f}\t"
                     f"{r.alignment_codons}\t{r.identity_pct:.1f}\t"
-                    f"{r.selection}\n"
+                    f"{r.method}\t{r.selection}\n"
                 )
     files["kaks_tsv"] = tsv_path
     logger.info(f"Ka/Ks table written to {tsv_path}")
@@ -872,7 +408,64 @@ def _parse_kaks_calculator_output(output_path: Path) -> list[dict]:
     return results
 
 
-def batch_kaks_with_calculator(
+def _extract_cds_from_record(record) -> dict[str, str]:
+    """Extract CDS sequences from a BioPython SeqRecord."""
+    cds = {}
+    for feat in record.features:
+        if feat.type != "CDS":
+            continue
+        name = feat.qualifiers.get("gene", feat.qualifiers.get("locus_tag", [""]))[0]
+        if not name:
+            continue
+        try:
+            seq = str(feat.extract(record.seq)).upper()
+            if len(seq) >= 3:
+                cds[name] = seq
+        except Exception:
+            continue
+    return cds
+
+
+def _clean_alignment(seq_a: str, seq_b: str) -> tuple[str, str]:
+    """Remove gap columns and ensure length is a multiple of 3.
+
+    Mimics pal2nal -nogap -nomismatch behavior.
+    """
+    clean_a, clean_b = [], []
+    for a, b in zip(seq_a, seq_b):
+        if a == "-" or b == "-":
+            continue
+        if a == "N" or b == "N":
+            continue
+        clean_a.append(a)
+        clean_b.append(b)
+    # Truncate to multiple of 3
+    aligned_a = "".join(clean_a)
+    aligned_b = "".join(clean_b)
+    trim = len(aligned_a) - (len(aligned_a) % 3)
+    return aligned_a[:trim], aligned_b[:trim]
+
+
+def _extract_gene_from_pair(gene_pair: str) -> str:
+    """Extract gene name from KaKs_Calculator output 'Sequence' field.
+
+    Format: "query_genename ref_genename" or "speciesA_genename speciesB_genename".
+    """
+    parts = gene_pair.split()
+    if not parts:
+        return ""
+    # Take first part and extract gene name after species prefix
+    name = parts[0]
+    # Remove common prefixes: "query_", "queryName_"
+    if "_" in name:
+        # Skip the first segment (species prefix), take the rest as gene name
+        segments = name.split("_", 1)
+        if len(segments) >= 2:
+            return segments[1]
+    return name
+
+
+def batch_kaks(
     query_gbk: Path,
     reference_gbks: list[Path],
     query_name: str = "query",
@@ -884,8 +477,8 @@ def batch_kaks_with_calculator(
 ) -> list[KaKsBatchResult]:
     """Calculate Ka/Ks using KaKs_Calculator-3.0.
 
-    This is the preferred engine when KaKs_Calculator-3.0 is installed.
-    It supports multiple methods (MA, NG, LWL, LPB, GY, YN, ALL).
+    Supports multiple methods (MA, NG, LWL, LPB, GY, YN, ALL).
+    Requires KaKs_Calculator-3.0 to be installed and in PATH.
 
     Args:
         query_gbk: Query GenBank file.
@@ -905,7 +498,7 @@ def batch_kaks_with_calculator(
     """
     if not check_kaks_calculator_available():
         raise RuntimeError(
-            "KaKs_Calculator-3.0 not found. "
+            "KaKs_Calculator-3.0 not found in PATH. "
             "Install from: https://github.com/Chenglin20170390/KaKs_Calculator-3.0"
         )
 
@@ -970,18 +563,7 @@ def batch_kaks_with_calculator(
             kaks_out = Path(tmpdir) / "output.kaks"
             _write_axt_file(axt_entries, axt_path)
 
-            try:
-                _run_kaks_calculator(axt_path, kaks_out, method=method, genetic_code=genetic_code)
-            except RuntimeError as e:
-                logger.warning("KaKs_Calculator failed: %s, falling back to Python", e)
-                # Fall back to Python NG86 for this pair
-                batch = calculate_kaks_from_genbank(
-                    query_gbk, ref_gbk,
-                    species_a=query_name, species_b=ref_name,
-                    min_identity=min_identity,
-                )
-                all_results.append(batch)
-                continue
+            _run_kaks_calculator(axt_path, kaks_out, method=method, genetic_code=genetic_code)
 
             # Parse results
             parsed = _parse_kaks_calculator_output(kaks_out)
@@ -1028,7 +610,6 @@ def batch_kaks_with_calculator(
                     species_a=query_name,
                     species_b=ref_name,
                     ka=ka, ks=ks, kaks_ratio=kaks_ratio,
-                    s_sites=0, n_sites=0, s_diffs=0, n_diffs=0,
                     alignment_codons=len(gene_alignments.get(gene_name, ("", ""))[0]) // 3,
                     identity_pct=identity,
                     selection=selection,
@@ -1051,61 +632,3 @@ def batch_kaks_with_calculator(
         write_kaks_tables(all_results, Path(output_dir))
 
     return all_results
-
-
-def _extract_cds_from_record(record) -> dict[str, str]:
-    """Extract CDS sequences from a BioPython SeqRecord."""
-    from Bio import SeqIO
-    cds = {}
-    for feat in record.features:
-        if feat.type != "CDS":
-            continue
-        name = feat.qualifiers.get("gene", feat.qualifiers.get("locus_tag", [""]))[0]
-        if not name:
-            continue
-        try:
-            seq = str(feat.extract(record.seq)).upper()
-            if len(seq) >= 3:
-                cds[name] = seq
-        except Exception:
-            continue
-    return cds
-
-
-def _clean_alignment(seq_a: str, seq_b: str) -> tuple[str, str]:
-    """Remove gap columns and ensure length is a multiple of 3.
-
-    Mimics pal2nal -nogap -nomismatch behavior.
-    """
-    clean_a, clean_b = [], []
-    for a, b in zip(seq_a, seq_b):
-        if a == "-" or b == "-":
-            continue
-        if a == "N" or b == "N":
-            continue
-        clean_a.append(a)
-        clean_b.append(b)
-    # Truncate to multiple of 3
-    aligned_a = "".join(clean_a)
-    aligned_b = "".join(clean_b)
-    trim = len(aligned_a) - (len(aligned_a) % 3)
-    return aligned_a[:trim], aligned_b[:trim]
-
-
-def _extract_gene_from_pair(gene_pair: str) -> str:
-    """Extract gene name from KaKs_Calculator output 'Sequence' field.
-
-    Format: "query_genename ref_genename" or "speciesA_genename speciesB_genename".
-    """
-    parts = gene_pair.split()
-    if not parts:
-        return ""
-    # Take first part and extract gene name after species prefix
-    name = parts[0]
-    # Remove common prefixes: "query_", "queryName_"
-    if "_" in name:
-        # Skip the first segment (species prefix), take the rest as gene name
-        segments = name.split("_", 1)
-        if len(segments) >= 2:
-            return segments[1]
-    return name

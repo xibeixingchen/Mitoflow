@@ -1,13 +1,13 @@
-"""Ka/Ks selection pressure analysis."""
+"""Ka/Ks selection pressure analysis (KaKs_Calculator-3.0)."""
 
 from .calculator import (
     KaKsResult, KaKsBatchResult,
-    calculate_kaks, calculate_kaks_from_genbank, batch_kaks,
+    batch_kaks, check_kaks_calculator_available,
     write_kaks_tables,
 )
 
 __all__ = [
     "KaKsResult", "KaKsBatchResult",
-    "calculate_kaks", "calculate_kaks_from_genbank", "batch_kaks",
+    "batch_kaks", "check_kaks_calculator_available",
     "write_kaks_tables",
 ]

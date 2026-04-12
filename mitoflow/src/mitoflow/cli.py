@@ -359,48 +359,34 @@ def kaks(
     references: List[Path] = typer.Option(..., "-r", "--ref", help="Reference GenBank file(s)"),
     output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
     names: Optional[List[str]] = typer.Option(None, "--names", help="Species names (same order as inputs)"),
-    engine: str = typer.Option("auto", "--engine", help="Calculation engine: auto | kaks_calculator | python"),
-    method: str = typer.Option("MA", "--method", help="KaKs method: MA | NG | LWL | LPB | GY | YN | ALL (kaks_calculator only)"),
+    method: str = typer.Option("MA", "--method", help="KaKs method: MA | NG | LWL | LPB | GY | YN | ALL"),
     plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate Ka/Ks plots"),
     dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
-    """Calculate Ka/Ks selection pressure between species pairs."""
+    """Calculate Ka/Ks selection pressure using KaKs_Calculator-3.0."""
     from .kaks.calculator import (
-        batch_kaks, batch_kaks_with_calculator,
-        check_kaks_calculator_available, write_kaks_tables,
+        batch_kaks, check_kaks_calculator_available, write_kaks_tables,
     )
     from .core.output import OutputManager
 
     console.print(f"[bold green]MitoFlow Ka/Ks Analysis[/]")
+
+    if not check_kaks_calculator_available():
+        console.print("[red]Error:[/] KaKs_Calculator-3.0 not found in PATH")
+        console.print("[dim]Install from: https://github.com/Chenglin20170390/KaKs_Calculator-3.0[/]")
+        raise typer.Exit(1)
+
     out = OutputManager(output, "kaks")
     out.setup()
 
     sp_names = names if names else None
 
-    # Determine engine
-    use_calculator = False
-    if engine == "kaks_calculator":
-        if not check_kaks_calculator_available():
-            console.print("[red]Error:[/] KaKs_Calculator-3.0 not found in PATH")
-            console.print("[dim]Install from: https://github.com/Chenglin20170390/KaKs_Calculator-3.0[/]")
-            raise typer.Exit(1)
-        use_calculator = True
-    elif engine == "auto":
-        if check_kaks_calculator_available():
-            use_calculator = True
-            console.print("[dim]Using KaKs_Calculator-3.0 (auto-detected)[/]")
-        else:
-            console.print("[dim]KaKs_Calculator-3.0 not found, using Python NG86[/]")
-
-    if use_calculator:
-        results = batch_kaks_with_calculator(
-            query, references,
-            reference_names=sp_names,
-            output_dir=out.report_dir,
-            method=method,
-        )
-    else:
-        results = batch_kaks(query, references, reference_names=sp_names, output_dir=out.report_dir)
+    results = batch_kaks(
+        query, references,
+        reference_names=sp_names,
+        output_dir=out.report_dir,
+        method=method,
+    )
 
     total = sum(len(r.results) for r in results)
     console.print(f"Analyzed {total} gene pairs across {len(references)} reference species")

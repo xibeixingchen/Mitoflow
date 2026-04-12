@@ -428,8 +428,18 @@ def plot_all_kaks(
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    files = {}
 
+    # Try R visualization first (ggplot2 + eoffice → PNG/PDF/PPTX)
+    try:
+        from .visualize_r import check_r_kaks_available, plot_kaks_with_r
+        if check_r_kaks_available():
+            logger.info("Using R (ggplot2 + eoffice) for Ka/Ks visualization")
+            return plot_kaks_with_r(results, output_dir, prefix, dpi)
+    except Exception as e:
+        logger.warning(f"R visualization unavailable, falling back to matplotlib: {e}")
+
+    # Fallback: matplotlib (PNG only)
+    files = {}
     files["barplot"] = plot_kaks_barplot(results, output_dir / f"{prefix}_kaks_barplot.png", dpi=dpi)
     files["boxplot"] = plot_kaks_boxplot(results, output_dir / f"{prefix}_kaks_boxplot.png", dpi=dpi)
     files["dotplot"] = plot_kaks_dotplot(results, output_dir / f"{prefix}_kaks_dotplot.png", dpi=dpi)

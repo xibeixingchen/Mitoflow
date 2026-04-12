@@ -28,14 +28,33 @@ mitoflow annotate -i mitogenome.fasta -o results/ --name "Species name"
 
 No linter or type-checker is configured (no ruff, mypy, or black config).
 
+### R Environment Setup
+
+The R visualization layer requires R 4.x with the following packages:
+
+```bash
+# Core R packages for all module visualization
+Rscript -e "install.packages(c('ggplot2', 'dplyr', 'tidyr', 'eoffice'))"
+
+# NUMT ideogram (optional)
+Rscript -e "install.packages('RIdeogram')"
+
+# RIdeogram also needs rsvg for SVG→PNG conversion
+Rscript -e "install.packages('rsvg')"
+```
+
+The system R is at `/home/jiazc/software/R-4.4.2/`. The Makeconf was reconstructed from scratch — do NOT overwrite it. See `Makeconf.bak_codex_empty` for the broken backup.
+
+**Known conda/system library conflicts**: The conda `mitoflow310` environment's shared libraries (libxml2, libgobject, libicuuc) conflict with system R. If R packages fail to load with segfaults, the fix is to rebuild the conflicting R package from CRAN source so it links to system libraries instead of conda libraries. Example: `remove.packages("XML"); install.packages("XML")`.
+
 ## Architecture
 
 ### Package Structure
 
-Source lives in `src/mitoflow/` with 20 submodules. The CLI entry point is `mitoflow.cli:app` (Typer).
+Source lives in `src/mitoflow/` with 20+ submodules. The CLI entry point is `mitoflow.cli:app` (Typer).
 
 ```
-cli.py              -> 17 Typer subcommands (annotate, qc, mtpt, viz, rna-edit, codon, etc.)
+cli.py              -> 18 Typer subcommands (annotate, qc, mtpt, viz, rna-edit, codon, etc.)
 core/               -> I/O (input.py), output management (output.py), pipeline orchestrator (pipeline.py)
 models/             -> Pydantic data models (genome.py, gene.py, feature.py, gff.py)
 annotate/           -> Gene annotation: PCG (pyhmmer HMM), tRNA (dual-tool), rRNA, boundary correction, CDS validation, GFF/GenBank writer
@@ -100,9 +119,105 @@ FASTA -> load_fasta() -> GenomeSequence (Pydantic)
 
 Requires Python >= 3.10 (set in `pyproject.toml`). The code uses `X | Y` union types and `list[...]` generics that require 3.10+. All modules use `from __future__ import annotations` for forward compatibility.
 
-## Visualization Backends
+## R Visualization Architecture
 
-Two visualization backends:
+All analysis modules (10 total) follow a consistent **R-first, matplotlib fallback** pattern:
+
+### Module Visualization Files
+
+Each module with R visualization has three files:
+
+| File | Purpose |
+|------|---------|
+| `*_plots.R` | R script using ggplot2 + eoffice, reads TSV, outputs PNG/PDF/PPTX |
+| `visualize_r.py` | Python→R bridge: writes temp TSV, calls Rscript, collects outputs |
+| `visualize.py` | R-first entry point with matplotlib fallback |
+
+### R Script Pattern
+
+```r
+# Standard header
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(eoffice)
+})
+
+# Parse args: <input.tsv> <output_prefix> [extra_args...] [width] [height] [dpi]
+# save_plot helper: ggsave PNG + PDF + eoffice::topptx() PPTX
+# Each plot function: build ggplot2 object -> save_plot(p, "plot_name")
+```
+
+### Python Bridge Pattern
+
+```python
+# visualize_r.py
+def check_r_<module>_available() -> bool:
+    """Check R + ggplot2 + eoffice."""
+    # subprocess.run([rscript, "-e", "require(ggplot2) && require(eoffice)"])
+
+def plot_<module>_with_r(result, output_dir, prefix, dpi, ...) -> dict[str, Path]:
+    """Write temp TSV -> call Rscript -> collect PNG/PDF/PPTX outputs."""
+    # tempfile.NamedTemporaryFile for TSV
+    # subprocess.run([rscript, r_script, tsv_path, out_prefix, ...])
+    # Return {plot_name: png_path}
+```
+
+### visualize.py Pattern
+
+```python
+# visualize.py
+def plot_all_<module>(result, output_dir, prefix, dpi, ...) -> dict[str, Path]:
+    # Try R first
+    try:
+        from .visualize_r import check_r_<module>_available, plot_<module>_with_r
+        if check_r_<module>_available():
+            return plot_<module>_with_r(...)
+    except Exception:
+        logger.warning("R unavailable, falling back to matplotlib")
+
+    # Fallback: matplotlib implementations
+    ...
+```
+
+### CLI Integration
+
+All analysis commands use standardized flags:
+
+```python
+plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots")
+dpi: int = typer.Option(300, "--dpi", help="Plot resolution (DPI)")
+```
+
+After analysis completes:
+
+```python
+if plot:
+    from .<module>.visualize import plot_all_<module>
+    plot_dir = out.report_dir / "plots"
+    plot_files = plot_all_<module>(result, output_dir=plot_dir, prefix=name, dpi=dpi, ...)
+```
+
+### Module Visualization Summary
+
+| Module | R Script | Plots | Special R Packages |
+|--------|----------|-------|--------------------|
+| numt | numt_plots.R | 5 | RIdeogram (ideogram), rsvg |
+| kaks | kaks_plots.R | 5 | — |
+| codon | codon_plots.R | 7 | — |
+| pi | pi_plots.R | 3 | — |
+| rna_edit | rnaedit_plots.R | 3 | — |
+| mtpt | mtpt_plots.R | 4 | — |
+| qc | qc_plots.R | 3 | — |
+| cms | cms_plots.R | 4 | — |
+| multiconf | multiconf_plots.R | 4 | — |
+| repeat | repeat_plots.R | 5 | — |
+
+All modules use `ggplot2 + eoffice` as baseline. Only NUMT additionally requires `RIdeogram` for chromosome ideogram and `rsvg` for SVG conversion.
+
+## Visualization Backends (Genome Maps)
+
+Two visualization backends for circular genome maps:
 
 | Style | Engine | Dependency | Install |
 |-------|--------|-----------|---------|
@@ -124,3 +239,15 @@ For gbdraw (requires Python 3.10+), use the `mitoflow310` conda environment:
 ```bash
 conda activate mitoflow310
 ```
+
+## Git Subtree Push
+
+The `mitoflow/` subdirectory is pushed to GitHub repo `xibeixingchen/Mitoflow` via git subtree:
+
+```bash
+# From the PMGA root directory
+cd /home/jiazc/data16t/mito_genome/PMGA
+git subtree push --prefix=mitoflow mitoflow main
+```
+
+This frequently gets SIGTERM but usually succeeds. If it fails, retry.

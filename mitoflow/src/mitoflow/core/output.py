@@ -30,7 +30,7 @@ class OutputManager:
         return self._ensure(self.root / "gff")
 
     @property
-    def gbk_dir(self) -> Path:
+    def gb_dir(self) -> Path:
         return self._ensure(self.root / "genbank")
 
     @property
@@ -50,8 +50,8 @@ class OutputManager:
         return self.gff_dir / f"{self.project_name}.gff"
 
     @property
-    def gbk_path(self) -> Path:
-        return self.gbk_dir / f"{self.project_name}.gbk"
+    def gb_path(self) -> Path:
+        return self.gb_dir / f"{self.project_name}.gb"
 
     @property
     def cds_fasta(self) -> Path:

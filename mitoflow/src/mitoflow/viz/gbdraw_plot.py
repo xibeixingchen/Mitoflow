@@ -42,7 +42,7 @@ def draw_with_gbdraw(
     """Draw a circular genome diagram using gbdraw.
 
     Args:
-        genbank_path: Path to the GenBank (.gb/.gbk) file.
+        genbank_path: Path to the GenBank (.gb) file.
         output_path: Output file path. The extension is ignored; gbdraw determines
                      format from the *format* argument.
         organism: Organism name displayed on the diagram.

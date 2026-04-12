@@ -159,7 +159,7 @@ class AnnotationPipeline:
         write_gff3(annotations, trna_annotations, rrna_annotations, genome, out.gff_path)
         write_genbank(
             annotations, trna_annotations, rrna_annotations,
-            genome, out.gbk_path, organism=name,
+            genome, out.gb_path, organism=name,
         )
 
         # Step 8: Extract sequences

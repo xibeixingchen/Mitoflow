@@ -16,7 +16,7 @@ Usage:
     from mitoflow.viz.circos_plot_ogdraw import draw_genome_map
     
     draw_genome_map(
-        genbank_path="annotation.gbk",
+        genbank_path="annotation.gb",
         output_path="genome_map.png",
         organism="Arabidopsis thaliana",
     )
@@ -507,7 +507,7 @@ if __name__ == "__main__":
     import sys
     
     if len(sys.argv) < 3:
-        print("Usage: python circos_plot_ogdraw.py <input.gbk> <output.png> [organism_name]")
+        print("Usage: python circos_plot_ogdraw.py <input.gb> <output.png> [organism_name]")
         sys.exit(1)
     
     # Allow command-line override of use_ogdrawr

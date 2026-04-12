@@ -68,7 +68,7 @@ def draw_linear_genome(
     """Draw OGDraw-style linear genome map from GenBank file.
 
     Args:
-        genbank_path: Input GenBank (.gb/.gbk) file.
+        genbank_path: Input GenBank (.gb) file.
         output_path: Output image path (PNG/SVG/PDF).
         organism: Organism name.
         config: Visualization config.

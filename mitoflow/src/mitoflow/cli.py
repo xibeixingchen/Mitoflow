@@ -156,7 +156,7 @@ def mtpt(
 
 @app.command()
 def viz(
-    input: Path = typer.Option(..., "-i", "--input", help="GenBank file (.gb/.gbk)"),
+    input: Path = typer.Option(..., "-i", "--input", help="GenBank file (.gb)"),
     output: Path = typer.Option(..., "-o", "--output", help="Output image path (PNG/SVG/PDF)"),
     name: str = typer.Option("", "-n", "--name", help="Organism name (center text)"),
     format: str = typer.Option("png", "--format", help="Output format: png | svg | pdf"),
@@ -306,7 +306,7 @@ def multiconf(
     input: Path = typer.Option(..., "-i", "--input", help="Genome FASTA"),
     output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
     name: str = typer.Option("MitoFlow", "-n", "--name", help="Project name"),
-    gbk: Optional[Path] = typer.Option(None, "--gbk", help="GenBank file with gene annotations"),
+    gb: Optional[Path] = typer.Option(None, "--gb", help="GenBank file (.gb) with gene annotations"),
     min_repeat: int = typer.Option(100, "--min-repeat", help="Minimum repeat length"),
     reads: Optional[str] = typer.Option(None, "--reads", help="Long reads FASTQ for recombination validation"),
     plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
@@ -326,10 +326,10 @@ def multiconf(
 
     # Optional: load gene annotations
     gene_anns = None
-    if gbk:
+    if gb:
         from Bio import SeqIO
         from .models.gene import GeneAnnotation, ExonRecord, Strand
-        record = next(SeqIO.parse(str(gbk), "genbank"))
+        record = next(SeqIO.parse(str(gb), "genbank"))
         gene_anns = []
         for feat in record.features:
             if feat.type in ("gene", "CDS"):
@@ -562,7 +562,7 @@ def phylo(
 @app.command()
 def cms(
     input: Path = typer.Option(..., "-i", "--input", help="Genome FASTA file"),
-    gbk: Path = typer.Option(..., "--gbk", help="GenBank file with annotations"),
+    gb: Path = typer.Option(..., "--gb", help="GenBank file (.gb) with annotations"),
     output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
     name: str = typer.Option("MitoFlow", "-n", "--name", help="Project name"),
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
@@ -587,7 +587,7 @@ def cms(
     console.print(f"Known CMS genes in database: {len(KNOWN_CMS_GENES)}")
 
     # Load gene annotations from GenBank
-    record = next(SeqIO.parse(str(gbk), "genbank"))
+    record = next(SeqIO.parse(str(gb), "genbank"))
     gene_anns = []
     for feat in record.features:
         if feat.type in ("gene", "CDS"):
@@ -691,7 +691,7 @@ def report(
         data.qc_passed = scores.get("annotation_ready", False)
         data.qc_missing_genes = scores.get("missing_genes", [])
 
-    report_path = generate_html_report(data, output, gbk_path=input)
+    report_path = generate_html_report(data, output, gb_path=input)
     console.print(f"[bold green]Done![/] Report: {report_path}")
 
 
@@ -772,7 +772,7 @@ def numt(
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_identity: float = typer.Option(80.0, "--min-identity", help="Minimum identity %%"),
     min_length: int = typer.Option(100, "--min-length", help="Minimum alignment length (bp)"),
-    gbk: Optional[Path] = typer.Option(None, "--gbk", help="Mitochondrial GenBank for gene annotation"),
+    gb: Optional[Path] = typer.Option(None, "--gb", help="Mitochondrial GenBank (.gb) for gene annotation"),
     plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate NUMT plots"),
     dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
@@ -795,7 +795,7 @@ def numt(
         threads=threads,
         min_identity=min_identity,
         min_length=min_length,
-        mito_gbk=gbk,
+        mito_gb=gb,
     )
     console.print(result.summary())
 

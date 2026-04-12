@@ -83,7 +83,7 @@ def detect_numts(
     threads: int = 4,
     min_identity: float = 80.0,
     min_length: int = 200,
-    mito_gbk: Path | None = None,
+    mito_gb: Path | None = None,
 ) -> NUMTResult:
     """Detect NUMTs by BLASTing mitochondrial genome against nuclear genome.
 
@@ -94,7 +94,7 @@ def detect_numts(
         threads: BLAST threads
         min_identity: Minimum identity %
         min_length: Minimum alignment length (bp)
-        mito_gbk: Optional mitochondrial GenBank file for gene annotation
+        mito_gb: Optional mitochondrial GenBank file for gene annotation
 
     Returns:
         NUMTResult
@@ -196,8 +196,8 @@ def detect_numts(
     regions = _remove_overlaps(regions)
 
     # Annotate mito genes covered by each NUMT
-    if mito_gbk and mito_gbk.exists():
-        _annotate_mito_genes(regions, mito_gbk)
+    if mito_gb and mito_gb.exists():
+        _annotate_mito_genes(regions, mito_gb)
 
     return NUMTResult(
         regions=regions,
@@ -221,7 +221,7 @@ def _remove_overlaps(regions: list[NUMTRegion]) -> list[NUMTRegion]:
     return sorted(kept, key=lambda r: (r.chr_id, r.start))
 
 
-def _annotate_mito_genes(regions: list[NUMTRegion], mito_gbk: Path) -> None:
+def _annotate_mito_genes(regions: list[NUMTRegion], mito_gb: Path) -> None:
     """Annotate which mitochondrial genes each NUMT covers.
 
     Reads gene features from a GenBank file and checks overlap with
@@ -230,7 +230,7 @@ def _annotate_mito_genes(regions: list[NUMTRegion], mito_gbk: Path) -> None:
     from Bio import SeqIO
 
     genes = []
-    for rec in SeqIO.parse(str(mito_gbk), "genbank"):
+    for rec in SeqIO.parse(str(mito_gb), "genbank"):
         for feat in rec.features:
             if feat.type in ("gene", "CDS", "tRNA", "rRNA"):
                 name = (

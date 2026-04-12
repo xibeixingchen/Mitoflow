@@ -55,14 +55,14 @@ class ReportData:
 def generate_html_report(
     data: ReportData,
     output_path: Path,
-    gbk_path: Optional[Path] = None,
+    gb_path: Optional[Path] = None,
 ) -> Path:
     """Generate a self-contained HTML report.
 
     Args:
         data: ReportData with all analysis results.
         output_path: Output HTML file path.
-        gbk_path: Optional path to GenBank file for generating circos plot.
+        gb_path: Optional path to GenBank file for generating circos plot.
 
     Returns:
         Path to generated HTML file.
@@ -75,9 +75,9 @@ def generate_html_report(
     
     # Generate circos plot if GenBank provided
     circos_b64 = ""
-    if gbk_path and gbk_path.exists():
+    if gb_path and gb_path.exists():
         try:
-            circos_png = generate_circos_plot(gbk_path, output_path.parent, data.project_name)
+            circos_png = generate_circos_plot(gb_path, output_path.parent, data.project_name)
             if circos_png and circos_png.exists():
                 circos_b64 = encode_image_to_base64(circos_png)
         except Exception as e:
@@ -384,11 +384,11 @@ function filterGenes() {
 """
 
 
-def generate_circos_plot(gbk_path: Path, output_dir: Path, name: str) -> Optional[Path]:
+def generate_circos_plot(gb_path: Path, output_dir: Path, name: str) -> Optional[Path]:
     """Generate circular genome map using OGDrawR (R, preferred) or gbdraw (Python, fallback).
 
     Args:
-        gbk_path: Path to GenBank file
+        gb_path: Path to GenBank file
         output_dir: Output directory for plot
         name: Organism name
 
@@ -403,7 +403,7 @@ def generate_circos_plot(gbk_path: Path, output_dir: Path, name: str) -> Optiona
         from ..viz.circos_plot_ogdraw import draw_genome_map, check_ogdrawr_available
         if check_ogdrawr_available():
             result = draw_genome_map(
-                genbank_path=gbk_path,
+                genbank_path=gb_path,
                 output_path=output_path,
                 organism=name,
             )
@@ -422,7 +422,7 @@ def generate_circos_plot(gbk_path: Path, output_dir: Path, name: str) -> Optiona
         from ..viz.gbdraw_plot import draw_with_gbdraw, check_gbdraw_available
         if check_gbdraw_available():
             result = draw_with_gbdraw(
-                genbank_path=str(gbk_path),
+                genbank_path=str(gb_path),
                 output_path=str(output_path),
                 organism=name,
                 format="png",

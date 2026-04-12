@@ -562,6 +562,9 @@ def plot_all_codon(
 ) -> dict[str, Path]:
     """Generate all codon usage plots.
 
+    Tries R visualization first (ggplot2 + eoffice → PNG/PDF/PPTX),
+    falls back to matplotlib (PNG only).
+
     Args:
         result: CodonUsageResult.
         output_dir: Output directory.
@@ -573,6 +576,17 @@ def plot_all_codon(
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Try R visualization first (ggplot2 + eoffice → PNG/PDF/PPTX)
+    try:
+        from .visualize_r import check_r_codon_available, plot_codon_with_r
+        if check_r_codon_available():
+            logger.info("Using R (ggplot2 + eoffice) for codon visualization")
+            return plot_codon_with_r(result, output_dir, name, dpi)
+    except Exception as e:
+        logger.warning(f"R visualization unavailable, falling back to matplotlib: {e}")
+
+    # Fallback: matplotlib (PNG only)
     files = {}
 
     files["rscu_heatmap"] = plot_rscu_heatmap(result, output_dir / f"{name}_rscu_heatmap.png", dpi=dpi)

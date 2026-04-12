@@ -309,6 +309,8 @@ def multiconf(
     gbk: Optional[Path] = typer.Option(None, "--gbk", help="GenBank file with gene annotations"),
     min_repeat: int = typer.Option(100, "--min-repeat", help="Minimum repeat length"),
     reads: Optional[str] = typer.Option(None, "--reads", help="Long reads FASTQ for recombination validation"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution (DPI)"),
 ):
     """Predict multi-configuration structure from repeats."""
     from .core.input import load_fasta
@@ -364,6 +366,13 @@ def multiconf(
     report_path = out.report_dir / f"{name}_multiconf.txt"
     report_path.write_text(result.summary())
     console.print(f"Report: {report_path}")
+
+    if plot:
+        from .multiconf.visualize import plot_all_multiconf
+        plot_dir = out.report_dir / "plots"
+        plot_files = plot_all_multiconf(result, genome_length=genome.length, output_dir=plot_dir, prefix=name, dpi=dpi)
+        for ptype, ppath in plot_files.items():
+            console.print(f"  {ptype}: {ppath}")
 
 
 @app.command()
@@ -559,6 +568,8 @@ def cms(
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_orf: int = typer.Option(300, "--min-orf", help="Minimum ORF length (bp)"),
     gene_db: Optional[Path] = typer.Option(None, "--gene-db", help="Mitochondrial gene protein FASTA for chimera detection"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution (DPI)"),
 ):
     """Predict CMS (Cytoplasmic Male Sterility) candidate genes."""
     from .core.input import load_fasta
@@ -607,6 +618,13 @@ def cms(
     files = write_cms_report(result, out.report_dir, name)
     for ftype, fpath in files.items():
         console.print(f"  {ftype}: {fpath}")
+
+    if plot:
+        from .cms.visualize import plot_all_cms
+        plot_dir = out.report_dir / "plots"
+        plot_files = plot_all_cms(result, genome_length=genome.length, output_dir=plot_dir, prefix=name, dpi=dpi)
+        for ptype, ppath in plot_files.items():
+            console.print(f"  {ptype}: {ppath}")
 
 
 @app.command()
@@ -685,6 +703,8 @@ def repeat_cmd(
     min_tandem: int = typer.Option(100, "--min-tandem", help="Min tandem repeat length (bp)"),
     min_long: int = typer.Option(100, "--min-long", help="Min dispersed repeat length (bp)"),
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution (DPI)"),
 ):
     """Run repeat detection (SSR + tandem + long repeats)."""
     from .core.input import load_fasta
@@ -730,6 +750,17 @@ def repeat_cmd(
     report_path = out.report_dir / f"{name}_repeats.txt"
     report_path.write_text("\n".join(report_lines))
     console.print(f"Report: {report_path}")
+
+    if plot:
+        from .repeat.visualize import plot_all_repeat
+        plot_dir = out.report_dir / "plots"
+        plot_files = plot_all_repeat(
+            ssr_result, tandem_result, long_result,
+            output_dir=plot_dir, prefix=name, dpi=dpi,
+            genome_length=genome.length,
+        )
+        for ptype, ppath in plot_files.items():
+            console.print(f"  {ptype}: {ppath}")
 
 
 @app.command()

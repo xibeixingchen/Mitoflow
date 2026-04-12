@@ -70,6 +70,8 @@ def qc(
     bam: Optional[Path] = typer.Option(None, "--bam", help="BAM file for coverage check"),
     gfa: Optional[Path] = typer.Option(None, "--gfa", help="Assembly graph GFA file"),
     db: Optional[Path] = typer.Option(None, "--db", help="Database directory"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate QC plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
     """Run five-dimensional quality control (Completeness/Contiguity/Correctness/Contamination/Structure)."""
     from .core.input import load_fasta
@@ -99,6 +101,15 @@ def qc(
         for ftype, fpath in result.output_files.items():
             console.print(f"  {ftype}: {fpath}")
 
+    # Visualization
+    if plot:
+        from .qc.visualize import plot_all_qc
+        from .core.output import OutputManager
+        out = OutputManager(output, name)
+        plot_files = plot_all_qc(result, out.result_dir, name, dpi)
+        for pname, ppath in plot_files.items():
+            console.print(f"  Plot: {ppath}")
+
 
 @app.command()
 def mtpt(
@@ -108,12 +119,13 @@ def mtpt(
     name: str = typer.Option("MitoFlow", "-n", "--name", help="Project name"),
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_identity: float = typer.Option(70.0, "--min-identity", help="Minimum identity %%"),
-    dotplot: bool = typer.Option(True, "--dotplot/--no-dotplot", help="Generate dot-plot"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate MTPT plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
     """Detect MTPT (mitochondrial plastid-derived DNA transfer) regions."""
     from .core.input import load_fasta
     from .core.output import OutputManager
-    from .mtpt.detector import detect_mtpt, generate_mtpt_dotplot
+    from .mtpt.detector import detect_mtpt
 
     console.print(f"[bold green]MitoFlow MTPT Detection[/]")
     out = OutputManager(output, name)
@@ -134,10 +146,12 @@ def mtpt(
     report_path.write_text(result.summary())
     console.print(f"Report: {report_path}")
 
-    # Dot-plot
-    if dotplot:
-        plot_path = out.report_dir / f"{name}_mtpt_dotplot.png"
-        generate_mtpt_dotplot(input, cp, plot_path, title=f"{name} MTPT")
+    # Visualization
+    if plot and result.regions:
+        from .mtpt.visualize import plot_all_mtpt
+        plot_files = plot_all_mtpt(result, out.result_dir, name, dpi)
+        for pname, ppath in plot_files.items():
+            console.print(f"  Plot: {ppath}")
 
 
 @app.command()
@@ -204,6 +218,8 @@ def rna_edit(
     output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
     name: str = typer.Option("MitoFlow", "-n", "--name", help="Project name"),
     ref: Optional[Path] = typer.Option(None, "--ref", help="Reference edited proteins FASTA"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate RNA editing plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
     """Predict C-to-U RNA editing sites."""
     from .rna_edit.predictor import (
@@ -246,6 +262,13 @@ def rna_edit(
     report_path = out.report_dir / f"{name}_rna_editing.txt"
     report_path.write_text(result.summary())
     console.print(f"Report: {report_path}")
+
+    # Visualization
+    if plot and result.sites:
+        from .rna_edit.visualize import plot_all_rna_edit
+        plot_files = plot_all_rna_edit(result.sites, out.result_dir, name, dpi)
+        for pname, ppath in plot_files.items():
+            console.print(f"  Plot: {ppath}")
 
 
 @app.command()
@@ -469,11 +492,11 @@ def pi_cmd(
     output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
     names: Optional[List[str]] = typer.Option(None, "--names", help="Species names"),
     min_length: int = typer.Option(30, "--min-length", help="Minimum sequence length"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate Pi plots"),
     dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
     """Calculate nucleotide diversity (Pi) across species."""
     from .pi.diversity import calculate_pi_from_genbank, write_pi_tables
-    from .pi.visualize import plot_pi_bar
     from .core.output import OutputManager
 
     console.print(f"[bold green]MitoFlow Pi Analysis[/]")
@@ -492,10 +515,11 @@ def pi_cmd(
     for ftype, fpath in files.items():
         console.print(f"  {ftype}: {fpath}")
 
-    if result.regions:
-        plot_path = out.report_dir / "mitoflow_pi_bar.png"
-        plot_pi_bar(result, plot_path, dpi=dpi)
-        console.print(f"  pi_plot: {plot_path}")
+    if plot and result.regions:
+        from .pi.visualize import plot_all_pi
+        plot_files = plot_all_pi(result, out.result_dir, "mitoflow", dpi)
+        for pname, ppath in plot_files.items():
+            console.print(f"  Plot: {ppath}")
 
 
 @app.command()

@@ -7,7 +7,7 @@ from .diversity import (
     calculate_pi_from_genbank,
     write_pi_tables,
 )
-from .visualize import plot_pi_bar
+from .visualize import plot_pi_bar, plot_all_pi
 
 __all__ = [
     "PiResult",
@@ -16,4 +16,5 @@ __all__ = [
     "calculate_pi_from_genbank",
     "write_pi_tables",
     "plot_pi_bar",
+    "plot_all_pi",
 ]

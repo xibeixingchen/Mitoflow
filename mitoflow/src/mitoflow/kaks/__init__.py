@@ -5,9 +5,10 @@ from .calculator import (
     batch_kaks, check_kaks_calculator_available,
     write_kaks_tables,
 )
+from .visualize import plot_all_kaks
 
 __all__ = [
     "KaKsResult", "KaKsBatchResult",
     "batch_kaks", "check_kaks_calculator_available",
-    "write_kaks_tables",
+    "write_kaks_tables", "plot_all_kaks",
 ]

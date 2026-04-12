@@ -11,6 +11,7 @@ from .corrector import (
     generate_editing_vcf,
     plot_editing_summary,
 )
+from .visualize import plot_all_rna_edit
 
 __all__ = [
     # predictor
@@ -22,4 +23,6 @@ __all__ = [
     "write_corrected_fasta",
     "generate_editing_vcf",
     "plot_editing_summary",
+    # visualize
+    "plot_all_rna_edit",
 ]

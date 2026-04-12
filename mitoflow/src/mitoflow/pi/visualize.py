@@ -1,4 +1,8 @@
-"""Nucleotide diversity (Pi) visualization for plant mitochondrial genomes."""
+"""Nucleotide diversity (Pi) visualization for plant mitochondrial genomes.
+
+Tries R visualization (ggplot2 + eoffice) first for PNG/PDF/PPTX output,
+falls back to matplotlib (PNG only) if R is unavailable.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +11,46 @@ from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+def plot_all_pi(
+    result,
+    output_dir: Path,
+    prefix: str = "mitoflow",
+    dpi: int = 300,
+) -> dict[str, Path]:
+    """Generate all Pi plots (R first, matplotlib fallback).
+
+    Args:
+        result: PiResult from calculate_pi().
+        output_dir: Output directory.
+        prefix: File name prefix.
+        dpi: Resolution.
+
+    Returns:
+        Dict mapping plot name to file path.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Try R visualization first (ggplot2 + eoffice → PNG/PDF/PPTX)
+    try:
+        from .visualize_r import check_r_pi_available, plot_pi_with_r
+        if check_r_pi_available():
+            logger.info("Using R (ggplot2 + eoffice) for Pi visualization")
+            return plot_pi_with_r(result, output_dir, prefix, dpi)
+    except Exception as e:
+        logger.warning(f"R visualization unavailable, falling back to matplotlib: {e}")
+
+    # Fallback: matplotlib (PNG only)
+    if not result.regions:
+        logger.info("No Pi regions to plot")
+        return {}
+
+    files = {}
+    files["pi_bar"] = plot_pi_bar(result, output_dir / f"{prefix}_pi_bar.png", dpi=dpi)
+    logger.info(f"Matplotlib Pi plots written to {output_dir}")
+    return files
 
 
 def plot_pi_bar(

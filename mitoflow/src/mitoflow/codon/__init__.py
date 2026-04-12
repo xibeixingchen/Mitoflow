@@ -4,8 +4,9 @@ from .analysis import (
     CodonUsageResult, analyze_codon_usage,
     calculate_enc_expected, write_codon_tables,
 )
+from .visualize import plot_all_codon
 
 __all__ = [
     "CodonUsageResult", "analyze_codon_usage",
-    "calculate_enc_expected", "write_codon_tables",
+    "calculate_enc_expected", "write_codon_tables", "plot_all_codon",
 ]

@@ -717,11 +717,14 @@ def numt(
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_identity: float = typer.Option(80.0, "--min-identity", help="Minimum identity %%"),
     min_length: int = typer.Option(100, "--min-length", help="Minimum alignment length (bp)"),
+    gbk: Optional[Path] = typer.Option(None, "--gbk", help="Mitochondrial GenBank for gene annotation"),
+    plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate NUMT plots"),
+    dpi: int = typer.Option(300, "--dpi", help="Plot resolution"),
 ):
     """Detect NUMTs (nuclear mitochondrial DNA segments)."""
     from .core.input import load_fasta
     from .core.output import OutputManager
-    from .numt.detector import detect_numts
+    from .numt.detector import detect_numts, write_numt_output
 
     console.print(f"[bold green]MitoFlow NUMT Detection[/]")
     out = OutputManager(output, name)
@@ -732,16 +735,32 @@ def numt(
 
     result = detect_numts(
         mito_fasta=input,
-        nuc_fasta=nuc,
+        nuclear_fasta=nuc,
+        output_dir=out.result_dir,
         threads=threads,
         min_identity=min_identity,
         min_length=min_length,
+        mito_gbk=gbk,
     )
     console.print(result.summary())
+
+    # Write TSV and BED outputs
+    out_files = write_numt_output(result, out.result_dir, name)
+    for ftype, fpath in out_files.items():
+        console.print(f"  {ftype}: {fpath}")
 
     report_path = out.report_dir / f"{name}_numt.txt"
     report_path.write_text(result.summary())
     console.print(f"Report: {report_path}")
+
+    # Visualization
+    if plot and result.regions:
+        from .numt.visualize import plot_all_numt
+        plot_files = plot_all_numt(
+            result, out.result_dir, name, dpi,
+        )
+        for pname, ppath in plot_files.items():
+            console.print(f"  Plot: {ppath}")
 
 
 @app.command()

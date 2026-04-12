@@ -83,6 +83,7 @@ def detect_numts(
     threads: int = 4,
     min_identity: float = 80.0,
     min_length: int = 200,
+    mito_gbk: Path | None = None,
 ) -> NUMTResult:
     """Detect NUMTs by BLASTing mitochondrial genome against nuclear genome.
 
@@ -93,6 +94,7 @@ def detect_numts(
         threads: BLAST threads
         min_identity: Minimum identity %
         min_length: Minimum alignment length (bp)
+        mito_gbk: Optional mitochondrial GenBank file for gene annotation
 
     Returns:
         NUMTResult
@@ -193,6 +195,10 @@ def detect_numts(
     # Remove overlapping NUMTs (keep best)
     regions = _remove_overlaps(regions)
 
+    # Annotate mito genes covered by each NUMT
+    if mito_gbk and mito_gbk.exists():
+        _annotate_mito_genes(regions, mito_gbk)
+
     return NUMTResult(
         regions=regions,
         nuclear_genome_length=nuc_len,
@@ -213,6 +219,36 @@ def _remove_overlaps(regions: list[NUMTRegion]) -> list[NUMTRegion]:
         ):
             kept.append(r)
     return sorted(kept, key=lambda r: (r.chr_id, r.start))
+
+
+def _annotate_mito_genes(regions: list[NUMTRegion], mito_gbk: Path) -> None:
+    """Annotate which mitochondrial genes each NUMT covers.
+
+    Reads gene features from a GenBank file and checks overlap with
+    each NUMT's mitochondrial coordinates.
+    """
+    from Bio import SeqIO
+
+    genes = []
+    for rec in SeqIO.parse(str(mito_gbk), "genbank"):
+        for feat in rec.features:
+            if feat.type in ("gene", "CDS", "tRNA", "rRNA"):
+                name = (
+                    feat.qualifiers.get("gene", [None])[0]
+                    or feat.qualifiers.get("product", [None])[0]
+                    or feat.qualifiers.get("locus_tag", [f"feat_{feat.location.start}"])[0]
+                )
+                genes.append((int(feat.location.start) + 1, int(feat.location.end), name))
+
+    for r in regions:
+        covered = []
+        for g_start, g_end, g_name in genes:
+            # Check overlap: NUMT covers [mito_start, mito_end]
+            overlap_start = max(r.mito_start, g_start)
+            overlap_end = min(r.mito_end, g_end)
+            if overlap_end >= overlap_start:
+                covered.append(g_name)
+        r.mito_genes_covered = covered
 
 
 def write_numt_output(result: NUMTResult, output_dir: Path, name: str) -> dict[str, Path]:

@@ -293,3 +293,48 @@ def plot_recombination_summary(
     plt.close(fig)
     logger.info(f"Recombination summary saved to {output_path}")
     return output_path
+
+
+# ── Unified API (R-first, matplotlib fallback) ──────────────────────
+
+def plot_all_multiconf(
+    result: "MulticonfResult",
+    genome_length: int,
+    output_dir: Path,
+    prefix: str = "mitoflow",
+    dpi: int = 300,
+) -> dict[str, Path]:
+    """Generate Multiconf plots (R first, matplotlib fallback).
+
+    Args:
+        result: MulticonfResult from analysis.
+        genome_length: Total genome length in bp.
+        output_dir: Output directory.
+        prefix: File name prefix.
+        dpi: Resolution for PNG.
+
+    Returns:
+        Dict mapping plot name to output path.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Try R visualization first
+    try:
+        from .visualize_r import check_r_multiconf_available, plot_multiconf_with_r
+        if check_r_multiconf_available():
+            logger.info("Using R (ggplot2 + eoffice) for Multiconf visualization")
+            return plot_multiconf_with_r(result, output_dir, prefix, dpi, genome_length=genome_length)
+    except Exception as e:
+        logger.warning(f"R visualization unavailable, falling back to matplotlib: {e}")
+
+    # Fallback: matplotlib - use existing functions
+    files = {}
+    path = draw_repeat_map(result, genome_length, output_dir / f"{prefix}_multiconf_repeat_map.png", dpi)
+    files["multiconf_repeat_map"] = path
+    path = draw_configuration_diagram(result, genome_length, output_dir / f"{prefix}_multiconf_config_diagram.png", dpi)
+    files["multiconf_config_diagram"] = path
+    path = plot_recombination_summary(result, output_dir / f"{prefix}_multiconf_recomb_summary.png", dpi)
+    files["multiconf_recomb_summary"] = path
+    logger.info(f"Matplotlib Multiconf plots written to {output_dir}")
+    return files

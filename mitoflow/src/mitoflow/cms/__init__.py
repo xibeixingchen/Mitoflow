@@ -5,9 +5,11 @@ from .predictor import (
     predict_cms, write_cms_report,
     KNOWN_CMS_GENES,
 )
+from .visualize import plot_all_cms
 
 __all__ = [
     "CMSCandidate", "CMSResult", "ChimeraInfo", "TMDomain",
     "predict_cms", "write_cms_report",
     "KNOWN_CMS_GENES",
+    "plot_all_cms",
 ]

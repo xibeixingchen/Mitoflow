@@ -347,3 +347,49 @@ def plot_cms_heatmap(
     plt.close(fig)
     logger.info(f"CMS heatmap saved to {output_path}")
     return output_path
+
+
+# ── Unified API (R-first, matplotlib fallback) ──────────────────────
+
+def plot_all_cms(
+    result: "CMSResult",
+    genome_length: int,
+    output_dir: str | Path,
+    prefix: str = "mitoflow",
+    dpi: int = 300,
+) -> dict[str, Path]:
+    """Generate CMS plots (R first, matplotlib fallback).
+
+    Args:
+        result: CMSResult from prediction.
+        genome_length: Total genome length in bp.
+        output_dir: Output directory.
+        prefix: File name prefix.
+        dpi: Resolution for PNG.
+
+    Returns:
+        Dict mapping plot name to output path.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Try R visualization first
+    try:
+        from .visualize_r import check_r_cms_available, plot_cms_with_r
+        if check_r_cms_available():
+            logger.info("Using R (ggplot2 + eoffice) for CMS visualization")
+            return plot_cms_with_r(result, output_dir, prefix, dpi, genome_length=genome_length)
+    except Exception as e:
+        logger.warning(f"R visualization unavailable, falling back to matplotlib: {e}")
+
+    # Fallback: matplotlib - use existing functions
+    files = {}
+    if result.candidates:
+        path = plot_cms_scores(result, output_dir / f"{prefix}_cms_scores.png", dpi)
+        files["cms_scores"] = path
+        path = plot_cms_heatmap(result, output_dir / f"{prefix}_cms_heatmap.png", dpi)
+        files["cms_heatmap"] = path
+        path = plot_cms_genome_context(result, genome_length, output_dir / f"{prefix}_cms_genome_context.png", dpi)
+        files["cms_genome_context"] = path
+    logger.info(f"Matplotlib CMS plots written to {output_dir}")
+    return files

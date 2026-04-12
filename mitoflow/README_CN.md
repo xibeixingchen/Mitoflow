@@ -18,7 +18,7 @@
 
 - **自动化注释** — 蛋白编码基因（pyhmmer HMM + BLAST）、tRNA（tRNAscan-SE + ARAGORN）、rRNA（Barrnap），支持边界校正和 RNA 编辑
 - **密码子使用分析** — RSCU、ENC、GC3s、GC12、PR2 偏倚图、中性绘图、ENC-GC3s 选择绘图（7 张发表级图表）
-- **Ka/Ks 选择压力** — 双引擎：KaKs_Calculator-3.0（C++，7 种方法）+ Python NG86 兜底；柱状图、点图、散点图、箱线图、饼图
+- **Ka/Ks 选择压力** — KaKs_Calculator-3.0（C++，7 种方法 MA/NG/LWL/LPB/GY/YN/ALL）；R 可视化（ggplot2 + eoffice）输出 PNG/PDF/PPTX，5 种图表；R 不可用时回退 matplotlib
 - **核苷酸多样性 (Pi)** — CDS 与 IGS 区域 Pi 计算、进化热点识别、排序柱状图
 - **共线性可视化** — 基于 gbdraw 的线性图，配对 tblastx 比对链接
 - **基因组图谱** — R（OGDrawR）或 Python（gbdraw）环形基因组图；50+ 配色方案
@@ -61,7 +61,7 @@ mitoflow annotate \
 mitoflow codon -i annotation.gbk -o codon_results/
 
 # Ka/Ks 选择压力（自动检测 KaKs_Calculator-3.0）
-mitoflow kaks -q query.gbk -r ref1.gbk -r ref2.gbk -o kaks_results/
+mitoflow kaks -q query.gbk -r ref1.gbk -r ref2.gbk -o kaks_results/ --method MA
 
 # 跨物种核苷酸多样性
 mitoflow pi -i sp1.gbk -i sp2.gbk -o pi_results/
@@ -94,6 +94,20 @@ results/
 
 报告优先使用 OGDrawR（R），不可用时回退 gbdraw（Python）。
 
+### Ka/Ks 可视化
+
+Ka/Ks 图表由 R（ggplot2 + eoffice）生成，输出 PNG、PDF、PPTX 三种格式。`eoffice` 包的 `topptx()` 提供 PPTX 导出。
+
+| 格式 | 后端 | 说明 |
+|------|------|------|
+| PNG | ggplot2 + ggsave | 默认 300 DPI |
+| PDF | ggplot2 + ggsave | 矢量图 |
+| PPTX | eoffice::topptx | PowerPoint 可编辑 |
+
+5 种图表：柱状图、箱线图、Ka-Ks 散点图、选择类型饼图、水平点图。
+
+若 R 不可用，回退 matplotlib（仅 PNG）。
+
 ## CLI 命令
 
 | 命令 | 说明 |
@@ -102,7 +116,7 @@ results/
 | `qc` | 五维质量控制（0–100 评分） |
 | `mtpt` | 线粒体叶绿体来源 DNA 检测 |
 | `codon` | 密码子使用分析（7 张图） |
-| `kaks` | Ka/Ks 选择压力（双引擎） |
+| `kaks` | Ka/Ks 选择压力（KaKs_Calculator-3.0，R 可视化） |
 | `pi` | 核苷酸多样性与热点检测 |
 | `synteny` | 共线性分析与可视化 |
 | `phylo` | 系统发育比对准备 |

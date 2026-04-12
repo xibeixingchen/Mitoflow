@@ -67,10 +67,14 @@ mitoflow annotate \
 
 所有分析命令均支持 `--plot/--no-plot`（默认生成图表）和 `--dpi`（默认 300）选项。当 R 环境可用时，自动生成 **PNG + PDF + PPTX** 三种格式；否则使用 matplotlib 回退（仅 PNG）。
 
+**输入格式**：下游分析支持两种输入方式：
+- GenBank 格式（`.gb`）— 推荐使用，序列与注释信息集成在单个文件中
+- FASTA + GFF 格式（`.fasta` + `.gff`）— 分别提供序列文件和注释文件
+
 ### 密码子使用分析
 
 ```bash
-mitoflow codon -i annotation.gbk -o codon_results/
+mitoflow codon -i annotation.gb -o codon_results/
 ```
 
 生成 7 张图表：
@@ -85,7 +89,7 @@ mitoflow codon -i annotation.gbk -o codon_results/
 ### Ka/Ks 选择压力
 
 ```bash
-mitoflow kaks -q query.gbk -r ref1.gbk -r ref2.gbk -o kaks_results/ --method MA
+mitoflow kaks -q query.gb -r ref1.gb -r ref2.gb -o kaks_results/ --method MA
 ```
 
 生成 5 张图表：
@@ -100,7 +104,7 @@ mitoflow kaks -q query.gbk -r ref1.gbk -r ref2.gbk -o kaks_results/ --method MA
 ### 核苷酸多样性
 
 ```bash
-mitoflow pi -i sp1.gbk -i sp2.gbk -o pi_results/
+mitoflow pi -i sp1.gb -i sp2.gb -o pi_results/
 ```
 
 生成 3 张图表：
@@ -151,7 +155,7 @@ mitoflow repeat -i mitogenome.fasta -o repeat_results/
 ### 多构型结构分析
 
 ```bash
-mitoflow multiconf -i mitogenome.fasta -o multiconf_results/ --gbk annotation.gbk
+mitoflow multiconf -i mitogenome.fasta -o multiconf_results/ --gb annotation.gb
 ```
 
 预测由大重复序列介导的重组产生的主环与亚基因组构型。生成 4 张图表：
@@ -163,7 +167,7 @@ mitoflow multiconf -i mitogenome.fasta -o multiconf_results/ --gbk annotation.gb
 ### CMS 候选基因预测
 
 ```bash
-mitoflow cms -i mitogenome.fasta --gbk annotation.gbk -o cms_results/
+mitoflow cms -i mitogenome.fasta --gb annotation.gb -o cms_results/
 ```
 
 预测细胞质雄性不育候选基因。生成 4 张图表：
@@ -175,7 +179,7 @@ mitoflow cms -i mitogenome.fasta --gbk annotation.gbk -o cms_results/
 ### RNA 编辑位点预测
 
 ```bash
-mitoflow rna-edit -i annotation.gbk -o rna_edit_results/
+mitoflow rna-edit -i annotation.gb -o rna_edit_results/
 ```
 
 预测 C-to-U RNA 编辑位点（起始密码子获得、终止密码子获得）。生成 3 张图表：
@@ -186,7 +190,7 @@ mitoflow rna-edit -i annotation.gbk -o rna_edit_results/
 ### 质量控制
 
 ```bash
-mitoflow qc -i mitogenome.fasta --gbk annotation.gbk -o qc_results/
+mitoflow qc -i mitogenome.fasta --gb annotation.gb -o qc_results/
 ```
 
 五维评分体系（完整性 35%、正确性 25%、连续性 15%、污染度 15%、结构 10%）。生成 3 张图表：
@@ -197,13 +201,13 @@ mitoflow qc -i mitogenome.fasta --gbk annotation.gbk -o qc_results/
 ### 共线性分析
 
 ```bash
-mitoflow synteny -i sp1.gbk -i sp2.gbk -o synteny_results/ --viz gbdraw
+mitoflow synteny -i sp1.gb -i sp2.gb -o synteny_results/ --viz gbdraw
 ```
 
 ### 基因组图谱
 
 ```bash
-mitoflow viz -i annotation.gbk -o genome_map.png --style gbdraw --palette orchid
+mitoflow viz -i annotation.gb -o genome_map.png --style gbdraw --palette orchid
 ```
 
 ## 可视化

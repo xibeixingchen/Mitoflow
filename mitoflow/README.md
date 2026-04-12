@@ -67,10 +67,12 @@ This runs the full 10-step pipeline: loading, PCG annotation, tRNA/rRNA annotati
 
 All analysis commands support `--plot/--no-plot` (default: plot) and `--dpi` (default: 300) options. When R with ggplot2 + eoffice is available, plots are generated in **PNG + PDF + PPTX** formats; otherwise, matplotlib fallback produces PNG only.
 
+**Input formats**: downstream analyses accept GenBank (`.gb`) or FASTA + GFF (`.fasta` + `.gff`) as input. GenBank format is recommended as it contains both sequence and annotation in a single file.
+
 ### Codon Usage
 
 ```bash
-mitoflow codon -i annotation.gbk -o codon_results/
+mitoflow codon -i annotation.gb -o codon_results/
 ```
 
 Generates 7 figures: RSCU heatmap, ENC-GC3s plot (basic + enhanced), codon usage bar, amino acid frequency, PR2 bias, neutrality plot.
@@ -78,7 +80,7 @@ Generates 7 figures: RSCU heatmap, ENC-GC3s plot (basic + enhanced), codon usage
 ### Ka/Ks Selection Pressure
 
 ```bash
-mitoflow kaks -q query.gbk -r ref1.gbk -r ref2.gbk -o kaks_results/ --method MA
+mitoflow kaks -q query.gb -r ref1.gb -r ref2.gb -o kaks_results/ --method MA
 ```
 
 Generates 5 figures: omega barplot, omega distribution, gene heatmap, ML scatter, selection type pie. Supports 7 methods: MA, NG, LWL, LPB, GY, YN, ALL.
@@ -86,7 +88,7 @@ Generates 5 figures: omega barplot, omega distribution, gene heatmap, ML scatter
 ### Nucleotide Diversity
 
 ```bash
-mitoflow pi -i sp1.gbk -i sp2.gbk -o pi_results/
+mitoflow pi -i sp1.gb -i sp2.gb -o pi_results/
 ```
 
 Generates 3 figures: Pi bar chart, Pi distribution, species comparison.
@@ -118,7 +120,7 @@ Detects SSR (microsatellite), tandem, and long/dispersed repeats. Generates 5 fi
 ### Multi-configuration Structure
 
 ```bash
-mitoflow multiconf -i mitogenome.fasta -o multiconf_results/ --gbk annotation.gbk
+mitoflow multiconf -i mitogenome.fasta -o multiconf_results/ --gb annotation.gb
 ```
 
 Predicts subgenomic configurations from repeat-mediated recombination. Generates 4 figures: repeat map with connecting arcs, configuration diagram (master + subcircles), recombination summary, repeat type distribution.
@@ -126,7 +128,7 @@ Predicts subgenomic configurations from repeat-mediated recombination. Generates
 ### CMS Candidate Genes
 
 ```bash
-mitoflow cms -i mitogenome.fasta --gbk annotation.gbk -o cms_results/
+mitoflow cms -i mitogenome.fasta --gb annotation.gb -o cms_results/
 ```
 
 Predicts cytoplasmic male sterility candidate genes. Generates 4 figures: score breakdown (stacked bar), candidate heatmap, genome context map, confidence distribution.
@@ -134,7 +136,7 @@ Predicts cytoplasmic male sterility candidate genes. Generates 4 figures: score 
 ### RNA Editing
 
 ```bash
-mitoflow rna-edit -i annotation.gbk -o rna_edit_results/
+mitoflow rna-edit -i annotation.gb -o rna_edit_results/
 ```
 
 Predicts C-to-U RNA editing sites. Generates 3 figures: editing sites per gene, editing type pie, codon position distribution.
@@ -142,7 +144,7 @@ Predicts C-to-U RNA editing sites. Generates 3 figures: editing sites per gene, 
 ### Quality Control
 
 ```bash
-mitoflow qc -i mitogenome.fasta --gbk annotation.gbk -o qc_results/
+mitoflow qc -i mitogenome.fasta --gb annotation.gb -o qc_results/
 ```
 
 Five-dimensional scoring (completeness, contiguity, correctness, contamination, structure). Generates 3 figures: radar chart, gauge, dimension summary.
@@ -150,13 +152,13 @@ Five-dimensional scoring (completeness, contiguity, correctness, contamination, 
 ### Synteny
 
 ```bash
-mitoflow synteny -i sp1.gbk -i sp2.gbk -o synteny_results/ --viz gbdraw
+mitoflow synteny -i sp1.gb -i sp2.gb -o synteny_results/ --viz gbdraw
 ```
 
 ### Genome Map
 
 ```bash
-mitoflow viz -i annotation.gbk -o genome_map.png --style gbdraw --palette orchid
+mitoflow viz -i annotation.gb -o genome_map.png --style gbdraw --palette orchid
 ```
 
 ## Visualization

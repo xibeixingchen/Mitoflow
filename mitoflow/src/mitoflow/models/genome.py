@@ -17,7 +17,7 @@ class GenomeSequence(BaseModel):
     seqid: str
     sequence: str
     is_circular: bool = True
-    contig_map: list[ContigInfo] = []
+    contig_map: list[ContigInfo] | None = None
 
     @computed_field
     @property

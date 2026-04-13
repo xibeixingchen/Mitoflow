@@ -86,6 +86,8 @@ CODON_TABLE = {
 START_CODONS = {"ATG"}  # Standard start codon; ACG allowed for RNA editing genes
 STOP_CODONS = {"TAA", "TAG", "TGA"}
 STOP_GAIN_CODONS = {"CAA", "CAG", "CGA", "TGG"}  # RNA editing: C->U creates stop
+# Non-standard mitochondrial start codons (RNA editing or alternative starts)
+MITO_START_CODONS = {"ACG", "ATA", "GTG", "TTG"}  # ACG→M, ATA→M/I, GTG→V/M, TTG→L/M
 MAX_CONSERVATIVE_SLIDE = 10  # Maximum adjustment in conservative refinement (bp)
 
 # Expected gene lengths with ±10% tolerance for validation
@@ -860,7 +862,7 @@ def _refine_boundaries(
 
         allowed_starts = START_CODONS | ({"ACG"} if is_start_gain else set())
         if gene_name == "mttB":
-            allowed_starts |= {"ATA", "GTG"}
+            allowed_starts |= {"ATA", "GTG", "TTG"}
         elif gene_name == "rpl16":
             allowed_starts |= {"GTG"}
 
@@ -1001,7 +1003,7 @@ def _refine_boundaries_reference(
                     for hit in hits]
 
         for hit in hits:
-            gene_name = hit.gene_name
+            gene_name = hit.gene_name.lower()  # Normalize to lowercase for file matching
             # Use Protein.fasta for tblastn (we have protein references)
             ref_file = ref_dir / f"{gene_name}.Protein.fasta"
 
@@ -1157,7 +1159,7 @@ def _parse_tblastn_for_boundary(
     new_start = best_start
     new_end = best_end
 
-    START_CODONS_EXT = ["ATG", "GTG"]  # Include GTG for some genes
+    START_CODONS_EXT = ["ATG", "GTG", "TTG"]  # Include GTG/TTG for mitochondrial genes
     STOP_CODONS = ["TAA", "TAG", "TGA"]
 
     if best_strand == Strand.PLUS:
@@ -1192,36 +1194,39 @@ def _parse_tblastn_for_boundary(
         logger.debug(f"ATG search for {hmm_hit.gene_name}: downstream {searched}bp, start={new_start}")
     else:
         # For minus strand, start codon is at HIGH coordinate
-        # Search upstream (left) first - reference may be longer
-        search_pos = best_end
+        # Gene transcribes from HIGH to LOW (transcription direction)
+        # ATG (start) is at transcription start = HIGH coordinate
+        # Search toward HIGHER coordinates first - reference may be truncated at N-terminal
+        # Then search toward LOWER coordinates - reference may be extended at N-terminal
+        search_pos = best_end + 3  # Start beyond current HIGH end
         searched = 0
-        while searched <= extension_range and search_pos >= 3:
+        while searched <= extension_range and search_pos <= genome.length:
             # Get codon and reverse complement
             codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
             codon = codon_fwd.translate(comp)[::-1]
             if codon in START_CODONS_EXT:
                 new_end = search_pos
-                logger.debug(f"tblastn found start codon {codon} upstream at {search_pos} (minus)")
+                logger.debug(f"tblastn found start codon {codon} at higher coord {search_pos} (minus)")
                 break
             if codon in STOP_CODONS:
                 break
-            search_pos -= 3
+            search_pos += 3
             searched += 3
 
-        # If not found, search downstream (right)
+        # If not found at higher coords, search toward lower coordinates
         if new_end == best_end:
-            search_pos = best_end + 3
+            search_pos = best_end
             searched = 0
-            while searched <= extension_range and search_pos <= genome.length:
+            while searched <= extension_range and search_pos >= 3:
                 codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
                 codon = codon_fwd.translate(comp)[::-1]
                 if codon in START_CODONS_EXT:
                     new_end = search_pos
-                    logger.debug(f"tblastn found start codon {codon} downstream at {search_pos} (minus)")
+                    logger.debug(f"tblastn found start codon {codon} at lower coord {search_pos} (minus)")
                     break
                 if codon in STOP_CODONS:
                     break
-                search_pos += 3
+                search_pos -= 3
                 searched += 3
 
     # Create refined HMMHit with extended boundaries
@@ -1375,7 +1380,7 @@ def _refine_single_conservative(
 
     allowed_starts = START_CODONS | ({"ACG"} if is_start_gain else set())
     if gene_name == "mttB":
-        allowed_starts |= {"ATA", "GTG"}
+        allowed_starts |= {"ATA", "GTG", "TTG"}
     elif gene_name == "rpl16":
         allowed_starts |= {"GTG"}
 

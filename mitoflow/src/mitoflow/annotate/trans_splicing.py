@@ -411,7 +411,7 @@ def search_exons_blastn(
     genome: GenomeSequence,
     exon_ref_file: Path,
     blastn_path: str,
-) -> dict[int, list[tuple[int, int, Strand, float]]]:
+) -> dict[int, list[tuple[int, int, Strand, float, int, int]]]:
     """BLASTn search for exons using exon-separated reference.
 
     Uses blastn with parameters optimized for exon detection:
@@ -426,9 +426,9 @@ def search_exons_blastn(
         blastn_path: Path to blastn executable
 
     Returns:
-        Dict mapping exon_number -> list of (start, end, strand, identity) hits
+        Dict mapping exon_number -> list of (start, end, strand, identity, hit_length, expected_length) hits
     """
-    result: dict[int, list[tuple[int, int, Strand, float]]] = {}
+    result: dict[int, list[tuple[int, int, Strand, float, int, int]]] = {}
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create query file from genome
@@ -487,16 +487,17 @@ def search_exons_blastn(
                 qseqid = parts[0]
                 sstart = int(parts[2])
                 send = int(parts[3])
+                hit_length = int(parts[6])  # Actual hit length
                 pident = float(parts[7])
             except (ValueError, IndexError):
                 continue
 
-            # Parse exon ID to get exon number
+            # Parse exon ID to get exon number and expected length
             parsed = parse_exon_id(qseqid)
             if not parsed:
                 continue
 
-            gene, exon_num, exon_len = parsed
+            gene, exon_num, expected_length = parsed
 
             # Only include hits for the queried gene
             if gene != gene_name:
@@ -510,17 +511,17 @@ def search_exons_blastn(
                 strand = Strand.MINUS
                 start, end = send, sstart
 
-            # Store hit
+            # Store hit with length info: (start, end, strand, identity, hit_length, expected_length)
             if exon_num not in result:
                 result[exon_num] = []
-            result[exon_num].append((start, end, strand, pident))
+            result[exon_num].append((start, end, strand, pident, hit_length, expected_length))
 
     return result
 
 
 def merge_exons_to_gene(
     gene_name: str,
-    exon_hits: dict[int, list[tuple[int, int, Strand, float]]],
+    exon_hits: dict[int, list[tuple[int, int, Strand, float, int, int]]],
     config: dict,
     genome: GenomeSequence,
 ) -> GeneAnnotation | None:
@@ -528,14 +529,14 @@ def merge_exons_to_gene(
 
     Strategy:
     1. Check we have all expected exons
-    2. Select best hit per exon (highest identity)
+    2. Select best hit per exon (prioritize full-length matches, then highest identity)
     3. Calculate gene coordinates: start = min(exon starts), end = max(exon ends)
     4. Validate span <= max_span
     5. Create GeneAnnotation with merged exons
 
     Args:
         gene_name: Gene name
-        exon_hits: Dict from search_exons_blastn()
+        exon_hits: Dict from search_exons_blastn() with (start, end, strand, identity, hit_length, expected_length)
         config: Gene config from TRANS_SPLICED_CONFIG
         genome: Genome sequence for boundary refinement
 
@@ -563,15 +564,28 @@ def merge_exons_to_gene(
             logger.debug(f"{gene_name}: no hits for expected exon {exon_num}")
             return None
 
-        # Sort by identity descending, take best
-        hits_sorted = sorted(hits, key=lambda h: h[3], reverse=True)
-        best = hits_sorted[0]
-        start, end, strand, identity = best
+        # Sort by: 1) hit_length (prefer full-length), 2) identity (higher is better)
+        # A full-length match (hit_length >= 90% expected) should be preferred over partial matches
+        hits_with_score = []
+        for h in hits:
+            start, end, strand, identity, hit_length, expected_length = h
+            # Calculate coverage ratio (hit_length / expected_length)
+            coverage_ratio = hit_length / expected_length if expected_length > 0 else 0
+            # Prioritize full-length matches: coverage_ratio >= 0.9 gets bonus
+            full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
+            # Score = full_length_bonus + identity * coverage_ratio
+            score = full_length_bonus + identity * coverage_ratio
+            hits_with_score.append((h, score))
+
+        # Sort by score descending
+        hits_sorted = sorted(hits_with_score, key=lambda x: x[1], reverse=True)
+        best_hit, best_score = hits_sorted[0]
+        start, end, strand, identity, hit_length, expected_length = best_hit
         best_exons.append((start, end, strand, exon_num))
 
         logger.debug(
             f"{gene_name} exon {exon_num}: {start}-{end} "
-            f"({strand.symbol}, {identity:.1f}% identity)"
+            f"({strand.symbol}, {identity:.1f}% identity, {hit_length}/{expected_length}bp, score={best_score:.1f})"
         )
 
     # Calculate gene boundaries
@@ -591,11 +605,18 @@ def merge_exons_to_gene(
         # Get all hits for exon 1 (the anchor)
         exon1_hits = exon_hits.get(1, [])
         if exon1_hits:
-            # Sort exon 1 hits by identity
-            exon1_sorted = sorted(exon1_hits, key=lambda h: h[3], reverse=True)
+            # Sort exon 1 hits by score (prioritize full-length)
+            exon1_with_score = []
+            for h in exon1_hits:
+                coverage_ratio = h[4] / h[5] if h[5] > 0 else 0
+                full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
+                score = full_length_bonus + h[3] * coverage_ratio
+                exon1_with_score.append((h, score))
+            exon1_sorted = sorted(exon1_with_score, key=lambda x: x[1], reverse=True)
+
             # Try each exon 1 hit as anchor, find compatible exon 2+ hits
-            for e1_hit in exon1_sorted[:3]:  # Try top 3 exon 1 hits
-                e1_start, e1_end, e1_strand, e1_id = e1_hit
+            for e1_hit, e1_score in exon1_sorted[:3]:  # Try top 3 exon 1 hits
+                e1_start, e1_end, e1_strand = e1_hit[0], e1_hit[1], e1_hit[2]
 
                 # Find exon 2+ hits close to this exon 1
                 alt_exons = [(e1_start, e1_end, e1_strand, 1)]
@@ -608,9 +629,16 @@ def merge_exons_to_gene(
                         if abs(h[0] - e1_end) < max_exon_gap or abs(e1_start - h[1]) < max_exon_gap
                     ]
                     if compatible:
-                        # Take best compatible hit
-                        compatible.sort(key=lambda h: h[3], reverse=True)
-                        alt_exons.append((compatible[0][0], compatible[0][1], compatible[0][2], exon_num))
+                        # Take best compatible hit (by score)
+                        compat_with_score = []
+                        for h in compatible:
+                            coverage_ratio = h[4] / h[5] if h[5] > 0 else 0
+                            full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
+                            score = full_length_bonus + h[3] * coverage_ratio
+                            compat_with_score.append((h, score))
+                        compat_with_score.sort(key=lambda x: x[1], reverse=True)
+                        best_compat = compat_with_score[0][0]
+                        alt_exons.append((best_compat[0], best_compat[1], best_compat[2], exon_num))
 
                 if len(alt_exons) == expected_exons:
                     alt_span = max(e[1] for e in alt_exons) - min(e[0] for e in alt_exons)
@@ -721,11 +749,13 @@ def refine_exon_boundaries_with_codons(
                     # Codon at offset spans [exon.end + offset : exon.end + offset + 3]
                     # New end should be AFTER the stop codon (exclusive coordinate)
                     new_end = exon.end + offset + 3
+                    new_start = exon.start
                 else:
                     # For minus strand, codon in reverse complement at offset
                     # means codon spans [exon.start - offset - 3 : exon.start - offset]
                     # New start should be AT the start of the stop codon
                     new_start = exon.start - offset - 3
+                    new_end = exon.end
 
                 if new_end != exon.end or new_start != exon.start:
                     logger.debug(
@@ -733,8 +763,8 @@ def refine_exon_boundaries_with_codons(
                         f"by {offset}bp to stop codon"
                     )
                     refined.append(ExonRecord(
-                        start=new_start if strand == Strand.MINUS else exon.start,
-                        end=new_end if strand == Strand.PLUS else exon.end,
+                        start=new_start,
+                        end=new_end,
                         strand=exon.strand,
                         number=exon.number,
                     ))

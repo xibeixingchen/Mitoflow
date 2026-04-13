@@ -36,8 +36,12 @@ def _standardize_trna_name(amino_acid: str, anticodon: str) -> str:
     Returns:
         Standardized name like "trnI(aat)"
     """
-    # Normalize amino acid to single uppercase letter
-    aa_upper = amino_acid.upper() if len(amino_acid) <= 1 else amino_acid[0].upper()
+    # Handle fMet special case (formylmethionine -> Met)
+    # ARAGORN outputs "fMet" which should map to "M", not "F"
+    if amino_acid.lower() == "fmet":
+        aa_upper = "M"
+    else:
+        aa_upper = amino_acid.upper() if len(amino_acid) <= 1 else amino_acid[0].upper()
 
     # Convert U to T in anticodon (RNA -> DNA notation)
     anticodon_t = anticodon.upper().replace("U", "T")

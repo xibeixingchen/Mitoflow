@@ -52,6 +52,18 @@ class TestStandardizeTRnaName:
         result = _standardize_trna_name("i", "aau")
         assert result == "trnI(aat)", f"Expected 'trnI(aat)', got '{result}'"
 
+    def test_fmet_standardization(self):
+        """fMet (formylmethionine) should be standardized to 'M' (Met)."""
+        result = _standardize_trna_name("fMet", "CAU")
+        assert result == "trnM(cat)", f"Expected 'trnM(cat)', got '{result}'"
+
+    def test_fmet_case_insensitive(self):
+        """fMet handling should be case-insensitive."""
+        test_cases = ["fMet", "fmet", "FMET", "Fmet"]
+        for fmet_input in test_cases:
+            result = _standardize_trna_name(fmet_input, "CAU")
+            assert result == "trnM(cat)", f"For '{fmet_input}': expected 'trnM(cat)', got '{result}'"
+
 
 class TestTRnaNamingIntegration:
     """Integration tests for tRNA naming in the pipeline."""

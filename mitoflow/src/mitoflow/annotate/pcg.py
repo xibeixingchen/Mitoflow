@@ -1145,53 +1145,84 @@ def _parse_tblastn_for_boundary(
     best_hits.sort(key=lambda x: -x[3])
     best_start, best_end, best_strand, _, pident, frame = best_hits[0]
 
-    # Extend upstream to find start codon
-    # Reference proteins may be truncated, missing first few amino acids
-    # Search up to 300bp upstream for ATG
+    # Extend to find start codon
+    # Reference proteins may be truncated OR extended relative to actual gene
+    # Need to search BOTH upstream (left) and downstream (right) for ATG
     gene_name = hmm_hit.gene_name.lower()
 
-    # For genes with known truncation issues (rpl16, rps1, atp6)
+    # For genes with known issues
     genes_need_extension = {"rpl16", "rps1", "atp6", "ccmfc", "ccmfn", "rpl2"}
     extension_range = 300 if gene_name in genes_need_extension else 150
 
     new_start = best_start
     new_end = best_end
 
+    START_CODONS_EXT = ["ATG", "GTG"]  # Include GTG for some genes
+    STOP_CODONS = ["TAA", "TAG", "TGA"]
+
     if best_strand == Strand.PLUS:
-        # Slide upstream (left) to find start codon
-        search_pos = best_start - 3
+        # Search downstream (right) first - reference may be longer than gene
+        search_pos = best_start
         searched = 0
-        while searched <= extension_range and search_pos >= 1:
-            # Convert to 0-based for genome indexing
+        while searched <= extension_range and search_pos <= genome.length - 2:
             codon = genome.sequence[search_pos - 1:search_pos - 1 + 3].upper()
-            if codon in START_CODONS:
+            if codon in START_CODONS_EXT:
                 new_start = search_pos
-                logger.debug(f"tblastn found start codon at position {search_pos} for {hmm_hit.gene_name}")
-                break
-            if codon in STOP_CODONS:
-                # Stop codon upstream means we went too far
-                logger.debug(f"Stop codon blocked search for {hmm_hit.gene_name}")
-                break
-            search_pos -= 3
-            searched += 3
-        logger.debug(f"ATG search for {hmm_hit.gene_name}: searched {searched}bp")
-    else:
-        # For minus strand, start codon is at HIGH coordinate
-        # Slide downstream (right) to find start codon in reverse complement
-        search_pos = best_end + 3
-        searched = 0
-        while searched <= extension_range and search_pos <= genome.length:
-            # Get forward strand codon and reverse complement it
-            codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
-            codon = codon_fwd.translate(comp)[::-1]
-            if codon in START_CODONS:
-                new_end = search_pos  # For minus strand, end is the start position
-                logger.debug(f"tblastn found start codon {codon} at position {search_pos} (minus strand)")
+                logger.debug(f"tblastn found start codon {codon} downstream at {search_pos}")
                 break
             if codon in STOP_CODONS:
                 break
             search_pos += 3
             searched += 3
+
+        # If no ATG found downstream, search upstream (left)
+        if new_start == best_start:
+            search_pos = best_start - 3
+            searched = 0
+            while searched <= extension_range and search_pos >= 1:
+                codon = genome.sequence[search_pos - 1:search_pos - 1 + 3].upper()
+                if codon in START_CODONS_EXT:
+                    new_start = search_pos
+                    logger.debug(f"tblastn found start codon {codon} upstream at {search_pos}")
+                    break
+                if codon in STOP_CODONS:
+                    break
+                search_pos -= 3
+                searched += 3
+        logger.debug(f"ATG search for {hmm_hit.gene_name}: downstream {searched}bp, start={new_start}")
+    else:
+        # For minus strand, start codon is at HIGH coordinate
+        # Search upstream (left) first - reference may be longer
+        search_pos = best_end
+        searched = 0
+        while searched <= extension_range and search_pos >= 3:
+            # Get codon and reverse complement
+            codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
+            codon = codon_fwd.translate(comp)[::-1]
+            if codon in START_CODONS_EXT:
+                new_end = search_pos
+                logger.debug(f"tblastn found start codon {codon} upstream at {search_pos} (minus)")
+                break
+            if codon in STOP_CODONS:
+                break
+            search_pos -= 3
+            searched += 3
+
+        # If not found, search downstream (right)
+        if new_end == best_end:
+            search_pos = best_end + 3
+            searched = 0
+            while searched <= extension_range and search_pos <= genome.length:
+                codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
+                codon = codon_fwd.translate(comp)[::-1]
+                if codon in START_CODONS_EXT:
+                    new_end = search_pos
+                    logger.debug(f"tblastn found start codon {codon} downstream at {search_pos} (minus)")
+                    break
+                if codon in STOP_CODONS:
+                    break
+                search_pos += 3
+                searched += 3
 
     # Create refined HMMHit with extended boundaries
     logger.debug(

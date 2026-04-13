@@ -81,26 +81,28 @@ MAX_CONSERVATIVE_SLIDE = 10  # Maximum adjustment in conservative refinement (bp
 
 # Expected gene lengths with ±10% tolerance for validation
 # Based on plant mitochondrial gene lengths (approximate bp)
-# reject_below/reject_above are ~±22% from typical expected length
+# min/max: reasonable range across species for filtering candidates
+# reject_below/reject_above: ±10% from midpoint, reject genes outside this range
 EXPECTED_LENGTHS_WITH_TOLERANCE = {
-    "atp1": {"min": 1400, "max": 1600, "reject_below": 1260, "reject_above": 1760},
-    "atp4": {"min": 500, "max": 650, "reject_below": 450, "reject_above": 720},
-    "atp6": {"min": 900, "max": 1200, "reject_below": 810, "reject_above": 1320},
-    "atp8": {"min": 400, "max": 550, "reject_below": 360, "reject_above": 605},
-    "atp9": {"min": 200, "max": 280, "reject_below": 180, "reject_above": 310},
-    "cob": {"min": 1100, "max": 1300, "reject_below": 990, "reject_above": 1430},
-    "cox1": {"min": 1500, "max": 1650, "reject_below": 1350, "reject_above": 1815},
-    "cox2": {"min": 700, "max": 900, "reject_below": 630, "reject_above": 990},
-    "cox3": {"min": 750, "max": 900, "reject_below": 675, "reject_above": 990},
-    "nad1": {"min": 900, "max": 1100, "reject_below": 810, "reject_above": 1210},
-    "nad2": {"min": 1100, "max": 1400, "reject_below": 990, "reject_above": 1540},
-    "nad3": {"min": 300, "max": 400, "reject_below": 270, "reject_above": 440},
-    "nad4": {"min": 1300, "max": 1600, "reject_below": 1170, "reject_above": 1760},
-    "nad4L": {"min": 250, "max": 350, "reject_below": 225, "reject_above": 385},
-    "nad5": {"min": 1800, "max": 2300, "reject_below": 1620, "reject_above": 2530},
-    "nad6": {"min": 550, "max": 700, "reject_below": 495, "reject_above": 770},
-    "nad7": {"min": 1100, "max": 1400, "reject_below": 990, "reject_above": 1540},
-    "nad9": {"min": 500, "max": 650, "reject_below": 450, "reject_above": 720},
+    # Expected lengths with ±10% reject thresholds (based on midpoint of min/max)
+    "atp1": {"min": 1400, "max": 1600, "reject_below": 1350, "reject_above": 1650},
+    "atp4": {"min": 500, "max": 650, "reject_below": 517, "reject_above": 632},
+    "atp6": {"min": 900, "max": 1200, "reject_below": 945, "reject_above": 1155},
+    "atp8": {"min": 400, "max": 550, "reject_below": 427, "reject_above": 522},
+    "atp9": {"min": 200, "max": 280, "reject_below": 216, "reject_above": 264},
+    "cob": {"min": 1100, "max": 1300, "reject_below": 1080, "reject_above": 1320},
+    "cox1": {"min": 1500, "max": 1650, "reject_below": 1417, "reject_above": 1732},
+    "cox2": {"min": 700, "max": 900, "reject_below": 720, "reject_above": 880},
+    "cox3": {"min": 750, "max": 900, "reject_below": 742, "reject_above": 907},
+    "nad1": {"min": 900, "max": 1100, "reject_below": 900, "reject_above": 1100},
+    "nad2": {"min": 1100, "max": 1400, "reject_below": 1125, "reject_above": 1375},
+    "nad3": {"min": 300, "max": 400, "reject_below": 315, "reject_above": 385},
+    "nad4": {"min": 1300, "max": 1600, "reject_below": 1305, "reject_above": 1595},
+    "nad4L": {"min": 250, "max": 350, "reject_below": 270, "reject_above": 330},
+    "nad5": {"min": 1800, "max": 2300, "reject_below": 1845, "reject_above": 2255},
+    "nad6": {"min": 550, "max": 700, "reject_below": 562, "reject_above": 687},
+    "nad7": {"min": 1100, "max": 1400, "reject_below": 1125, "reject_above": 1375},
+    "nad9": {"min": 500, "max": 650, "reject_below": 517, "reject_above": 632},
 }
 
 
@@ -235,6 +237,13 @@ def annotate_pcg(
     # Step 2: Refine boundaries using reference-based approach
     refined_hits = _refine_boundaries_reference(raw_hits, genome, db_manager, config)
     logger.info(f"Boundary refinement: {len(refined_hits)} hits retained")
+
+    # Step 2b: Validate lengths against expected (±10% tolerance)
+    valid_hits = [h for h in refined_hits if _validate_hit_length(h)]
+    if len(valid_hits) < len(refined_hits):
+        filtered_count = len(refined_hits) - len(valid_hits)
+        logger.info(f"Length validation: filtered {filtered_count} hits outside ±10% tolerance")
+    refined_hits = valid_hits
 
     # Step 3: Resolve overlaps
     final_hits = _resolve_overlaps(refined_hits)

@@ -688,26 +688,50 @@ def annotate_trans_spliced_genes(
         logger.warning("blastn not available, skipping trans-spliced annotation")
         return existing_annotations
 
+    hmm_discarded = set()  # Track genes where HMM was discarded due to large span
+
     for gene_name, config in TRANS_SPLICED_CONFIG.items():
         # Check if gene is already annotated
         already_found = gene_name in existing_annotations
 
         if already_found:
             current = existing_annotations[gene_name]
-            if len(current.exons) >= config["exons"]:
+
+            # Check HMM annotation span - if too large, it may be wrong
+            hmm_span = abs(current.end - current.start)
+            max_span = config["max_span"]
+
+            # If HMM span exceeds max_span, discard and use BLASTn only
+            if hmm_span > max_span:
+                logger.warning(
+                    f"{gene_name}: HMM span {hmm_span}bp > max {max_span}bp, "
+                    f"discarding HMM result and using BLASTn exon search"
+                )
+                # Remove from dict to force BLASTn search
+                del existing_annotations[gene_name]
+                already_found = False
+                hmm_discarded.add(gene_name)
+            elif len(current.exons) >= config["exons"]:
                 logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
                 continue
+            else:
+                logger.info(
+                    f"{gene_name}: has {len(current.exons)} exons, expected {config['exons']}. "
+                    f"Attempting BLASTn exon search to find missing exons."
+                )
 
-            logger.info(
-                f"{gene_name}: has {len(current.exons)} exons, expected {config['exons']}. "
-                f"Attempting BLASTn exon search to find missing exons."
-            )
-        else:
-            # Gene not found by HMM - try BLASTn exon search anyway
-            logger.info(
-                f"{gene_name}: not found by HMM search. "
-                f"Attempting BLASTn exon search for trans-spliced gene."
-            )
+        if not already_found:
+            if gene_name in hmm_discarded:
+                logger.info(
+                    f"{gene_name}: HMM result discarded. "
+                    f"Attempting BLASTn exon search for accurate position."
+                )
+            else:
+                # Gene not found by HMM - try BLASTn exon search anyway
+                logger.info(
+                    f"{gene_name}: not found by HMM search. "
+                    f"Attempting BLASTn exon search for trans-spliced gene."
+                )
 
         # Find exon reference file
         exon_ref = find_exon_reference_file(gene_name, db_manager)

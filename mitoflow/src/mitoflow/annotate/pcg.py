@@ -10,6 +10,7 @@ Core annotation strategy:
 
 from __future__ import annotations
 import logging
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -75,6 +76,7 @@ CODON_TABLE = {
 START_CODONS = {"ATG"}  # Standard start codon; ACG allowed for RNA editing genes
 STOP_CODONS = {"TAA", "TAG", "TGA"}
 STOP_GAIN_CODONS = {"CAA", "CAG", "CGA", "TGG"}  # RNA editing: C->U creates stop
+MAX_CONSERVATIVE_SLIDE = 15  # Maximum adjustment in conservative refinement (bp)
 
 
 def translate_codon(codon: str) -> str:
@@ -164,8 +166,8 @@ def annotate_pcg(
         logger.warning("No HMM hits found. Check database or input quality.")
         return []
 
-    # Step 2: Refine boundaries
-    refined_hits = _refine_boundaries(raw_hits, genome, db_manager, config)
+    # Step 2: Refine boundaries using reference-based approach
+    refined_hits = _refine_boundaries_reference(raw_hits, genome, db_manager, config)
     logger.info(f"Boundary refinement: {len(refined_hits)} hits retained")
 
     # Step 3: Resolve overlaps
@@ -600,6 +602,343 @@ def _refine_boundaries(
         refined.append(hit)
 
     return refined
+
+
+def _refine_boundaries_reference(
+    hits: list[HMMHit],
+    genome: GenomeSequence,
+    db_manager: DBManager,
+    config: PCGConfig,
+) -> list[HMMHit]:
+    """Refine boundaries using reference sequence BLAST (PMGA-style approach).
+
+    Instead of sliding outward from HMM hit, use tblastn against reference
+    protein database to find exact gene boundaries. This prevents over-extension.
+
+    Strategy:
+    1. For each hit, extract region ±100bp around HMM boundary
+    2. tblastn against reference protein for this specific gene
+    3. Use best BLAST hit coordinates as refined boundary
+    4. Only use conservative sliding search as fallback if BLAST fails
+
+    Args:
+        hits: Raw HMM hits to refine
+        genome: Genome sequence
+        db_manager: Database manager with reference files
+        config: PCG configuration
+
+    Returns:
+        Refined HMMHit objects with corrected boundaries
+    """
+    import subprocess
+
+    tblastn = shutil.which("tblastn")
+    makeblastdb = shutil.which("makeblastdb")
+    if not tblastn or not makeblastdb:
+        # Fallback to conservative refinement
+        logger.warning("tblastn/makeblastdb not found, using conservative refinement")
+        return [_refine_single_conservative(hit, genome, db_manager, config)
+                for hit in hits]
+
+    refined = []
+    ref_dir = db_manager.blast_ref_dir
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Build BLAST db from genome
+        genome_fa = Path(tmpdir) / "genome.fasta"
+        genome_fa.write_text(f">{genome.seqid}\n{genome.sequence}\n")
+
+        db_path = Path(tmpdir) / "genome_db"
+        try:
+            subprocess.run(
+                [makeblastdb, "-in", str(genome_fa), "-dbtype", "nucl",
+                 "-out", str(db_path)],
+                capture_output=True, text=True, timeout=60, check=True,
+            )
+        except subprocess.SubprocessError as e:
+            logger.warning(f"makeblastdb failed: {e.stderr}")
+            return [_refine_single_conservative(hit, genome, db_manager, config)
+                    for hit in hits]
+
+        for hit in hits:
+            gene_name = hit.gene_name
+            ref_file = ref_dir / f"{gene_name}.Protein.fasta"
+
+            if not ref_file.exists():
+                # No reference available, use conservative refinement
+                refined.append(_refine_single_conservative(hit, genome, db_manager, config))
+                continue
+
+            # Run tblastn: query=reference protein, subject=genome
+            out_file = Path(tmpdir) / f"tblastn_{gene_name}.tsv"
+            cmd = [
+                tblastn,
+                "-query", str(ref_file),
+                "-db", str(db_path),
+                "-out", str(out_file),
+                "-outfmt", "6 qseqid sseqid qstart qend sstart send evalue bitscore length pident qcovs",
+                "-evalue", "1e-10",
+                "-max_target_seqs", "5",
+            ]
+
+            try:
+                subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            except subprocess.SubprocessError:
+                refined.append(_refine_single_conservative(hit, genome, db_manager, config))
+                continue
+
+            # Parse BLAST results to find best hit near the HMM region
+            best_hit = _parse_tblastn_for_boundary(out_file, hit, genome)
+
+            if best_hit:
+                refined.append(best_hit)
+            else:
+                # BLAST failed or no good hit, use conservative refinement
+                refined.append(_refine_single_conservative(hit, genome, db_manager, config))
+
+    return refined
+
+
+def _parse_tblastn_for_boundary(
+    blast_file: Path,
+    hmm_hit: HMMHit,
+    genome: GenomeSequence,
+) -> HMMHit | None:
+    """Parse tblastn results to extract refined boundary.
+
+    Find the BLAST hit that best matches the HMM region and use its
+    coordinates as refined boundaries.
+
+    Args:
+        blast_file: Path to tblastn output file
+        hmm_hit: Original HMM hit
+        genome: Genome sequence
+
+    Returns:
+        Refined HMMHit or None if no suitable hit found
+    """
+    if not blast_file.exists() or not blast_file.read_text().strip():
+        return None
+
+    lines = blast_file.read_text().strip().split("\n")
+    if not lines:
+        return None
+
+    # Find the best hit near the HMM region
+    hmm_center = (hmm_hit.start + hmm_hit.end) // 2
+    hmm_len = hmm_hit.end - hmm_hit.start + 1
+
+    best_hit = None
+    best_score = -1
+    best_dist = float("inf")
+
+    for line in lines:
+        parts = line.split("\t")
+        if len(parts) < 11:
+            continue
+
+        try:
+            sstart = int(parts[4])
+            send = int(parts[5])
+            score = float(parts[7])
+            pident = float(parts[9])
+            qcovs = float(parts[10])
+        except (ValueError, IndexError):
+            continue
+
+        # Filter by quality
+        if pident < 60 or qcovs < 50:
+            continue
+
+        # Determine strand and coordinates
+        if sstart <= send:
+            strand = 1
+            blast_start, blast_end = sstart, send
+        else:
+            strand = -1
+            blast_start, blast_end = send, sstart
+
+        # Check if this hit is near the HMM region
+        blast_center = (blast_start + blast_end) // 2
+        dist = abs(blast_center - hmm_center)
+
+        # Prefer hits that are:
+        # 1. Close to HMM region (within 2x HMM length)
+        # 2. High score
+        # 3. Strand matches HMM
+        if strand == hmm_hit.strand and dist < hmm_len * 2:
+            # Combined score: BLAST score adjusted by proximity
+            combined = score * (1 - dist / (hmm_len * 4))
+            if combined > best_score:
+                best_score = combined
+                best_hit = (blast_start, blast_end, strand, score)
+
+    if best_hit:
+        new_start, new_end, new_strand, new_score = best_hit
+        return HMMHit(
+            gene_name=hmm_hit.gene_name,
+            start=new_start,
+            end=new_end,
+            strand=new_strand,
+            score=max(new_score, hmm_hit.score),
+            evalue=hmm_hit.evalue,
+            domain_score=hmm_hit.domain_score,
+            ali_start=hmm_hit.ali_start,
+            ali_end=hmm_hit.ali_end,
+        )
+
+    return None
+
+
+def _refine_single_conservative(
+    hit: HMMHit,
+    genome: GenomeSequence,
+    db_manager: DBManager,
+    config: PCGConfig,
+) -> HMMHit:
+    """Conservative boundary refinement - only adjust ±15bp max.
+
+    This is a fallback when reference-based refinement is not available.
+    It only makes small adjustments to find start/stop codons very close
+    to the HMM boundary, preventing over-extension.
+
+    Strategy:
+    - For start: scan upstream (lower coord) for start codon
+    - For stop: scan both upstream and downstream within ±15bp
+    - If stop codon found upstream (HMM over-extended), use that
+    - If stop codon found downstream (HMM truncated), use that
+
+    Args:
+        hit: Single HMM hit to refine
+        genome: Genome sequence
+        db_manager: Database manager for gene metadata
+        config: PCG configuration
+
+    Returns:
+        Refined HMMHit with conservative adjustments
+    """
+    comp = str.maketrans("ATGCatgcNn", "TACGtacgNn")
+    gene_name = hit.gene_name
+    is_stop_gain = db_manager.is_stop_gain_gene(gene_name)
+    is_start_gain = db_manager.is_start_gain_gene(gene_name)
+
+    start = hit.start
+    end = hit.end
+    new_start = start
+    new_end = end
+
+    allowed_starts = START_CODONS | ({"ACG"} if is_start_gain else set())
+    if gene_name == "mttB":
+        allowed_starts |= {"ATA", "GTG"}
+    elif gene_name == "rpl16":
+        allowed_starts |= {"GTG"}
+
+    if hit.strand == 1:
+        # Forward strand
+
+        # Check for start codon upstream (within MAX_CONSERVATIVE_SLIDE)
+        # Scan backward from HMM start toward lower coordinates
+        for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+            pos = start - offset
+            if pos >= 1:
+                codon = genome.sequence[pos - 1:pos + 2].upper()
+                if codon in allowed_starts:
+                    new_start = pos
+                    break
+
+        # For stop codon, scan BOTH directions within ±MAX_CONSERVATIVE_SLIDE
+        # First priority: stop codon upstream (if HMM over-extended)
+        found_stop_upstream = False
+        for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+            # Check positions ending at end-offset (scanning backward)
+            pos = end - offset - 2  # Position of stop codon start
+            if pos >= 1 and pos + 2 <= end:
+                codon = genome.sequence[pos - 1:pos + 2].upper()
+                if codon in STOP_CODONS:
+                    new_end = pos + 2  # Include stop codon
+                    found_stop_upstream = True
+                    break
+                if is_stop_gain and codon in STOP_GAIN_CODONS:
+                    new_end = pos + 2
+                    found_stop_upstream = True
+                    break
+
+        # If no upstream stop found, check downstream
+        if not found_stop_upstream:
+            for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+                pos = end + offset  # Position after end
+                if pos + 2 <= genome.length:
+                    codon = genome.sequence[pos - 1:pos + 2].upper()
+                    if codon in STOP_CODONS:
+                        new_end = pos + 2
+                        break
+                    if is_stop_gain and codon in STOP_GAIN_CODONS:
+                        new_end = pos + 2
+                        break
+
+    else:
+        # Reverse strand
+        # On reverse strand: start is at high coord, stop is at low coord
+
+        # Check for start codon downstream (higher coord, within MAX_CONSERVATIVE_SLIDE)
+        for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+            pos = end + offset
+            if pos <= genome.length:
+                # Get forward strand codon, then reverse complement
+                codon_fwd = genome.sequence[pos - 3:pos].upper()
+                codon = codon_fwd.translate(comp)[::-1]
+                if codon in allowed_starts:
+                    new_end = pos
+                    break
+
+        # For stop codon on reverse strand, scan both directions
+        # Stop is at low coordinate end
+        found_stop_upstream = False
+
+        # First check if stop is beyond the HMM hit (need to scan toward higher coords)
+        for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+            pos = start + offset  # Higher coordinate
+            if pos + 2 <= genome.length:
+                codon_fwd = genome.sequence[pos - 1:pos + 2].upper()
+                codon = codon_fwd.translate(comp)[::-1]
+                if codon in STOP_CODONS:
+                    new_start = pos
+                    found_stop_upstream = True
+                    break
+                if is_stop_gain and codon in STOP_GAIN_CODONS:
+                    new_start = pos
+                    found_stop_upstream = True
+                    break
+
+        # If not found, check toward lower coords
+        if not found_stop_upstream:
+            for offset in range(0, MAX_CONSERVATIVE_SLIDE + 1, 3):
+                pos = start - offset
+                if pos >= 1:
+                    codon_fwd = genome.sequence[pos - 1:pos + 2].upper()
+                    codon = codon_fwd.translate(comp)[::-1]
+                    if codon in STOP_CODONS:
+                        new_start = pos
+                        break
+                    if is_stop_gain and codon in STOP_GAIN_CODONS:
+                        new_start = pos
+                        break
+
+    # Only update if we found valid codons
+    if new_start != start or new_end != end:
+        return HMMHit(
+            gene_name=hit.gene_name,
+            start=new_start,
+            end=new_end,
+            strand=hit.strand,
+            score=hit.score,
+            evalue=hit.evalue,
+            domain_score=hit.domain_score,
+            ali_start=hit.ali_start,
+            ali_end=hit.ali_end,
+        )
+
+    return hit
 
 
 def _merge_same_gene_annotations(

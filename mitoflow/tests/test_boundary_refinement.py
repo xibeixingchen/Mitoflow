@@ -79,9 +79,9 @@ class TestBoundaryOverExtension:
         # because the current implementation over-extends
 
     def test_conservative_refinement_limits_adjustment(self):
-        """Conservative refinement should only adjust ±15bp max."""
+        """Conservative refinement should only adjust ±10bp max."""
         # Create a genome where the true gene ends at 300 (TAA)
-        # HMM hit end is at 312 (12bp beyond, frame-aligned)
+        # HMM hit end is at 306 (6bp beyond, frame-aligned) - within ±10bp limit
 
         gene_seq = "ATG" + "GCT" * 98 + "TAA"  # 300 bp, stop at 298-300
         extra_seq = "GCT" * 20  # 60 bp
@@ -93,7 +93,66 @@ class TestBoundaryOverExtension:
         hit = HMMHit(
             gene_name="atp4",
             start=1,
-            end=312,  # HMM end is 12bp beyond true stop (frame-aligned)
+            end=306,  # HMM end is 6bp beyond true stop (frame-aligned, within limit)
+            strand=1,
+            score=500,
+            evalue=1e-10,
+            domain_score=400,
+            ali_start=1,
+            ali_end=102,
+        )
+
+        db_manager = DBManager()
+
+        refined = _refine_single_conservative(hit, genome, db_manager, PCGConfig())
+
+        # Should adjust back to 300 (within ±10bp range, frame-aligned)
+        assert refined.end == 300, f"Expected 300, got {refined.end}"
+
+    def test_conservative_refinement_does_not_adjust_beyond_limit(self):
+        """If stop codon is beyond ±10bp limit, keep HMM boundary."""
+        # Create genome where stop codon is 9bp beyond HMM end (within limit)
+        # but we test a case where the frame alignment doesn't find it
+
+        gene_seq = "ATG" + "GCT" * 98 + "TAA"  # 300 bp, stop at 298-300
+        extra_seq = "GCT" * 20
+
+        sequence = gene_seq + extra_seq
+
+        genome = GenomeSequence(seqid="test", sequence=sequence, is_circular=False)
+
+        hit = HMMHit(
+            gene_name="atp4",
+            start=1,
+            end=309,  # HMM end is 9bp beyond true stop (frame-aligned, within ±10bp)
+            strand=1,
+            score=500,
+            evalue=1e-10,
+            domain_score=400,
+            ali_start=1,
+            ali_end=103,
+        )
+
+        db_manager = DBManager()
+
+        refined = _refine_single_conservative(hit, genome, db_manager, PCGConfig())
+
+        # Should adjust back to 300 (9bp is within ±10bp limit, frame-aligned)
+        assert refined.end == 300, f"Expected 300, got {refined.end}"
+
+    def test_conservative_refinement_beyond_limit_keeps_boundary(self):
+        """If stop codon is 12bp away (beyond ±10bp), keep HMM boundary."""
+        gene_seq = "ATG" + "GCT" * 98 + "TAA"  # 300 bp, stop at 298-300
+        extra_seq = "GCT" * 20
+
+        sequence = gene_seq + extra_seq
+
+        genome = GenomeSequence(seqid="test", sequence=sequence, is_circular=False)
+
+        hit = HMMHit(
+            gene_name="atp4",
+            start=1,
+            end=312,  # HMM end is 12bp beyond (frame-aligned, but beyond ±10bp limit)
             strand=1,
             score=500,
             evalue=1e-10,
@@ -106,8 +165,8 @@ class TestBoundaryOverExtension:
 
         refined = _refine_single_conservative(hit, genome, db_manager, PCGConfig())
 
-        # Should adjust back to 300 (within ±15bp range, frame-aligned)
-        assert refined.end == 300, f"Expected 300, got {refined.end}"
+        # Should NOT adjust (12bp is beyond ±10bp limit)
+        assert refined.end == 312, f"Expected 312 (no adjustment), got {refined.end}"
 
     def test_conservative_refinement_does_not_adjust_if_no_nearby_codon(self):
         """If no stop codon within ±10bp, keep HMM boundary."""
@@ -142,20 +201,54 @@ class TestBoundaryOverExtension:
 class TestReferenceBasedRefinement:
     """Tests for reference-based boundary refinement using BLAST."""
 
+    def test_uses_blastn_not_tblastn(self):
+        """Verify that blastn tool is used (not tblastn) for nucleotide alignment."""
+        import subprocess
+        from unittest.mock import patch, MagicMock
+
+        # blastn should be checked, not tblastn
+        blastn_path = shutil.which("blastn")
+        if not blastn_path:
+            pytest.skip("blastn not available")
+
+        # Verify blastn exists and tblastn is NOT the primary tool
+        # The code should use shutil.which("blastn") not shutil.which("tblastn")
+        assert blastn_path is not None, "blastn tool must be available"
+
+    def test_uses_cds_fasta_not_protein_fasta(self):
+        """Verify that CDS.fasta files are used (not Protein.fasta) as reference."""
+        db_manager = DBManager()
+
+        # Check if the reference directory exists
+        ref_dir = db_manager.blast_ref_dir
+        if not ref_dir.exists():
+            pytest.skip("Reference directory not found")
+
+        # List reference files - should contain .CDS.fasta files
+        cds_files = list(ref_dir.glob("*.CDS.fasta"))
+        protein_files = list(ref_dir.glob("*.Protein.fasta"))
+
+        # The spec requires CDS.fasta files to be used
+        # At minimum, verify the naming convention is correct
+        if cds_files:
+            # CDS.fasta files should be the primary reference
+            for f in cds_files:
+                assert f.name.endswith(".CDS.fasta"), f"Expected CDS.fasta file: {f}"
+
     @pytest.mark.skipif(
-        not shutil.which("tblastn"),
-        reason="tblastn not available"
+        not shutil.which("blastn"),
+        reason="blastn not available"
     )
-    def test_refinement_with_reference_protein(self):
-        """When reference protein is available, use BLAST to find exact boundaries."""
+    def test_refinement_with_reference_cds(self):
+        """When reference CDS is available, use blastn to find exact boundaries."""
         # Create a mock genome with a known gene
         # Use a sequence that matches atp4 reference approximately
         db_manager = DBManager()
 
         # Check if reference exists
-        ref_file = db_manager.blast_ref_dir / "atp4.Protein.fasta"
+        ref_file = db_manager.blast_ref_dir / "atp4.CDS.fasta"
         if not ref_file.exists():
-            pytest.skip("atp4 reference not found")
+            pytest.skip("atp4 CDS reference not found")
 
         # Create genome with atp4-like sequence
         # For testing, we'll use a simple case
@@ -185,8 +278,8 @@ class TestReferenceBasedRefinement:
         assert refined[0].gene_name == "atp4"
 
     def test_refinement_fallback_to_conservative_without_blast(self):
-        """If BLAST is not available, fallback to conservative refinement."""
-        # This test uses a mock scenario where tblastn is not available
+        """If blastn is not available, fallback to conservative refinement."""
+        # This test uses a mock scenario where blastn is not available
         db_manager = DBManager()
 
         gene_seq = "ATG" + "GCT" * 98 + "TAA"

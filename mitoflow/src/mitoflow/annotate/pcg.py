@@ -76,7 +76,7 @@ CODON_TABLE = {
 START_CODONS = {"ATG"}  # Standard start codon; ACG allowed for RNA editing genes
 STOP_CODONS = {"TAA", "TAG", "TGA"}
 STOP_GAIN_CODONS = {"CAA", "CAG", "CGA", "TGG"}  # RNA editing: C->U creates stop
-MAX_CONSERVATIVE_SLIDE = 15  # Maximum adjustment in conservative refinement (bp)
+MAX_CONSERVATIVE_SLIDE = 10  # Maximum adjustment in conservative refinement (bp)
 
 
 def translate_codon(codon: str) -> str:
@@ -632,11 +632,11 @@ def _refine_boundaries_reference(
     """
     import subprocess
 
-    tblastn = shutil.which("tblastn")
+    blastn = shutil.which("blastn")
     makeblastdb = shutil.which("makeblastdb")
-    if not tblastn or not makeblastdb:
+    if not blastn or not makeblastdb:
         # Fallback to conservative refinement
-        logger.warning("tblastn/makeblastdb not found, using conservative refinement")
+        logger.warning("blastn/makeblastdb not found, using conservative refinement")
         return [_refine_single_conservative(hit, genome, db_manager, config)
                 for hit in hits]
 
@@ -662,21 +662,22 @@ def _refine_boundaries_reference(
 
         for hit in hits:
             gene_name = hit.gene_name
-            ref_file = ref_dir / f"{gene_name}.Protein.fasta"
+            ref_file = ref_dir / f"{gene_name}.CDS.fasta"
 
             if not ref_file.exists():
                 # No reference available, use conservative refinement
                 refined.append(_refine_single_conservative(hit, genome, db_manager, config))
                 continue
 
-            # Run tblastn: query=reference protein, subject=genome
-            out_file = Path(tmpdir) / f"tblastn_{gene_name}.tsv"
+            # Run blastn: query=reference CDS, subject=genome
+            out_file = Path(tmpdir) / f"blastn_{gene_name}.tsv"
             cmd = [
-                tblastn,
+                blastn,
+                "-task", "blastn",
                 "-query", str(ref_file),
                 "-db", str(db_path),
                 "-out", str(out_file),
-                "-outfmt", "6 qseqid sseqid qstart qend sstart send evalue bitscore length pident qcovs",
+                "-outfmt", "6 qseqid sseqid sstart send evalue bitscore pident length",
                 "-evalue", "1e-10",
                 "-max_target_seqs", "5",
             ]
@@ -688,7 +689,7 @@ def _refine_boundaries_reference(
                 continue
 
             # Parse BLAST results to find best hit near the HMM region
-            best_hit = _parse_tblastn_for_boundary(out_file, hit, genome)
+            best_hit = _parse_blastn_for_boundary(out_file, hit, genome)
 
             if best_hit:
                 refined.append(best_hit)
@@ -699,18 +700,18 @@ def _refine_boundaries_reference(
     return refined
 
 
-def _parse_tblastn_for_boundary(
+def _parse_blastn_for_boundary(
     blast_file: Path,
     hmm_hit: HMMHit,
     genome: GenomeSequence,
 ) -> HMMHit | None:
-    """Parse tblastn results to extract refined boundary.
+    """Parse blastn results to extract refined boundary.
 
     Find the BLAST hit that best matches the HMM region and use its
     coordinates as refined boundaries.
 
     Args:
-        blast_file: Path to tblastn output file
+        blast_file: Path to blastn output file
         hmm_hit: Original HMM hit
         genome: Genome sequence
 
@@ -734,20 +735,22 @@ def _parse_tblastn_for_boundary(
 
     for line in lines:
         parts = line.split("\t")
-        if len(parts) < 11:
+        # blastn outfmt: qseqid sseqid sstart send evalue bitscore pident length
+        if len(parts) < 8:
             continue
 
         try:
-            sstart = int(parts[4])
-            send = int(parts[5])
-            score = float(parts[7])
-            pident = float(parts[9])
-            qcovs = float(parts[10])
+            sstart = int(parts[2])
+            send = int(parts[3])
+            evalue = float(parts[4])
+            score = float(parts[5])
+            pident = float(parts[6])
+            length = int(parts[7])
         except (ValueError, IndexError):
             continue
 
-        # Filter by quality
-        if pident < 60 or qcovs < 50:
+        # Filter by quality (pident threshold for nucleotide alignment)
+        if pident < 70:
             continue
 
         # Determine strand and coordinates
@@ -796,7 +799,7 @@ def _refine_single_conservative(
     db_manager: DBManager,
     config: PCGConfig,
 ) -> HMMHit:
-    """Conservative boundary refinement - only adjust ±15bp max.
+    """Conservative boundary refinement - only adjust ±10bp max.
 
     This is a fallback when reference-based refinement is not available.
     It only makes small adjustments to find start/stop codons very close
@@ -804,7 +807,7 @@ def _refine_single_conservative(
 
     Strategy:
     - For start: scan upstream (lower coord) for start codon
-    - For stop: scan both upstream and downstream within ±15bp
+    - For stop: scan both upstream and downstream within ±10bp
     - If stop codon found upstream (HMM over-extended), use that
     - If stop codon found downstream (HMM truncated), use that
 

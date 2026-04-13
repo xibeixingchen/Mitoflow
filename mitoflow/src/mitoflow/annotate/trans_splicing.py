@@ -18,6 +18,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from Bio.Seq import Seq
+
 from ..models.genome import GenomeSequence
 from ..models.gene import GeneAnnotation, ExonRecord, Strand
 from ..db.manager import DBManager
@@ -520,6 +522,7 @@ def merge_exons_to_gene(
     gene_name: str,
     exon_hits: dict[int, list[tuple[int, int, Strand, float]]],
     config: dict,
+    genome: GenomeSequence,
 ) -> GeneAnnotation | None:
     """Merge exon BLAST hits into a single gene annotation.
 
@@ -534,6 +537,7 @@ def merge_exons_to_gene(
         gene_name: Gene name
         exon_hits: Dict from search_exons_blastn()
         config: Gene config from TRANS_SPLICED_CONFIG
+        genome: Genome sequence for boundary refinement
 
     Returns:
         GeneAnnotation with merged exons, or None if validation fails
@@ -645,6 +649,9 @@ def merge_exons_to_gene(
         for i, e in enumerate(best_exons, 1)
     ]
 
+    # Refine boundaries for problematic genes
+    exons = refine_exon_boundaries_with_codons(exons, genome, strand, gene_name)
+
     # Create annotation
     annotation = GeneAnnotation(
         gene_name=gene_name,
@@ -661,6 +668,76 @@ def merge_exons_to_gene(
     )
 
     return annotation
+
+
+def refine_exon_boundaries_with_codons(
+    exons: list[ExonRecord],
+    genome: GenomeSequence,
+    strand: Strand,
+    gene_name: str,
+) -> list[ExonRecord]:
+    """Refine exon boundaries using start/stop codons.
+
+    For genes with known boundary issues (cox2, nad6), check:
+    1. Exon ends should align with stop codon (TAA, TAG, TGA)
+    2. Adjust boundaries within small tolerance
+
+    Args:
+        exons: Current exon records (sorted by position)
+        genome: Genome sequence
+        strand: Gene strand
+        gene_name: Gene name
+
+    Returns:
+        Refined exon records
+    """
+    # Genes with known boundary issues
+    problematic_genes = {"cox2", "nad6", "atp6", "rps3", "nad5"}
+
+    if gene_name.lower() not in problematic_genes:
+        return exons
+
+    stop_codons = ["TAA", "TAG", "TGA"]
+    refined = []
+
+    for exon in exons:
+        # Check exon end for stop codon
+        if strand == Strand.PLUS:
+            # For plus strand, check last 3 bases
+            region_end = min(exon.end + 50, len(genome.sequence))
+            region = genome.sequence[exon.end:region_end]
+        else:
+            # For minus strand, check first 3 bases (reverse complement)
+            region_start = max(0, exon.start - 50)
+            region = str(Seq(genome.sequence[region_start:exon.start]).reverse_complement())
+
+        # Search for stop codon in downstream region
+        for offset in range(0, min(50, len(region))):
+            codon = region[offset:offset+3].upper() if offset+3 <= len(region) else ""
+            if codon in stop_codons:
+                # Found stop codon, adjust boundary
+                if strand == Strand.PLUS:
+                    new_end = exon.end + offset
+                else:
+                    new_start = exon.start - offset
+
+                if new_end != exon.end or new_start != exon.start:
+                    logger.debug(
+                        f"{gene_name} exon {exon.number}: refined boundary "
+                        f"by {offset}bp to stop codon"
+                    )
+                    refined.append(ExonRecord(
+                        start=new_start if strand == Strand.MINUS else exon.start,
+                        end=new_end if strand == Strand.PLUS else exon.end,
+                        strand=exon.strand,
+                        number=exon.number,
+                    ))
+                    break
+        else:
+            # No stop codon found, keep original
+            refined.append(exon)
+
+    return refined
 
 
 def annotate_trans_spliced_genes(
@@ -748,7 +825,7 @@ def annotate_trans_spliced_genes(
             continue
 
         # Merge exons into gene
-        merged = merge_exons_to_gene(gene_name, exon_hits, config)
+        merged = merge_exons_to_gene(gene_name, exon_hits, config, genome)
 
         if merged:
             existing_annotations[gene_name] = merged

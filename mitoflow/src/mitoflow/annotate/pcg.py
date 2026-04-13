@@ -23,8 +23,17 @@ from Bio.Seq import Seq
 from ..models.genome import GenomeSequence
 from ..models.gene import GeneAnnotation, ExonRecord, Strand
 from ..db.manager import DBManager
+from .trans_splicing import annotate_trans_spliced_genes
 
 logger = logging.getLogger(__name__)
+
+
+# Core genes that must be detected - force BLASTn search if HMM fails
+CORE_GENES_FORCE_BLAST = [
+    "atp1", "atp4", "atp6", "atp8", "atp9",
+    "cob", "cox1", "cox2", "cox3",
+    "nad1", "nad2", "nad3", "nad4", "nad4L", "nad5", "nad6", "nad7", "nad9",
+]
 
 
 @dataclass
@@ -45,7 +54,7 @@ class HMMHit:
 class PCGConfig:
     """Configuration for PCG annotation."""
     evalue: float = 1e-5
-    min_score: float = 50.0
+    min_score: float = 30.0  # 降低阈值以检测更多基因（原值50）
     min_gene_length_aa: int = 30     # ~90 bp minimum
     max_gene_length_aa: int = 2500
     start_codon_search_range: int = 250  # search upstream for start codon
@@ -172,6 +181,12 @@ def _validate_hit_length(hit: HMMHit) -> bool:
     Returns:
         True if valid, False if should be rejected
     """
+    # Trans-spliced genes have scattered exons - skip length validation
+    # They will be validated after merging
+    TRANS_SPLICED_SKIP_VALIDATION = {"nad1", "nad2", "nad5", "nad4", "nad7", "cox2", "rpl2", "rps3", "ccmFC"}
+    if hit.gene_name.lower() in {g.lower() for g in TRANS_SPLICED_SKIP_VALIDATION}:
+        return True  # Skip validation for trans-spliced genes
+
     if hit.gene_name not in EXPECTED_LENGTHS_WITH_TOLERANCE:
         return True
 
@@ -192,6 +207,41 @@ def _validate_hit_length(hit: HMMHit) -> bool:
             f"{hit.gene_name}: {hit_len}bp below reject threshold "
             f"{expected['reject_below']}bp - fragmented"
         )
+        return False
+
+    return True
+
+
+def _validate_gene_span(gene_name: str, start: int, end: int) -> bool:
+    """Validate gene span is reasonable, exclude pseudogenes.
+
+    Args:
+        gene_name: Gene name (lowercase)
+        start: Gene start
+        end: Gene end
+
+    Returns:
+        True if span is reasonable
+    """
+    span = abs(end - start)
+
+    # Max allowed spans for trans-spliced genes (already merged)
+    max_spans = {
+        "nad1": 500000,
+        "nad2": 300000,
+        "nad5": 500000,
+        "nad4": 200000,
+        "nad7": 200000,
+        "cox2": 100000,
+        "rpl2": 100000,
+        "rps3": 100000,
+    }
+
+    # Regular genes shouldn't exceed 50kb
+    max_allowed = max_spans.get(gene_name.lower(), 50000)
+
+    if span > max_allowed:
+        logger.warning(f"{gene_name}: span {span}bp exceeds max {max_allowed}, skipping")
         return False
 
     return True
@@ -255,6 +305,10 @@ def annotate_pcg(
         gene_name = db_manager.resolve_gene_name(hit.gene_name)
         product = db_manager.get_product(gene_name)
 
+        # Validate gene span to exclude false positives/pseudogenes
+        if not _validate_gene_span(gene_name, hit.start, hit.end):
+            continue
+
         strand = Strand.PLUS if hit.strand == 1 else Strand.MINUS
 
         gene = GeneAnnotation(
@@ -274,12 +328,62 @@ def annotate_pcg(
     annotations = _merge_same_gene_annotations(annotations, db_manager)
     logger.info(f"After merging same-gene annotations: {len(annotations)} genes")
 
+    # Step 5b: Search for missing core genes using BLASTn
+    found_genes = {a.gene_name.lower() for a in annotations}
+    missing_core = [g for g in CORE_GENES_FORCE_BLAST if g.lower() not in found_genes]
+    if missing_core:
+        logger.info(f"Missing core genes: {missing_core}. Forcing BLASTn search...")
+        blast_hits = _search_missing_core_genes_blast(genome, db_manager, missing_core, config)
+        for hit in blast_hits:
+            gene_name = db_manager.resolve_gene_name(hit.gene_name)
+            product = db_manager.get_product(gene_name)
+
+            # Validate gene span to exclude false positives/pseudogenes
+            if not _validate_gene_span(gene_name, hit.start, hit.end):
+                continue
+
+            strand = Strand.PLUS if hit.strand == 1 else Strand.MINUS
+            gene = GeneAnnotation(
+                gene_name=gene_name,
+                product=product,
+                exons=[ExonRecord(start=hit.start, end=hit.end, strand=strand)],
+                strand=strand,
+                transl_table=config.transl_table,
+                source_method="BLASTn",
+                confidence=hit.score / 500.0 if hit.score > 0 else 0.0,
+                score=hit.score,
+                evalue=hit.evalue,
+            )
+            annotations.append(gene)
+        logger.info(f"After BLASTn search for missing genes: {len(annotations)} genes")
+
     # Step 6: Final filter - remove genes with total exon length < 90bp (30aa)
     min_bp = config.min_gene_length_aa * 3
     filtered = [a for a in annotations if a.total_exon_length >= min_bp]
     if len(filtered) < len(annotations):
         removed = len(annotations) - len(filtered)
         logger.info(f"Removed {removed} genes with total exon length < {min_bp}bp")
+
+    # Step 7: Process trans-spliced genes - merge exons and refine boundaries
+    # Convert list to dict for trans-spliced gene processing
+    ann_dict: dict[str, GeneAnnotation] = {}
+    for ann in filtered:
+        # Handle multiple copies of same gene (e.g., trnN.2, trnN.3)
+        key = ann.gene_name
+        if key in ann_dict:
+            # If gene already exists, use the one with longer total exon length
+            if ann.total_exon_length > ann_dict[key].total_exon_length:
+                ann_dict[key] = ann
+        else:
+            ann_dict[key] = ann
+
+    # Process trans-spliced genes
+    ann_dict = annotate_trans_spliced_genes(genome, db_manager, ann_dict)
+
+    # Convert back to list
+    filtered = list(ann_dict.values())
+    logger.info(f"After trans-spliced gene processing: {len(filtered)} genes")
+
     return filtered
 
 
@@ -381,17 +485,20 @@ def _search_hmm(
                                 expected_bp = hmm_len_aa * 3
                                 # Reject if hit is >1.5x expected gene length
                                 if hit_length_nt > expected_bp * 1.5 and expected_bp > 90:
-                                    logger.debug(f"  {gene_name}: {hit_length_nt}bp > 1.5x{expected_bp}bp, skipped")
+                                    logger.info(f"  [Filtered] {gene_name}: {hit_length_nt}bp > 1.5x{expected_bp}bp (score={hit.score:.1f})")
                                     continue
                                 if hit.score < config.min_score:
-                                    logger.debug(f"  {gene_name}: score {hit.score:.1f} < {config.min_score}, skipped")
+                                    logger.info(f"  [Filtered] {gene_name}: score {hit.score:.1f} < {config.min_score} (len={hit_length_nt}bp)")
                                     continue
                                 if hit_length_aa < config.min_gene_length_aa:
-                                    logger.debug(f"  {gene_name}: {hit_length_aa}aa < {config.min_gene_length_aa}aa min, skipped")
+                                    logger.info(f"  [Filtered] {gene_name}: {hit_length_aa}aa < {config.min_gene_length_aa}aa min (score={hit.score:.1f})")
                                     continue
                                 if hit_length_aa > config.max_gene_length_aa:
-                                    logger.debug(f"  {gene_name}: {hit_length_aa}aa > {config.max_gene_length_aa}aa max, skipped")
+                                    logger.info(f"  [Filtered] {gene_name}: {hit_length_aa}aa > {config.max_gene_length_aa}aa max (score={hit.score:.1f})")
                                     continue
+
+                                # Log accepted hits
+                                logger.info(f"  [Accepted] {gene_name}: {hit_length_nt}bp, score={hit.score:.1f}, strand={strand}")
 
                                 hits.append(HMMHit(
                                     gene_name=gene_name,
@@ -517,6 +624,156 @@ def _blastn_fallback(
                     domain_score=score,
                     ali_start=int(parts[2]),
                     ali_end=int(parts[3]),
+                ))
+
+    return hits
+
+
+def _search_missing_core_genes_blast(
+    genome: GenomeSequence,
+    db_manager: DBManager,
+    missing_genes: list[str],
+    config: PCGConfig,
+) -> list[HMMHit]:
+    """Force BLASTn search for missing core genes.
+
+    For genes like atp1, cox2, nad1-nad7 that were not detected by HMM,
+    use BLASTn against reference CDS database to find them.
+
+    Args:
+        genome: Genome sequence
+        db_manager: Database manager
+        missing_genes: List of gene names to search
+        config: PCG configuration
+
+    Returns:
+        List of HMMHit objects for found genes
+    """
+    blastn = shutil.which("blastn")
+    makeblastdb = shutil.which("makeblastdb")
+    if not blastn:
+        logger.warning("blastn not available, skipping forced gene search")
+        return []
+
+    hits = []
+    ref_dir = db_manager.blast_ref_dir
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Build BLAST db from genome
+        genome_fa = Path(tmpdir) / "genome.fasta"
+        genome_fa.write_text(f">{genome.seqid}\n{genome.sequence}\n")
+
+        if makeblastdb:
+            subprocess.run(
+                [makeblastdb, "-in", str(genome_fa), "-dbtype", "nucl"],
+                capture_output=True, timeout=60,
+            )
+
+        for gene_name in missing_genes:
+            # Try CDS reference file
+            ref_file = ref_dir / f"{gene_name}.CDS.fasta"
+            if not ref_file.exists():
+                # Try protein file as fallback (convert to tblastn)
+                ref_file = ref_dir / f"{gene_name}.Protein.fasta"
+                if not ref_file.exists():
+                    logger.info(f"  No reference file for {gene_name}, skipped")
+                    continue
+
+            out_file = Path(tmpdir) / f"{gene_name}_blast.tsv"
+
+            # Use blastn for CDS or tblastn for Protein
+            if ref_file.name.endswith(".CDS.fasta"):
+                cmd = [
+                    blastn,
+                    "-query", str(ref_file),
+                    "-db", str(genome_fa),
+                    "-out", str(out_file),
+                    "-outfmt", "6 qseqid sseqid sstart send evalue bitscore pident length",
+                    "-evalue", "1e-10",
+                    "-max_target_seqs", "3",
+                    "-task", "blastn",
+                ]
+            else:
+                # tblastn for protein queries
+                tblastn = shutil.which("tblastn")
+                if not tblastn:
+                    continue
+                cmd = [
+                    tblastn,
+                    "-query", str(ref_file),
+                    "-db", str(genome_fa),
+                    "-out", str(out_file),
+                    "-outfmt", "6 qseqid sseqid qstart qend sstart send evalue bitscore pident qcovs",
+                    "-evalue", "1e-5",
+                    "-max_target_seqs", "3",
+                ]
+
+            try:
+                subprocess.run(cmd, capture_output=True, timeout=120)
+            except Exception as e:
+                logger.warning(f"  BLAST failed for {gene_name}: {e}")
+                continue
+
+            if not out_file.exists() or not out_file.read_text().strip():
+                logger.info(f"  No BLAST hit for {gene_name}")
+                continue
+
+            # Parse best hit
+            lines = out_file.read_text().strip().split("\n")
+            best_hit = None
+            best_score = 0
+
+            for line in lines:
+                parts = line.split("\t")
+                if len(parts) < 8:
+                    continue
+                try:
+                    if ref_file.name.endswith(".CDS.fasta"):
+                        # blastn output: qseqid sseqid sstart send evalue bitscore pident length
+                        sstart = int(parts[2])
+                        send = int(parts[3])
+                        score = float(parts[5])
+                        pident = float(parts[6])
+                        length = int(parts[7])
+                        qcovs = length * 100 / 100  # approximate
+                    else:
+                        # tblastn output: qseqid sseqid qstart qend sstart send evalue bitscore pident qcovs
+                        sstart = int(parts[4])
+                        send = int(parts[5])
+                        score = float(parts[7])
+                        pident = float(parts[8])
+                        qcovs = float(parts[9]) if len(parts) > 9 else 50
+                except (ValueError, IndexError):
+                    continue
+
+                if pident < 70 or qcovs < 50:
+                    continue
+
+                if score > best_score:
+                    best_score = score
+                    best_hit = (sstart, send, score, pident)
+
+            if best_hit:
+                sstart, send, score, pident = best_hit
+                # Determine strand
+                if sstart <= send:
+                    strand = 1
+                    start, end = sstart, send
+                else:
+                    strand = -1
+                    start, end = send, sstart
+
+                logger.info(f"  [BLAST found] {gene_name}: {start}-{end} ({strand}), score={score:.1f}, pident={pident:.1f}%")
+
+                hits.append(HMMHit(
+                    gene_name=gene_name,
+                    start=start, end=end,
+                    strand=strand,
+                    score=score,
+                    evalue=1e-10,
+                    domain_score=score,
+                    ali_start=1,
+                    ali_end=end - start + 1,
                 ))
 
     return hits

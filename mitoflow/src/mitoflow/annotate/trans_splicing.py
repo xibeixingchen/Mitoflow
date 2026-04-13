@@ -12,6 +12,7 @@ This module provides utilities to detect and validate trans-spliced gene structu
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 import subprocess
 import tempfile
@@ -324,3 +325,358 @@ def is_trans_spliced_gene(gene_name: str) -> bool:
     # True trans-spliced genes: exons are far apart (>10kb)
     TRANS_SPLICED_ONLY = {"nad1", "nad2", "nad5"}
     return gene_name in TRANS_SPLICED_ONLY
+
+
+# =============================================================================
+# Exon Merging Logic for Trans-spliced Genes (PMGA-style)
+# =============================================================================
+
+# Configuration for trans-spliced genes: expected exons, max genomic span, min exon length
+TRANS_SPLICED_CONFIG = {
+    "nad1": {"exons": 5, "max_span": 500000, "min_exon_bp": 15},
+    "nad2": {"exons": 5, "max_span": 300000, "min_exon_bp": 15},
+    "nad5": {"exons": 5, "max_span": 500000, "min_exon_bp": 20},
+    "nad4": {"exons": 4, "max_span": 200000, "min_exon_bp": 30},
+    "nad7": {"exons": 4, "max_span": 200000, "min_exon_bp": 30},
+    "cox2": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
+    "rpl2": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
+    "rps3": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
+}
+
+
+def parse_exon_id(exon_id: str) -> tuple[str, int, int] | None:
+    """Parse exon ID to extract gene name, exon number, and length.
+
+    Expected ID pattern: {prefix}_{gene}_{exon_num}_{length}
+    Example: "ArthCpNC-037304_cds181_nad5_1_230" -> ("nad5", 1, 230)
+
+    Args:
+        exon_id: FASTA header/ID from exon reference file
+
+    Returns:
+        Tuple of (gene_name, exon_number, exon_length) or None if parsing fails
+    """
+    # Pattern: look for {gene}_{num}_{length} at end of ID
+    # Examples:
+    #   ArthCpNC-037304_cds181_nad5_1_230 -> nad5, 1, 230
+    #   refCp_cds46_rps12_2_232 -> rps12, 2, 232
+    parts = exon_id.split("_")
+    if len(parts) < 3:
+        return None
+
+    # Try to find pattern: gene_num_length at the end
+    try:
+        length = int(parts[-1])
+        exon_num = int(parts[-2])
+        gene_name = parts[-3]
+        return (gene_name, exon_num, length)
+    except (ValueError, IndexError):
+        return None
+
+
+def find_exon_reference_file(gene_name: str, db_manager: DBManager) -> Path | None:
+    """Find exon reference file for a gene.
+
+    Looks for files in blast_refs/exons/{gene}.CDS.Exons.Extent.fasta
+    These files contain individual exon sequences for trans-spliced genes.
+
+    Args:
+        gene_name: Gene name (e.g., "nad5", "nad1")
+        db_manager: Database manager with data directory
+
+    Returns:
+        Path to exon reference file or None if not found
+    """
+    # Primary: look for exon-specific reference in blast_refs/exons/
+    exon_ref = db_manager.data_dir / "blast_refs" / "exons" / f"{gene_name}.CDS.Exons.Extent.fasta"
+    if exon_ref.exists():
+        return exon_ref
+
+    # Fallback: check for .CDS.fasta in blast_refs/pcg/ (full CDS, less ideal but usable)
+    cds_ref = db_manager.blast_ref_dir / f"{gene_name}.CDS.fasta"
+    if cds_ref.exists():
+        return cds_ref
+
+    return None
+
+
+def search_exons_blastn(
+    gene_name: str,
+    genome: GenomeSequence,
+    exon_ref_file: Path,
+    blastn_path: str,
+) -> dict[int, list[tuple[int, int, Strand, float]]]:
+    """BLASTn search for exons using exon-separated reference.
+
+    Uses blastn with parameters optimized for exon detection:
+    - -evalue 1e-10 (stringent e-value)
+    - -word_size 7 (sensitive for short sequences)
+    - -outfmt 6 (tabular output)
+
+    Args:
+        gene_name: Gene name for logging
+        genome: Genome sequence to search
+        exon_ref_file: Reference file with exon sequences
+        blastn_path: Path to blastn executable
+
+    Returns:
+        Dict mapping exon_number -> list of (start, end, strand, identity) hits
+    """
+    result: dict[int, list[tuple[int, int, Strand, float]]] = {}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create query file from genome
+        query_file = Path(tmpdir) / "genome.fasta"
+        query_file.write_text(f">{genome.seqid}\n{genome.sequence}\n")
+
+        # Create BLAST database from genome
+        makeblastdb = shutil.which("makeblastdb")
+        if not makeblastdb:
+            logger.warning("makeblastdb not found, skipping exon search")
+            return result
+
+        try:
+            subprocess.run(
+                [makeblastdb, "-in", str(query_file), "-dbtype", "nucl"],
+                capture_output=True,
+                timeout=60,
+                check=True,
+            )
+        except subprocess.SubprocessError as e:
+            logger.warning(f"makeblastdb failed for {gene_name}: {e}")
+            return result
+
+        # Run BLASTn search
+        out_file = Path(tmpdir) / "blast.tsv"
+        cmd = [
+            blastn_path,
+            "-query", str(exon_ref_file),
+            "-subject", str(query_file),
+            "-out", str(out_file),
+            "-outfmt", "6 qseqid sseqid sstart send evalue bitscore length pident",
+            "-evalue", "1e-10",
+            "-word_size", "7",
+            "-max_target_seqs", "10",
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=120, check=True)
+        except subprocess.SubprocessError as e:
+            logger.warning(f"BLASTn search failed for {gene_name}: {e}")
+            return result
+
+        if not out_file.exists() or not out_file.read_text().strip():
+            return result
+
+        # Parse BLAST results
+        for line in out_file.read_text().strip().split("\n"):
+            if not line.strip():
+                continue
+
+            parts = line.split("\t")
+            if len(parts) < 8:
+                continue
+
+            try:
+                qseqid = parts[0]
+                sstart = int(parts[2])
+                send = int(parts[3])
+                pident = float(parts[7])
+            except (ValueError, IndexError):
+                continue
+
+            # Parse exon ID to get exon number
+            parsed = parse_exon_id(qseqid)
+            if not parsed:
+                continue
+
+            gene, exon_num, exon_len = parsed
+
+            # Only include hits for the queried gene
+            if gene != gene_name:
+                continue
+
+            # Determine strand and coordinates
+            if sstart <= send:
+                strand = Strand.PLUS
+                start, end = sstart, send
+            else:
+                strand = Strand.MINUS
+                start, end = send, sstart
+
+            # Store hit
+            if exon_num not in result:
+                result[exon_num] = []
+            result[exon_num].append((start, end, strand, pident))
+
+    return result
+
+
+def merge_exons_to_gene(
+    gene_name: str,
+    exon_hits: dict[int, list[tuple[int, int, Strand, float]]],
+    config: dict,
+) -> GeneAnnotation | None:
+    """Merge exon BLAST hits into a single gene annotation.
+
+    Strategy:
+    1. Check we have all expected exons
+    2. Select best hit per exon (highest identity)
+    3. Calculate gene coordinates: start = min(exon starts), end = max(exon ends)
+    4. Validate span <= max_span
+    5. Create GeneAnnotation with merged exons
+
+    Args:
+        gene_name: Gene name
+        exon_hits: Dict from search_exons_blastn()
+        config: Gene config from TRANS_SPLICED_CONFIG
+
+    Returns:
+        GeneAnnotation with merged exons, or None if validation fails
+    """
+    expected_exons = config["exons"]
+    max_span = config["max_span"]
+
+    # Check we have all expected exons
+    found_exon_nums = set(exon_hits.keys())
+    expected_nums = set(range(1, expected_exons + 1))
+
+    if not expected_nums.issubset(found_exon_nums):
+        missing = expected_nums - found_exon_nums
+        logger.debug(f"{gene_name}: missing exons {missing}, cannot merge")
+        return None
+
+    # Select best hit per exon (highest identity)
+    best_exons: list[tuple[int, int, Strand, int]] = []  # (start, end, strand, exon_num)
+
+    for exon_num in sorted(found_exon_nums):
+        hits = exon_hits[exon_num]
+        if not hits:
+            continue
+
+        # Sort by identity descending, take best
+        hits_sorted = sorted(hits, key=lambda h: h[3], reverse=True)
+        best = hits_sorted[0]
+        start, end, strand, identity = best
+        best_exons.append((start, end, strand, exon_num))
+
+        logger.debug(
+            f"{gene_name} exon {exon_num}: {start}-{end} "
+            f"({strand.symbol}, {identity:.1f}% identity)"
+        )
+
+    # Calculate gene boundaries
+    gene_start = min(e[0] for e in best_exons)
+    gene_end = max(e[1] for e in best_exons)
+    gene_span = gene_end - gene_start + 1
+
+    # Validate span
+    if gene_span > max_span:
+        logger.warning(
+            f"{gene_name}: merged span {gene_span}bp exceeds max {max_span}bp"
+        )
+        return None
+
+    # Determine dominant strand (all exons should be on same strand)
+    strands = [e[2] for e in best_exons]
+    if len(set(strands)) > 1:
+        logger.warning(f"{gene_name}: exons on mixed strands, using most common")
+        # Use most common strand
+        strand = max(set(strands), key=strands.count)
+    else:
+        strand = strands[0]
+
+    # Sort exons by genomic position and re-number
+    best_exons.sort(key=lambda e: e[0])  # Sort by start
+
+    exons = [
+        ExonRecord(start=e[0], end=e[1], strand=e[2], number=i)
+        for i, e in enumerate(best_exons, 1)
+    ]
+
+    # Create annotation
+    annotation = GeneAnnotation(
+        gene_name=gene_name,
+        gene_type="CDS",
+        exons=exons,
+        strand=strand,
+        notes=[f"Merged from {len(exons)} exons via BLASTn"],
+        source_method="BLAST",
+    )
+
+    logger.info(
+        f"{gene_name}: merged {len(exons)} exons, span={gene_start}-{gene_end} "
+        f"({gene_span}bp)"
+    )
+
+    return annotation
+
+
+def annotate_trans_spliced_genes(
+    genome: GenomeSequence,
+    db_manager: DBManager,
+    existing_annotations: dict[str, GeneAnnotation],
+) -> dict[str, GeneAnnotation]:
+    """Main entry point: annotate trans-spliced genes using BLASTn exon search.
+
+    For genes in TRANS_SPLICED_CONFIG:
+    1. Skip if already has enough exons
+    2. Find exon reference file
+    3. Run BLASTn search
+    4. Merge exons into gene annotation
+
+    Args:
+        genome: Genome sequence
+        db_manager: Database manager
+        existing_annotations: Current annotations (will be updated)
+
+    Returns:
+        Updated annotations dict
+    """
+    blastn = shutil.which("blastn")
+    if not blastn:
+        logger.warning("blastn not available, skipping trans-spliced annotation")
+        return existing_annotations
+
+    for gene_name, config in TRANS_SPLICED_CONFIG.items():
+        # Check if gene is already annotated
+        already_found = gene_name in existing_annotations
+
+        if already_found:
+            current = existing_annotations[gene_name]
+            if len(current.exons) >= config["exons"]:
+                logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
+                continue
+
+            logger.info(
+                f"{gene_name}: has {len(current.exons)} exons, expected {config['exons']}. "
+                f"Attempting BLASTn exon search to find missing exons."
+            )
+        else:
+            # Gene not found by HMM - try BLASTn exon search anyway
+            logger.info(
+                f"{gene_name}: not found by HMM search. "
+                f"Attempting BLASTn exon search for trans-spliced gene."
+            )
+
+        # Find exon reference file
+        exon_ref = find_exon_reference_file(gene_name, db_manager)
+        if not exon_ref:
+            logger.debug(f"No exon reference file for {gene_name}, skipping")
+            continue
+
+        # Run BLASTn search
+        exon_hits = search_exons_blastn(gene_name, genome, exon_ref, blastn)
+
+        if not exon_hits:
+            logger.debug(f"{gene_name}: no BLASTn hits found")
+            continue
+
+        # Merge exons into gene
+        merged = merge_exons_to_gene(gene_name, exon_hits, config)
+
+        if merged:
+            existing_annotations[gene_name] = merged
+            logger.info(f"{gene_name}: successfully merged {len(merged.exons)} exons")
+
+    return existing_annotations

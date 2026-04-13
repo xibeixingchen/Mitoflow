@@ -716,10 +716,16 @@ def refine_exon_boundaries_with_codons(
             codon = region[offset:offset+3].upper() if offset+3 <= len(region) else ""
             if codon in stop_codons:
                 # Found stop codon, adjust boundary
+                # Stop codon spans 3 bases, must include all 3
                 if strand == Strand.PLUS:
-                    new_end = exon.end + offset
+                    # Codon at offset spans [exon.end + offset : exon.end + offset + 3]
+                    # New end should be AFTER the stop codon (exclusive coordinate)
+                    new_end = exon.end + offset + 3
                 else:
-                    new_start = exon.start - offset
+                    # For minus strand, codon in reverse complement at offset
+                    # means codon spans [exon.start - offset - 3 : exon.start - offset]
+                    # New start should be AT the start of the stop codon
+                    new_start = exon.start - offset - 3
 
                 if new_end != exon.end or new_start != exon.start:
                     logger.debug(

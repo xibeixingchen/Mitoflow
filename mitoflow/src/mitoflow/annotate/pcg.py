@@ -612,12 +612,12 @@ def _refine_boundaries_reference(
 ) -> list[HMMHit]:
     """Refine boundaries using reference sequence BLAST (PMGA-style approach).
 
-    Instead of sliding outward from HMM hit, use tblastn against reference
-    protein database to find exact gene boundaries. This prevents over-extension.
+    Instead of sliding outward from HMM hit, use blastn against reference
+    CDS database to find exact gene boundaries. This prevents over-extension.
 
     Strategy:
     1. For each hit, extract region ±100bp around HMM boundary
-    2. tblastn against reference protein for this specific gene
+    2. blastn against reference CDS for this specific gene
     3. Use best BLAST hit coordinates as refined boundary
     4. Only use conservative sliding search as fallback if BLAST fails
 

@@ -1,0 +1,1243 @@
+pcg_id,exon_id,species,genbank,gene,strand,position_before,position_after,correction_type,correction_note
+1.0,1,Arabidopsis thaliana,NC_037304.1,atp1,-,67098..68621,67098..68621,correct,the annotation is correct and no correction is needed
+2.0,2,Arabidopsis thaliana,NC_037304.1,atp4,+,362206..362784,362206..362784,correct,the annotation is correct and no correction is needed
+3.0,3,Arabidopsis thaliana,NC_037304.1,atp6_copy1,+,49423..50580,49423..50580,correct,the annotation is correct and no correction is needed
+4.0,4,Arabidopsis thaliana,NC_037304.1,atp6_copy2,-,264467..265516,264467..265516,correct,the annotation is correct and no correction is needed
+5.0,5,Arabidopsis thaliana,NC_037304.1,atp8,-,247016..247492,247016..247492,correct,the annotation is correct and no correction is needed
+6.0,6,Arabidopsis thaliana,NC_037304.1,atp9,-,270961..271185,270961..271185,correct,the annotation is correct and no correction is needed
+7.0,7,Arabidopsis thaliana,NC_037304.1,ccmb,-,17814..18434,17814..18434,correct,the annotation is correct and no correction is needed
+8.0,8,Arabidopsis thaliana,NC_037304.1,ccmc,+,308298..309068,308298..309068,correct,the annotation is correct and no correction is needed
+9.0,9,Arabidopsis thaliana,NC_037304.1,ccmfc,+,189483..190261,189483..190261,correct,the annotation is correct and no correction is needed
+10.0,11,Arabidopsis thaliana,NC_037304.1,ccmfn1,+,316013..317161,316013..317161,correct,the annotation is correct and no correction is needed
+11.0,12,Arabidopsis thaliana,NC_037304.1,ccmfn2,+,<291580..292191,<291580..292191,correct,the annotation is correct and no correction is needed
+12.0,13,Arabidopsis thaliana,NC_037304.1,cob,-,181677..182858,181677..182858,correct,the annotation is correct and no correction is needed
+13.0,14,Arabidopsis thaliana,NC_037304.1,cox1,-,114762..116345,114762..116345,correct,the annotation is correct and no correction is needed
+14.0,15,Arabidopsis thaliana,NC_037304.1,cox2,+,6264..6963,6264..6963,correct,the annotation is correct and no correction is needed
+15.0,16,Arabidopsis thaliana,NC_037304.1,cox2,+,8307..8389,8307..8389,correct,the annotation is correct and no correction is needed
+15.0,17,Arabidopsis thaliana,NC_037304.1,cox3,-,329976..330773,329976..330773,correct,the annotation is correct and no correction is needed
+16.0,18,Arabidopsis thaliana,NC_037304.1,matr,+,231089..233059,231089..233059,correct,the annotation is correct and no correction is needed
+17.0,19,Arabidopsis thaliana,NC_037304.1,mttb,-,218904..219746,218904..219746,correct,the annotation is correct and no correction is needed
+18.0,20,Arabidopsis thaliana,NC_037304.1,nad1,-,82937..83321,82937..83321,correct,the annotation is correct and no correction is needed
+19.0,25,Arabidopsis thaliana,NC_037304.1,nad2,+,161832..161984,161832..161984,correct,the annotation is correct and no correction is needed
+24.0,26,Arabidopsis thaliana,NC_037304.1,nad2,+,162966..163357,162966..163357,correct,the annotation is correct and no correction is needed
+25.0,27,Arabidopsis thaliana,NC_037304.1,nad2,-,97882..98042,97882..98042,correct,the annotation is correct and no correction is needed
+26.0,28,Arabidopsis thaliana,NC_037304.1,nad2,-,94666..95238,94666..95238,correct,the annotation is correct and no correction is needed
+27.0,29,Arabidopsis thaliana,NC_037304.1,nad2,-,92819..93006,92819..93006,correct,the annotation is correct and no correction is needed
+20.0,30,Arabidopsis thaliana,NC_037304.1,nad3,+,288044..288400,288044..288400,correct,the annotation is correct and no correction is needed
+21.0,31,Arabidopsis thaliana,NC_037304.1,nad4,-,215102..215562,215102..215562,correct,the annotation is correct and no correction is needed
+22.0,35,Arabidopsis thaliana,NC_037304.1,nad4l,+,361637..361939,361637..361939,correct,the annotation is correct and no correction is needed
+23.0,36,Arabidopsis thaliana,NC_037304.1,nad5,+,234352..234581,234352..234581,correct,the annotation is correct and no correction is needed
+24.0,41,Arabidopsis thaliana,NC_037304.1,nad6,+,165838..166455,165838..166455,correct,the annotation is correct and no correction is needed
+25.0,42,Arabidopsis thaliana,NC_037304.1,nad7,-,245188..245330,245188..245330,correct,the annotation is correct and no correction is needed
+41.0,43,Arabidopsis thaliana,NC_037304.1,nad7,-,244155..244223,244155..244223,correct,the annotation is correct and no correction is needed
+42.0,44,Arabidopsis thaliana,NC_037304.1,nad7,-,242625..243091,242625..243091,correct,the annotation is correct and no correction is needed
+43.0,45,Arabidopsis thaliana,NC_037304.1,nad7,-,241328..241571,241328..241571,correct,the annotation is correct and no correction is needed
+44.0,46,Arabidopsis thaliana,NC_037304.1,nad7,-,239250..239511,239250..239511,correct,the annotation is correct and no correction is needed
+26.0,47,Arabidopsis thaliana,NC_037304.1,nad9,+,24665..25237,24665..25237,correct,the annotation is correct and no correction is needed
+27.0,48,Arabidopsis thaliana,NC_037304.1,rpl16,+,23285..23824,23285..23824,correct,the annotation is correct and no correction is needed
+28.0,49,Arabidopsis thaliana,NC_037304.1,rpl2,-,221694..222610,221694..222610,correct,the annotation is correct and no correction is needed
+48.0,50,Arabidopsis thaliana,NC_037304.1,rpl2,-,219910..220042,219910..220042,correct,the annotation is correct and no correction is needed
+29.0,51,Arabidopsis thaliana,NC_037304.1,rpl5,-,184762..185319,184762..185319,correct,the annotation is correct and no correction is needed
+30.0,52,Arabidopsis thaliana,NC_037304.1,rps12,+,288446..288823,288446..288823,correct,the annotation is correct and no correction is needed
+31.0,53,Arabidopsis thaliana,NC_037304.1,rps3,+,20165..20238,20165..20238,correct,the annotation is correct and no correction is needed
+52.0,54,Arabidopsis thaliana,NC_037304.1,rps3,+,21822..23418,21822..23418,correct,the annotation is correct and no correction is needed
+32.0,55,Arabidopsis thaliana,NC_037304.1,rps4,+,159980..161068,159980..161068,correct,the annotation is correct and no correction is needed
+33.0,56,Arabidopsis thaliana,NC_037304.1,rps7,+,79559..80005,79559..80005,correct,the annotation is correct and no correction is needed
+34.0,57,Camellia sinensis var. assamica,MK574877.1,atp1,-,177522..179051,177522..179051,correct,the annotation is correct and no correction is needed
+35.0,58,Camellia sinensis var. assamica,MK574877.1,atp4,+,488951..489529,488951..489529,correct,the annotation is correct and no correction is needed
+36.0,59,Camellia sinensis var. assamica,MK574877.1,atp6,+,123260..124207,123260..123979,SPGE,SPGE1
+37.0,60,Camellia sinensis var. assamica,MK574877.1,atp8,+,258921..259400,258921..259400,correct,the annotation is correct and no correction is needed
+38.0,61,Camellia sinensis var. assamica,MK574877.1,atp9,-,594580..594993,594736..594960,SPGE,SPGE2
+39.0,62,Camellia sinensis var. assamica,MK574877.1,ccmb,+,141208..141828,141208..141828,correct,the annotation is correct and no correction is needed
+40.0,63,Camellia sinensis var. assamica,MK574877.1,ccmc,+,491377..492129,491377..492129,correct,the annotation is correct and no correction is needed
+41.0,64,Camellia sinensis var. assamica,MK574876.1,ccmfc,-,160426..161193,160427..161193,SSE,SSE1
+63.0,65,Camellia sinensis var. assamica,MK574876.1,ccmfc,-,158897..159472,158927..159470,SPGE,"SSE2, SPGE3"
+42.0,66,Camellia sinensis var. assamica,MK574877.1,ccmfn,+,211502..213298,211502..213298,correct,the annotation is correct and no correction is needed
+43.0,67,Camellia sinensis var. assamica,MK574876.1,cob,-,63149..64330,63149..64330,correct,the annotation is correct and no correction is needed
+44.0,68,Camellia sinensis var. assamica,MK574877.1,cox1,+,322622..322642,323708..325291,STGE,STGE1
+45.0,69,Camellia sinensis var. assamica,MK574877.1,cox2,+,509324..510115,509324..510115,correct,the annotation is correct and no correction is needed
+46.0,70,Camellia sinensis var. assamica,MK574877.1,cox3,+,260248..261045,260248..261045,correct,the annotation is correct and no correction is needed
+47.0,71,Camellia sinensis var. assamica,MK574877.1,matr,-,11046..13001,11046..13001,correct,the annotation is correct and no correction is needed
+48.0,72,Camellia sinensis var. assamica,MK574877.1,mttb,-,131960..132334,131960..132334,correct,the annotation is correct and no correction is needed
+49.0,73,Camellia sinensis var. assamica,MK574876.1,nad1,-,86181..86567,86183..86567,SSE,SSE3
+72.0,74,Camellia sinensis var. assamica,MK574877.1,nad1,+,541234..541314,539643..539725,SSE,"SSE4,5"
+73.0,75,Camellia sinensis var. assamica,MK574877.1,nad1,+,542768..542962,542768..542959,SSE,SSE6
+74.0,76,Camellia sinensis var. assamica,MK574876.1,nad1,-,13666..13722,13664..13722,SSE,SSE7
+75.0,77,Camellia sinensis var. assamica,MK574876.1,nad1,-,10258..10515,10258..10516,SSE,SSE8
+50.0,78,Camellia sinensis var. assamica,MK574877.1,nad2,+,623512..623664,623512..623664,correct,the annotation is correct and no correction is needed
+77.0,79,Camellia sinensis var. assamica,MK574877.1,nad2,+,624932..625282,624890..625281,SSE,SSE9
+78.0,80,Camellia sinensis var. assamica,MK574877.1,nad2,+,101968..102120,101961..102121,SSE,"SSE10,11"
+79.0,81,Camellia sinensis var. assamica,MK574877.1,nad2,+,104627..105283,104646..105218,SSE,"SSE12,13"
+80.0,82,Camellia sinensis var. assamica,MK574877.1,nad2,+,106683..106904,106717..106904,SSE,SSE14
+51.0,83,Camellia sinensis var. assamica,MK574877.1,nad3,-,639191..639547,639191..639547,correct,the annotation is correct and no correction is needed
+52.0,84,Camellia sinensis var. assamica,MK574877.1,nad4,-,118157..118615,118155..118615,SSE,SSE15
+53.0,87,Camellia sinensis var. assamica,MK574877.1,nad4l,+,488493..488765,488463..488765,STGE,STGE2
+54.0,88,Camellia sinensis var. assamica,MK574877.1,nad5,,exon1 not annotated,69980..70209,SSE,SSE19
+87.0,89,Camellia sinensis var. assamica,MK574877.1,nad5,,exon2 not annotated,67910..69125,SSE,"SSE20,21"
+88.0,90,Camellia sinensis var. assamica,MK574877.1,nad5,,exon3 not annotated,199747..199768,SSE,"SSE22,23"
+89.0,91,Camellia sinensis var. assamica,MK574877.1,nad5,,exon4 not annotated,529073..529467,SSE,"SSE24,25"
+90.0,92,Camellia sinensis var. assamica,MK574877.1,nad5,,exon5 not annotated,527807..527956,SSE,SSE26
+55.0,93,Camellia sinensis var. assamica,MK574877.1,nad6,+,563574..564191,563574..564191,correct,the annotation is correct and no correction is needed
+56.0,94,Camellia sinensis var. assamica,MK574877.1,nad7,+,339040..339225,339040..339182,SSE,SSE27
+93.0,95,Camellia sinensis var. assamica,MK574877.1,nad7,,exon2 not annotated,340065..340133,SSE,"SSE28,29"
+94.0,96,Camellia sinensis var. assamica,MK574877.1,nad7,+,341803..342264,341790..342256,SSE,"SSE30,31"
+95.0,97,Camellia sinensis var. assamica,MK574877.1,nad7,+,343442..343573,343320..343563,SSE,"SSE32,33"
+96.0,98,Camellia sinensis var. assamica,MK574877.1,nad7,+,345373..345663,345402..345663,SSE,SSE34
+57.0,99,Camellia sinensis var. assamica,MK574877.1,nad9,+,387183..387755,387183..387755,correct,the annotation is correct and no correction is needed
+58.0,100,Camellia sinensis var. assamica,MK574877.1,rpl10,-,142113..142601,142113..142601,correct,the annotation is correct and no correction is needed
+59.0,101,Camellia sinensis var. assamica,MK574877.1,rpl2,-,228182..229046,228157..229046,SSE,SSE37
+100.0,102,Camellia sinensis var. assamica,MK574877.1,rpl2,-,226127..226242,226127..226244,SSE,SSE38
+60.0,103,Camellia sinensis var. assamica,MK574876.1,rpl5,-,65957..66520,65957..66520,correct,the annotation is correct and no correction is needed
+61.0,104,Camellia sinensis var. assamica,MK574877.1,rps1,-,682130..682735,682130..682735,correct,the annotation is correct and no correction is needed
+62.0,105,Camellia sinensis var. assamica,MK574877.1,rps12,-,638765..639142,638765..639142,correct,the annotation is correct and no correction is needed
+63.0,106,Camellia sinensis var. assamica,MK574877.1,rps13,+,538354..538704,538354..538704,correct,the annotation is correct and no correction is needed
+64.0,107,Camellia sinensis var. assamica,MK574876.1,rps14,-,65653..65955,65653..65955,correct,the annotation is correct and no correction is needed
+65.0,108,Camellia sinensis var. assamica,MK574876.1,rps19,+,18000..18284,18000..18284,correct,the annotation is correct and no correction is needed
+66.0,109,Camellia sinensis var. assamica,MK574877.1,rps3,,exon1 not annotated,225203..225276,SSE,SSE35
+108.0,110,Camellia sinensis var. assamica,MK574877.1,rps3,-,221905..223596,221905..223522,SSE,SSE36
+67.0,111,Camellia sinensis var. assamica,MK574877.1,rps4,+,561869..562915,561869..562915,correct,the annotation is correct and no correction is needed
+68.0,112,Capsicum annuum,NC_024624.1,atp1,-,139475..141004,139475..141004,correct,the annotation is correct and no correction is needed
+69.0,113,Capsicum annuum,NC_024624.1,atp4,+,30325..30921,30325..30921,correct,the annotation is correct and no correction is needed
+70.0,114,Capsicum annuum,NC_024624.1,atp6,+,216879..218174,216879..218135,SPGE,SPGE4
+71.0,115,Capsicum annuum,NC_024624.1,atp8,-,270874..271344,270874..271344,correct,the annotation is correct and no correction is needed
+72.0,116,Capsicum annuum,NC_024624.1,atp9,+,134080..134313,134080..134304,SPGE,SPGE5
+73.0,117,Capsicum annuum,NC_024624.1,ccmb,-,337489..338109,337489..338109,correct,the annotation is correct and no correction is needed
+74.0,118,Capsicum annuum,NC_024624.1,ccmc,+,65699..66451,65699..66451,correct,the annotation is correct and no correction is needed
+75.0,119,Capsicum annuum,NC_024624.1,ccmfc,+,320093..320859,320093..320859,correct,the annotation is correct and no correction is needed
+118.0,120,Capsicum annuum,NC_024624.1,ccmfc,+,321805..322354,321805..322354,correct,the annotation is correct and no correction is needed
+76.0,121,Capsicum annuum,NC_024624.1,ccmfn,-,167640..169409,167640..169409,correct,the annotation is correct and no correction is needed
+77.0,122,Capsicum annuum,NC_024624.1,cob,-,159347..160528,159347..160528,correct,the annotation is correct and no correction is needed
+78.0,123,Capsicum annuum,NC_024624.1,cox1,+,71283..72866,71283..72866,correct,the annotation is correct and no correction is needed
+79.0,124,Capsicum annuum,NC_024624.1,cox2,+,498477..498858,498477..498858,correct,the annotation is correct and no correction is needed
+80.0,126,Capsicum annuum,NC_024624.1,cox3,-,269435..270232,269435..270232,correct,the annotation is correct and no correction is needed
+81.0,127,Capsicum annuum,NC_024624.1,mttb,+,<336100..336951,<336100..336951,correct,the annotation is correct and no correction is needed
+82.0,128,Capsicum annuum,NC_024624.1,matr,+,99840..101816,99840..101816,correct,the annotation is correct and no correction is needed
+83.0,129,Capsicum annuum,NC_024624.1,nad1,+,226985..227369,226985..227369,correct,the annotation is correct and no correction is needed
+128.0,130,Capsicum annuum,NC_024624.1,nad1,+,25622..25704,25622..25704,correct,the annotation is correct and no correction is needed
+129.0,131,Capsicum annuum,NC_024624.1,nad1,+,27194..27385,27194..27385,correct,the annotation is correct and no correction is needed
+130.0,132,Capsicum annuum,NC_024624.1,nad1,+,99120..99178,99120..99178,correct,the annotation is correct and no correction is needed
+131.0,133,Capsicum annuum,NC_024624.1,nad1,-,297774..298032,297774..298032,correct,the annotation is correct and no correction is needed
+84.0,134,Capsicum annuum,NC_024624.1,nad2,-,118176..118328,118176..118328,correct,the annotation is correct and no correction is needed
+133.0,135,Capsicum annuum,NC_024624.1,nad2,-,116759..117150,116759..117150,correct,the annotation is correct and no correction is needed
+134.0,136,Capsicum annuum,NC_024624.1,nad2,+,370721..370881,370721..370881,correct,the annotation is correct and no correction is needed
+135.0,137,Capsicum annuum,NC_024624.1,nad2,+,373341..373913,373341..373913,correct,the annotation is correct and no correction is needed
+136.0,138,Capsicum annuum,NC_024624.1,nad2,+,375381..375568,375381..375568,correct,the annotation is correct and no correction is needed
+85.0,139,Capsicum annuum,NC_024624.1,nad3,-,292092..292448,292092..292448,correct,the annotation is correct and no correction is needed
+86.0,140,Capsicum annuum,NC_024624.1,nad4,-,89937..90397,89937..90397,correct,the annotation is correct and no correction is needed
+139.0,141,Capsicum annuum,NC_024624.1,nad4,-,88014..88528,88014..88528,correct,the annotation is correct and no correction is needed
+140.0,142,Capsicum annuum,NC_024624.1,nad4,-,84463..84885,84463..84885,correct,the annotation is correct and no correction is needed
+141.0,143,Capsicum annuum,NC_024624.1,nad4,-,81720..81808,81720..81808,correct,the annotation is correct and no correction is needed
+87.0,144,Capsicum annuum,NC_024624.1,nad4l,+,29834..30136,29834..30136,correct,the annotation is correct and no correction is needed
+88.0,145,Capsicum annuum,NC_024624.1,nad5,+,362023..362252,362023..362252,correct,the annotation is correct and no correction is needed
+144.0,146,Capsicum annuum,NC_024624.1,nad5,+,363097..364312,363097..364312,correct,the annotation is correct and no correction is needed
+145.0,147,Capsicum annuum,NC_024624.1,nad5,+,38928..38949,38928..38949,correct,the annotation is correct and no correction is needed
+146.0,148,Capsicum annuum,NC_024624.1,nad5,-,107600..107994,107600..107994,correct,the annotation is correct and no correction is needed
+147.0,149,Capsicum annuum,NC_024624.1,nad5,-,106374..106520,106374..106520,correct,the annotation is correct and no correction is needed
+89.0,150,Capsicum annuum,NC_024624.1,nad6,+,412876..413532,412876..413532,correct,the annotation is correct and no correction is needed
+90.0,151,Capsicum annuum,NC_024624.1,nad7,+,1875..2017,1875..2017,correct,the annotation is correct and no correction is needed
+91.0,155,Capsicum annuum,NC_024624.1,nad9,+,347331..347903,347331..347903,correct,the annotation is correct and no correction is needed
+92.0,156,Capsicum annuum,NC_024624.1,rpl10,-,400829..401308,400829..401308,correct,the annotation is correct and no correction is needed
+93.0,157,Capsicum annuum,NC_024624.1,rpl16,+,<497752..498228,<497752..498228,correct,the annotation is correct and no correction is needed
+94.0,158,Capsicum annuum,NC_024624.1,rpl2,-,403636..404516,403636..404516,correct,the annotation is correct and no correction is needed
+95.0,160,Capsicum annuum,NC_024624.1,rpl5,-,162183..162737,162183..162737,correct,the annotation is correct and no correction is needed
+96.0,161,Capsicum annuum,NC_024624.1,rps10,+,223478..223727,223478..223727,correct,the annotation is correct and no correction is needed
+160.0,162,Capsicum annuum,NC_024624.1,rps10,+,224501..224583,224501..224583,correct,the annotation is correct and no correction is needed
+97.0,163,Capsicum annuum,NC_024624.1,rps12,-,291666..292043,291666..292043,correct,the annotation is correct and no correction is needed
+98.0,164,Capsicum annuum,NC_024624.1,rps13,+,24741..25091,24741..25091,correct,the annotation is correct and no correction is needed
+99.0,165,Capsicum annuum,NC_024624.1,rps19,+,494763..495047,494763..495047,correct,the annotation is correct and no correction is needed
+100.0,166,Capsicum annuum,NC_024624.1,rps3,+,495061..495134,495061..495134,correct,the annotation is correct and no correction is needed
+165.0,167,Capsicum annuum,NC_024624.1,rps3,+,496211..497822,496211..497822,correct,the annotation is correct and no correction is needed
+101.0,168,Capsicum annuum,NC_024624.1,rps4,-,39369..40406,39369..40406,correct,the annotation is correct and no correction is needed
+102.0,169,Capsicum annuum,NC_024624.1,sdh3,-,118894..119226,118894..119226,correct,the annotation is correct and no correction is needed
+103.0,170,Capsicum annuum,NC_024624.1,sdh4,-,269130..269507,269130..269507,correct,the annotation is correct and no correction is needed
+104.0,171,Glycine max,NC_020455.1,atp1_copy1,+,176598..178124,176598..178124,correct,the annotation is correct and no correction is needed
+105.0,172,Glycine max,NC_020455.1,atp1_copy2,+,256531..258057,256531..258057,correct,the annotation is correct and no correction is needed
+106.0,173,Glycine max,NC_020455.1,atp1_copy3,+,355252..356778,355252..356778,correct,the annotation is correct and no correction is needed
+107.0,174,Glycine max,NC_020455.1,atp4,+,45493..46074,45493..46074,correct,the annotation is correct and no correction is needed
+108.0,175,Glycine max,NC_020455.1,atp6_copy1,+,63192..63911,63192..63902,SPGE,SPGE6
+109.0,176,Glycine max,NC_020455.1,atp6_copy2,-,361726..362445,361735..362445,correct,
+110.0,177,Glycine max,NC_020455.1,atp8,-,375464..375946,375464..375946,correct,the annotation is correct and no correction is needed
+111.0,178,Glycine max,NC_020455.1,atp9,+,328658..328882,328658..328882,correct,the annotation is correct and no correction is needed
+112.0,179,Glycine max,NC_020455.1,ccmb,-,164245..164865,164245..164865,correct,the annotation is correct and no correction is needed
+113.0,180,Glycine max,NC_020455.1,ccmc,+,1653..2393,1653..2393,correct,the annotation is correct and no correction is needed
+114.0,181,Glycine max,NC_020455.1,ccmfc,+,57359..58137,57359..58137,correct,the annotation is correct and no correction is needed
+180.0,182,Glycine max,NC_020455.1,ccmfc,+,62238..62787,62238..62787,correct,the annotation is correct and no correction is needed
+115.0,183,Glycine max,NC_020455.1,ccmfn,-,244468..246204,244468..246204,correct,the annotation is correct and no correction is needed
+116.0,184,Glycine max,NC_020455.1,cob,+,20904..22076,20904..22076,correct,the annotation is correct and no correction is needed
+117.0,185,Glycine max,NC_020455.1,cox1,+,50644..52227,50644..52227,correct,the annotation is correct and no correction is needed
+118.0,186,Glycine max,NC_020455.1,cox2,-,352394..353176,352394..353176,correct,the annotation is correct and no correction is needed
+119.0,187,Glycine max,NC_020455.1,cox3,+,10907..11704,10907..11704,correct,the annotation is correct and no correction is needed
+120.0,188,Glycine max,NC_020455.1,matr,-,338030..340036,338030..340036,correct,the annotation is correct and no correction is needed
+121.0,189,Glycine max,NC_020455.1,mttb,+,400971..401693,400971..401693,correct,the annotation is correct and no correction is needed
+122.0,190,Glycine max,NC_020455.1,nad1,-,163153..163539,163155..163539,SSE,SSE39
+189.0,191,Glycine max,NC_020455.1,nad1,+,53706..53786,53704..53786,SSE,SSE40
+190.0,192,Glycine max,NC_020455.1,nad1,+,55229..55420,55229..55420,correct,the annotation is correct and no correction is needed
+191.0,193,Glycine max,NC_020455.1,nad1,-,340687..340745,340687..340745,correct,the annotation is correct and no correction is needed
+192.0,194,Glycine max,NC_020455.1,nad1,-,337279..337537,337279..337537,correct,the annotation is correct and no correction is needed
+123.0,195,Glycine max,NC_020455.1,nad2,-,134817..134969,134817..134969,correct,the annotation is correct and no correction is needed
+194.0,196,Glycine max,NC_020455.1,nad2,-,133180..133571,133180..133571,correct,the annotation is correct and no correction is needed
+195.0,197,Glycine max,NC_020455.1,nad2,-,323075..323235,323075..323235,correct,the annotation is correct and no correction is needed
+196.0,198,Glycine max,NC_020455.1,nad2,-,319933..320504,319933..320504,correct,the annotation is correct and no correction is needed
+197.0,199,Glycine max,NC_020455.1,nad2,-,318267..318455,318267..318455,correct,the annotation is correct and no correction is needed
+124.0,200,Glycine max,NC_020455.1,nad3,+,42927..43283,42927..43283,correct,the annotation is correct and no correction is needed
+125.0,201,Glycine max,NC_020455.1,nad4,-,102333..102793,102333..102793,correct,the annotation is correct and no correction is needed
+126.0,205,Glycine max,NC_020455.1,nad4l_copy1,+,145776..146078,145776..146078,correct,the annotation is correct and no correction is needed
+127.0,206,Glycine max,NC_020455.1,nad4l_copy2,-,205886..206188,205886..206188,correct,the annotation is correct and no correction is needed
+128.0,207,Glycine max,NC_020455.1,nad5,+,252035..252264,252035..252264,correct,the annotation is correct and no correction is needed
+206.0,208,Glycine max,NC_020455.1,nad5,+,253124..254339,253124..254339,correct,the annotation is correct and no correction is needed
+207.0,209,Glycine max,NC_020455.1,nad5,+,12450..12471,12450..12471,correct,the annotation is correct and no correction is needed
+208.0,210,Glycine max,NC_020455.1,nad5,+,267594..267988,267594..267988,correct,the annotation is correct and no correction is needed
+209.0,211,Glycine max,NC_020455.1,nad5,+,268909..269055,268909..269055,correct,the annotation is correct and no correction is needed
+129.0,212,Glycine max,NC_020455.1,nad6,-,159159..159818,159159..159818,correct,the annotation is correct and no correction is needed
+130.0,213,Glycine max,NC_020455.1,nad7,+,170007..170149,170007..170149,correct,the annotation is correct and no correction is needed
+212.0,214,Glycine max,NC_020455.1,nad7,+,171050..171118,171050..171118,correct,the annotation is correct and no correction is needed
+213.0,215,Glycine max,NC_020455.1,nad7,+,172450..172916,172450..172916,correct,the annotation is correct and no correction is needed
+214.0,216,Glycine max,NC_020455.1,nad7,+,173972..174215,173972..174215,correct,the annotation is correct and no correction is needed
+215.0,217,Glycine max,NC_020455.1,nad7,+,176249..176510,176249..176510,correct,the annotation is correct and no correction is needed
+131.0,218,Glycine max,NC_020455.1,nad9,+,289148..289720,289148..289720,correct,the annotation is correct and no correction is needed
+132.0,219,Glycine max,NC_020455.1,rpl16,-,308110..308625,308110..308625,correct,the annotation is correct and no correction is needed
+133.0,220,Glycine max,NC_020455.1,rpl5,+,19120..19677,19120..19677,correct,the annotation is correct and no correction is needed
+134.0,221,Glycine max,NC_020455.1,rps1,+,251220..251837,251220..251837,correct,the annotation is correct and no correction is needed
+135.0,222,Glycine max,NC_020455.1,rps10,+,47253..47502,47253..47502,correct,the annotation is correct and no correction is needed
+221.0,223,Glycine max,NC_020455.1,rps10,+,50332..50444,50332..50414,SPGE,SPGE7
+136.0,224,Glycine max,NC_020455.1,rps12,+,43332..43709,43332..43709,correct,the annotation is correct and no correction is needed
+137.0,225,Glycine max,NC_020455.1,rps14,+,19685..19987,19685..19987,correct,the annotation is correct and no correction is needed
+138.0,226,Glycine max,NC_020455.1,rps3,-,311507..311580,311507..311580,correct,the annotation is correct and no correction is needed
+225.0,227,Glycine max,NC_020455.1,rps3,-,308516..310130,308516..310130,correct,the annotation is correct and no correction is needed
+139.0,228,Glycine max,NC_020455.1,rps4,+,249448..250488,249448..250488,correct,the annotation is correct and no correction is needed
+140.0,229,Ipomoea aquatica,MZ240730.1,atp1,-,260836..262365,260836..262365,correct,the annotation is correct and no correction is needed
+141.0,230,Ipomoea aquatica,MZ240730.1,atp4,-,54056..54634,54056..54634,correct,the annotation is correct and no correction is needed
+142.0,231,Ipomoea aquatica,MZ240730.1,atp6,-,216282..217436,216417..217136,SPGE,SPGE8
+143.0,232,Ipomoea aquatica,MZ240730.1,atp8,-,150078..150554,150078..150554,correct,the annotation is correct and no correction is needed
+144.0,233,Ipomoea aquatica,MZ240730.1,atp9,+,24784..25101,24817..25041,SPGE,SPGE9
+145.0,234,Ipomoea aquatica,MZ240730.1,ccmb_copy1,+,172480..173106,172480..173106,correct,the annotation is correct and no correction is needed
+146.0,235,Ipomoea aquatica,MZ240730.1,ccmb_copy2,-,271933..272559,271933..272559,correct,the annotation is correct and no correction is needed
+147.0,236,Ipomoea aquatica,MZ240730.1,ccmc,-,13672..14418,13672..14418,correct,the annotation is correct and no correction is needed
+148.0,237,Ipomoea aquatica,MZ240730.1,ccmfc1,-,17508..18620,17508..18620,correct,the annotation is correct and no correction is needed
+149.0,238,Ipomoea aquatica,MZ240730.1,ccmfc2,-,170050..170525,170050..170525,correct,the annotation is correct and no correction is needed
+237.0,239,Ipomoea aquatica,MZ240730.1,ccmfc2,-,165246..165807,165246..165807,correct,the annotation is correct and no correction is needed
+150.0,240,Ipomoea aquatica,MZ240730.1,ccmfn,+,186715..188478,186715..188478,correct,the annotation is correct and no correction is needed
+151.0,241,Ipomoea aquatica,MZ240730.1,cob,+,231525..232706,231525..232706,correct,the annotation is correct and no correction is needed
+152.0,242,Ipomoea aquatica,MZ240730.1,cox1,-,219536..220261,219536..220261,correct,the annotation is correct and no correction is needed
+153.0,246,Ipomoea aquatica,MZ240730.1,cox2,+,274526..274907,274526..274907,correct,the annotation is correct and no correction is needed
+154.0,248,Ipomoea aquatica,MZ240730.1,cox3,-,148447..149244,148447..149244,correct,the annotation is correct and no correction is needed
+155.0,249,Ipomoea aquatica,MZ240730.1,matr,+,111173..113140,111173..113140,correct,the annotation is correct and no correction is needed
+156.0,250,Ipomoea aquatica,MZ240730.1,mttb,-,133773..134570,133773..134570,correct,the annotation is correct and no correction is needed
+157.0,251,Ipomoea aquatica,MZ240730.1,nad1,+,162617..163001,162617..163001,correct,the annotation is correct and no correction is needed
+250.0,252,Ipomoea aquatica,MZ240730.1,nad1,+,27211..27293,27211..27293,correct,the annotation is correct and no correction is needed
+251.0,253,Ipomoea aquatica,MZ240730.1,nad1,+,28739..28930,28739..28930,correct,the annotation is correct and no correction is needed
+252.0,254,Ipomoea aquatica,MZ240730.1,nad1,+,110453..110511,110453..110511,correct,the annotation is correct and no correction is needed
+253.0,255,Ipomoea aquatica,MZ240730.1,nad1,+,114183..114441,114183..114441,correct,the annotation is correct and no correction is needed
+158.0,256,Ipomoea aquatica,MZ240730.1,nad2,+,63450..63602,63450..63602,correct,the annotation is correct and no correction is needed
+255.0,257,Ipomoea aquatica,MZ240730.1,nad2,+,64836..65227,64836..65227,correct,the annotation is correct and no correction is needed
+256.0,258,Ipomoea aquatica,MZ240730.1,nad2,+,282549..282709,282549..282709,correct,the annotation is correct and no correction is needed
+257.0,259,Ipomoea aquatica,MZ240730.1,nad2,+,285127..285699,285127..285699,correct,the annotation is correct and no correction is needed
+258.0,260,Ipomoea aquatica,MZ240730.1,nad2,+,287154..287341,287154..287341,correct,the annotation is correct and no correction is needed
+159.0,261,Ipomoea aquatica,MZ240730.1,nad3,+,25234..25590,25234..25590,correct,the annotation is correct and no correction is needed
+160.0,262,Ipomoea aquatica,MZ240730.1,nad4,-,200336..200796,200336..200796,correct,the annotation is correct and no correction is needed
+261.0,263,Ipomoea aquatica,MZ240730.1,nad4,-,198403..198917,198403..198917,correct,the annotation is correct and no correction is needed
+262.0,264,Ipomoea aquatica,MZ240730.1,nad4,-,194780..195202,194780..195202,correct,the annotation is correct and no correction is needed
+263.0,265,Ipomoea aquatica,MZ240730.1,nad4,-,191864..191952,191864..191952,correct,the annotation is correct and no correction is needed
+161.0,266,Ipomoea aquatica,MZ240730.1,nad4l,-,54821..55093,54821..55093,correct,the annotation is correct and no correction is needed
+162.0,267,Ipomoea aquatica,MZ240730.1,nad5,-,245409..245638,245409..245638,correct,the annotation is correct and no correction is needed
+266.0,268,Ipomoea aquatica,MZ240730.1,nad5,-,243349..244564,243349..244564,correct,the annotation is correct and no correction is needed
+267.0,269,Ipomoea aquatica,MZ240730.1,nad5,-,17109..17130,17109..17130,correct,the annotation is correct and no correction is needed
+268.0,270,Ipomoea aquatica,MZ240730.1,nad5,-,158863..159257,158863..159257,correct,the annotation is correct and no correction is needed
+269.0,271,Ipomoea aquatica,MZ240730.1,nad5,-,157374..157520,157374..157520,correct,the annotation is correct and no correction is needed
+163.0,272,Ipomoea aquatica,MZ240730.1,nad6,+,183086..183703,183086..183703,correct,the annotation is correct and no correction is needed
+164.0,273,Ipomoea aquatica,MZ240730.1,nad7,+,5862..6004,5862..6004,correct,the annotation is correct and no correction is needed
+165.0,277,Ipomoea aquatica,MZ240730.1,nad9,-,264578..265150,264578..265150,correct,the annotation is correct and no correction is needed
+166.0,278,Ipomoea aquatica,MZ240730.1,rpl10_copy1,-,173417..173905,173417..173905,correct,the annotation is correct and no correction is needed
+167.0,279,Ipomoea aquatica,MZ240730.1,rpl10_copy2,+,271134..271622,271134..271622,correct,the annotation is correct and no correction is needed
+168.0,280,Ipomoea aquatica,MZ240730.1,rpl16,-,123569..124084,123569..124084,correct,the annotation is correct and no correction is needed
+169.0,281,Ipomoea aquatica,MZ240730.1,rpl5,+,229047..229601,229047..229601,correct,the annotation is correct and no correction is needed
+170.0,282,Ipomoea aquatica,MZ240730.1,rps1,-,147368..147964,147368..147964,correct,the annotation is correct and no correction is needed
+171.0,283,Ipomoea aquatica,MZ240730.1,rps10,+,181199..181448,181199..181448,correct,the annotation is correct and no correction is needed
+282.0,284,Ipomoea aquatica,MZ240730.1,rps10,+,182351..182463,182351..182433,SPGE,SPGE10
+172.0,285,Ipomoea aquatica,MZ240730.1,rps12,+,25639..26016,25639..26016,correct,the annotation is correct and no correction is needed
+173.0,286,Ipomoea aquatica,MZ240730.1,rps13,-,15480..15830,15480..15830,correct,the annotation is correct and no correction is needed
+174.0,287,Ipomoea aquatica,MZ240730.1,rps14,+,229603..229905,229603..229905,correct,the annotation is correct and no correction is needed
+175.0,288,Ipomoea aquatica,MZ240730.1,rps19,-,127210..127494,127210..127494,correct,the annotation is correct and no correction is needed
+176.0,289,Ipomoea aquatica,MZ240730.1,rps3,-,127123..127196,127123..127196,correct,the annotation is correct and no correction is needed
+288.0,290,Ipomoea aquatica,MZ240730.1,rps3,-,123975..125613,123975..125613,correct,the annotation is correct and no correction is needed
+177.0,291,Ipomoea aquatica,MZ240730.1,rps4,-,68244..69176,68244..69176,correct,the annotation is correct and no correction is needed
+178.0,292,Ipomoea aquatica,MZ240730.1,sdh4,-,148112..148519,148112..148519,correct,the annotation is correct and no correction is needed
+179.0,293,Liriodendron tulipifera,NC_021152.1,atp1,+,20647..22176,20647..22176,correct,the annotation is correct and no correction is needed
+180.0,294,Liriodendron tulipifera,NC_021152.1,atp4,+,65577..66158,65577..66158,correct,the annotation is correct and no correction is needed
+181.0,295,Liriodendron tulipifera,NC_021152.1,atp6,+,235103..235909,235103..235876,SPGE,SPGE11
+182.0,296,Liriodendron tulipifera,NC_021152.1,atp8,+,3736..4215,3736..4215,correct,the annotation is correct and no correction is needed
+183.0,297,Liriodendron tulipifera,NC_021152.1,atp9,+,136650..136874,136650..136874,correct,the annotation is correct and no correction is needed
+184.0,298,Liriodendron tulipifera,NC_021152.1,ccmb,-,176024..176644,176024..176644,correct,the annotation is correct and no correction is needed
+185.0,299,Liriodendron tulipifera,NC_021152.1,ccmc,+,527639..528361,527639..528361,correct,the annotation is correct and no correction is needed
+186.0,300,Liriodendron tulipifera,NC_021152.1,ccmfc,-,397876..398645,397876..398645,correct,the annotation is correct and no correction is needed
+299.0,301,Liriodendron tulipifera,NC_021152.1,ccmfc,-,396245..396833,396275..396833,SPGE,SPGE12
+187.0,302,Liriodendron tulipifera,NC_021152.1,ccmfn,-,332761..334566,332761..334566,correct,the annotation is correct and no correction is needed
+188.0,303,Liriodendron tulipifera,NC_021152.1,cob,-,403258..404439,403258..404439,correct,the annotation is correct and no correction is needed
+189.0,304,Liriodendron tulipifera,NC_021152.1,cox1,+,328527..330110,328527..330110,correct,the annotation is correct and no correction is needed
+190.0,305,Liriodendron tulipifera,NC_021152.1,cox2,+,247123..247504,247123..247504,correct,the annotation is correct and no correction is needed
+191.0,308,Liriodendron tulipifera,NC_021152.1,cox3,+,5009..5806,5009..5806,correct,the annotation is correct and no correction is needed
+192.0,309,Liriodendron tulipifera,NC_021152.1,matr,-,319386..321338,319386..321338,correct,the annotation is correct and no correction is needed
+193.0,310,Liriodendron tulipifera,NC_021152.1,mttb,-,457183..457950,457183..457950,correct,the annotation is correct and no correction is needed
+194.0,311,Liriodendron tulipifera,NC_021152.1,nad1,-,173058..173442,173058..173442,correct,the annotation is correct and no correction is needed
+310.0,312,Liriodendron tulipifera,NC_021152.1,nad1,+,25867..25949,25867..25949,correct,the annotation is correct and no correction is needed
+311.0,313,Liriodendron tulipifera,NC_021152.1,nad1,+,27369..27560,27369..27560,correct,the annotation is correct and no correction is needed
+312.0,314,Liriodendron tulipifera,NC_021152.1,nad1,-,323328..323386,323328..323386,correct,the annotation is correct and no correction is needed
+313.0,315,Liriodendron tulipifera,NC_021152.1,nad1,-,318321..318579,318321..318579,correct,the annotation is correct and no correction is needed
+195.0,316,Liriodendron tulipifera,NC_021152.1,nad2,-,127606..127758,127606..127758,correct,the annotation is correct and no correction is needed
+315.0,317,Liriodendron tulipifera,NC_021152.1,nad2,-,125770..126161,125770..126161,correct,the annotation is correct and no correction is needed
+316.0,318,Liriodendron tulipifera,NC_021152.1,nad2,-,465210..465370,465210..465370,correct,the annotation is correct and no correction is needed
+317.0,319,Liriodendron tulipifera,NC_021152.1,nad2,-,462019..462591,462019..462591,correct,the annotation is correct and no correction is needed
+318.0,320,Liriodendron tulipifera,NC_021152.1,nad2,-,460378..460565,460378..460565,correct,the annotation is correct and no correction is needed
+196.0,321,Liriodendron tulipifera,NC_021152.1,nad3,+,432684..433040,432684..433040,correct,the annotation is correct and no correction is needed
+197.0,322,Liriodendron tulipifera,NC_021152.1,nad4,-,43008..43468,43008..43468,correct,the annotation is correct and no correction is needed
+321.0,323,Liriodendron tulipifera,NC_021152.1,nad4,-,41089..41603,41089..41603,correct,the annotation is correct and no correction is needed
+322.0,324,Liriodendron tulipifera,NC_021152.1,nad4,-,36253..36675,36253..36675,correct,the annotation is correct and no correction is needed
+323.0,325,Liriodendron tulipifera,NC_021152.1,nad4,-,33265..33353,33265..33353,correct,the annotation is correct and no correction is needed
+198.0,326,Liriodendron tulipifera,NC_021152.1,nad4l,+,65104..65406,65104..65406,correct,the annotation is correct and no correction is needed
+199.0,327,Liriodendron tulipifera,NC_021152.1,nad5,+,429013..429242,429013..429242,correct,the annotation is correct and no correction is needed
+326.0,328,Liriodendron tulipifera,NC_021152.1,nad5,+,430088..431303,430088..431303,correct,the annotation is correct and no correction is needed
+327.0,329,Liriodendron tulipifera,NC_021152.1,nad5,-,317699..317720,317699..317720,correct,the annotation is correct and no correction is needed
+328.0,330,Liriodendron tulipifera,NC_021152.1,nad5,-,259751..260145,259751..260145,correct,the annotation is correct and no correction is needed
+329.0,331,Liriodendron tulipifera,NC_021152.1,nad5,-,258285..258434,258285..258434,correct,the annotation is correct and no correction is needed
+200.0,332,Liriodendron tulipifera,NC_021152.1,nad6_copy1,-,198237..198959,198237..198959,correct,the annotation is correct and no correction is needed
+201.0,333,Liriodendron tulipifera,NC_021152.1,nad6_copy2,+,254666..255400,254666..255400,correct,the annotation is correct and no correction is needed
+202.0,334,Liriodendron tulipifera,NC_021152.1,nad7,+,265005..265147,265005..265147,correct,the annotation is correct and no correction is needed
+333.0,335,Liriodendron tulipifera,NC_021152.1,nad7,+,266023..266091,266023..266091,correct,the annotation is correct and no correction is needed
+334.0,336,Liriodendron tulipifera,NC_021152.1,nad7,+,267846..268312,267846..268312,correct,the annotation is correct and no correction is needed
+335.0,337,Liriodendron tulipifera,NC_021152.1,nad7,+,269326..269569,269326..269569,correct,the annotation is correct and no correction is needed
+336.0,338,Liriodendron tulipifera,NC_021152.1,nad7,+,271474..271735,271474..271735,correct,the annotation is correct and no correction is needed
+203.0,339,Liriodendron tulipifera,NC_021152.1,nad9,+,377246..377818,377246..377818,correct,the annotation is correct and no correction is needed
+204.0,340,Liriodendron tulipifera,NC_021152.1,rpl10,+,543306..543785,543306..543785,correct,the annotation is correct and no correction is needed
+205.0,341,Liriodendron tulipifera,NC_021152.1,rpl16,-,511850..512284,511850..512284,correct,the annotation is correct and no correction is needed
+206.0,342,Liriodendron tulipifera,NC_021152.1,rpl2,-,518193..519187,518193..519187,correct,the annotation is correct and no correction is needed
+207.0,344,Liriodendron tulipifera,NC_021152.1,rpl5,-,405571..406131,405571..406131,correct,the annotation is correct and no correction is needed
+208.0,345,Liriodendron tulipifera,NC_021152.1,rps1,+,50372..50977,50372..50977,correct,the annotation is correct and no correction is needed
+209.0,346,Liriodendron tulipifera,NC_021152.1,rps10,+,1315..1561,1315..1561,correct,the annotation is correct and no correction is needed
+345.0,347,Liriodendron tulipifera,NC_021152.1,rps10,+,2400..2512,2400..2482,SPGE,SPGE13
+210.0,348,Liriodendron tulipifera,NC_021152.1,rps11,-,391042..391557,391042..391557,correct,the annotation is correct and no correction is needed
+211.0,349,Liriodendron tulipifera,NC_021152.1,rps12,+,433089..433466,433089..433466,correct,the annotation is correct and no correction is needed
+212.0,350,Liriodendron tulipifera,NC_021152.1,rps13,+,24579..24929,24579..24929,correct,the annotation is correct and no correction is needed
+213.0,351,Liriodendron tulipifera,NC_021152.1,rps14,-,405267..405569,405267..405569,correct,the annotation is correct and no correction is needed
+214.0,352,Liriodendron tulipifera,NC_021152.1,rps19,-,515767..516048,515767..516048,correct,the annotation is correct and no correction is needed
+215.0,353,Liriodendron tulipifera,NC_021152.1,rps2,-,339503..340123,339503..340123,correct,the annotation is correct and no correction is needed
+216.0,354,Liriodendron tulipifera,NC_021152.1,rps3,-,515678..515751,515678..515751,correct,the annotation is correct and no correction is needed
+353.0,355,Liriodendron tulipifera,NC_021152.1,rps3,-,512290..513799,512290..513799,correct,the annotation is correct and no correction is needed
+217.0,356,Liriodendron tulipifera,NC_021152.1,rps4,+,536631..537701,536631..537701,correct,the annotation is correct and no correction is needed
+218.0,357,Liriodendron tulipifera,NC_021152.1,rps7,+,23521..23970,23521..23970,correct,the annotation is correct and no correction is needed
+219.0,358,Liriodendron tulipifera,NC_021152.1,sdh3,+,151580..151909,151580..151909,correct,the annotation is correct and no correction is needed
+220.0,359,Liriodendron tulipifera,NC_021152.1,sdh4,+,5734..6138,5734..6138,correct,the annotation is correct and no correction is needed
+221.0,360,Malus x domestica,NC_018554.1,atp1,-,173682..175214,173682..175214,correct,the annotation is correct and no correction is needed
+222.0,361,Malus x domestica,NC_018554.1,atp4,+,396046..396642,396046..396642,correct,the annotation is correct and no correction is needed
+223.0,362,Malus x domestica,NC_018554.1,atp6,+,324429..325412,324429..325343,SPGE,SPGE14
+224.0,363,Malus x domestica,NC_018554.1,atp8,-,363468..363947,363468..363947,correct,the annotation is correct and no correction is needed
+225.0,364,Malus x domestica,NC_018554.1,atp9,-,74072..74353,74096..74320,SPGE,SPGE15
+226.0,365,Malus x domestica,NC_018554.1,ccmb,-,66039..66659,66039..66659,correct,the annotation is correct and no correction is needed
+227.0,366,Malus x domestica,NC_018554.1,ccmc,-,57142..57894,57142..57894,correct,the annotation is correct and no correction is needed
+228.0,367,Malus x domestica,NC_018554.1,ccmfc,+,1..761,1..761,correct,the annotation is correct and no correction is needed
+366.0,368,Malus x domestica,NC_018554.1,ccmfc,+,1724..2273,1724..2273,correct,the annotation is correct and no correction is needed
+229.0,369,Malus x domestica,NC_018554.1,ccmfn,+,90727..92490,90727..92490,correct,the annotation is correct and no correction is needed
+230.0,370,Malus x domestica,NC_018554.1,cob,+,125299..126480,125299..126480,correct,the annotation is correct and no correction is needed
+231.0,371,Malus x domestica,NC_018554.1,cox1,-,10301..11788,10301..11866,STGE,STGE3
+232.0,372,Malus x domestica,NC_018554.1,cox2,+,391312..392232,391312..392232,correct,the annotation is correct and no correction is needed
+233.0,373,Malus x domestica,NC_018554.1,cox3,-,362069..362866,362069..362866,correct,the annotation is correct and no correction is needed
+234.0,374,Malus x domestica,NC_018554.1,matr,-,234315..236282,234315..236282,correct,the annotation is correct and no correction is needed
+235.0,375,Malus x domestica,NC_018554.1,mttb,-,8629..9456,8629..9456,correct,the annotation is correct and no correction is needed
+236.0,376,Malus x domestica,NC_018554.1,nad1,+,104195..104597,104213..104597,STGE,STGE4
+375.0,377,Malus x domestica,NC_018554.1,nad1,-,262001..262083,262001..262083,correct,the annotation is correct and no correction is needed
+376.0,378,Malus x domestica,NC_018554.1,nad1,-,260363..260554,260363..260554,correct,the annotation is correct and no correction is needed
+377.0,379,Malus x domestica,NC_018554.1,nad1,-,236949..237007,236949..237007,correct,the annotation is correct and no correction is needed
+378.0,380,Malus x domestica,NC_018554.1,nad1,-,233268..233526,233268..233526,correct,the annotation is correct and no correction is needed
+237.0,381,Malus x domestica,NC_018554.1,nad2,+,165538..165690,165538..165690,correct,the annotation is correct and no correction is needed
+380.0,382,Malus x domestica,NC_018554.1,nad2,+,166888..167279,166888..167279,correct,the annotation is correct and no correction is needed
+381.0,383,Malus x domestica,NC_018554.1,nad2,-,245312..245472,245312..245472,correct,the annotation is correct and no correction is needed
+382.0,384,Malus x domestica,NC_018554.1,nad2,-,242893..243465,242893..243465,correct,the annotation is correct and no correction is needed
+383.0,385,Malus x domestica,NC_018554.1,nad2,-,241341..241528,241341..241528,correct,the annotation is correct and no correction is needed
+238.0,386,Malus x domestica,NC_018554.1,nad3,-,151702..152058,151702..152058,correct,the annotation is correct and no correction is needed
+239.0,387,Malus x domestica,NC_018554.1,nad4,-,32337..32797,32337..32797,correct,the annotation is correct and no correction is needed
+386.0,388,Malus x domestica,NC_018554.1,nad4,-,30406..30920,30406..30920,correct,the annotation is correct and no correction is needed
+387.0,389,Malus x domestica,NC_018554.1,nad4,-,26768..27190,26768..27190,correct,the annotation is correct and no correction is needed
+388.0,390,Malus x domestica,NC_018554.1,nad4,-,24311..24399,24311..24399,correct,the annotation is correct and no correction is needed
+240.0,391,Malus x domestica,NC_018554.1,nad4l,+,395584..395886,395584..395886,correct,the annotation is correct and no correction is needed
+241.0,392,Malus x domestica,NC_018554.1,nad5,-,73635..73864,73635..73864,correct,the annotation is correct and no correction is needed
+391.0,393,Malus x domestica,NC_018554.1,nad5,-,71571..72786,71571..72786,correct,the annotation is correct and no correction is needed
+392.0,394,Malus x domestica,NC_018554.1,nad5,+,121892..121913,121892..121913,correct,the annotation is correct and no correction is needed
+393.0,395,Malus x domestica,NC_018554.1,nad5,+,41783..42177,41783..42177,correct,the annotation is correct and no correction is needed
+394.0,396,Malus x domestica,NC_018554.1,nad5,+,43107..43256,43107..43256,correct,the annotation is correct and no correction is needed
+242.0,397,Malus x domestica,NC_018554.1,nad6,-,171761..172378,171761..172378,correct,the annotation is correct and no correction is needed
+243.0,398,Malus x domestica,NC_018554.1,nad7,-,181451..181593,181451..181593,correct,the annotation is correct and no correction is needed
+397.0,399,Malus x domestica,NC_018554.1,nad7,-,180474..180542,180474..180542,correct,the annotation is correct and no correction is needed
+398.0,400,Malus x domestica,NC_018554.1,nad7,-,178711..179177,178711..179177,correct,the annotation is correct and no correction is needed
+399.0,401,Malus x domestica,NC_018554.1,nad7,-,177414..177657,177414..177657,correct,the annotation is correct and no correction is needed
+400.0,402,Malus x domestica,NC_018554.1,nad7,-,175305..175566,175305..175566,correct,the annotation is correct and no correction is needed
+244.0,403,Malus x domestica,NC_018554.1,nad9,+,291982..292554,291982..292554,correct,the annotation is correct and no correction is needed
+245.0,404,Malus x domestica,NC_018554.1,rpl5,+,123400..123957,123400..123957,correct,the annotation is correct and no correction is needed
+246.0,405,Malus x domestica,NC_018554.1,rps1,-,186161..186769,186161..186769,correct,the annotation is correct and no correction is needed
+247.0,406,Malus x domestica,NC_018554.1,rps12_copy1,-,151276..151653,151276..151653,correct,the annotation is correct and no correction is needed
+248.0,407,Malus x domestica,NC_018554.1,rps12_copy2,+,339247..339624,339247..339624,correct,the annotation is correct and no correction is needed
+249.0,408,Malus x domestica,NC_018554.1,rps13,-,262975..263325,262975..263325,correct,the annotation is correct and no correction is needed
+250.0,409,Malus x domestica,NC_018554.1,rps14,+,123959..124174,123959..124174,correct,the annotation is correct and no correction is needed
+251.0,410,Malus x domestica,NC_018554.1,sdh4,-,361737..362141,361737..362141,correct,the annotation is correct and no correction is needed
+252.0,411,Nicotiana tabacum,NC_006581.1,atp1,+,261287..262816,261287..262816,correct,the annotation is correct and no correction is needed
+253.0,412,Nicotiana tabacum,NC_006581.1,atp4,+,113852:114449,113852:114449,correct,the annotation is correct and no correction is needed
+254.0,413,Nicotiana tabacum,NC_006581.1,atp6,-,24579..25766,24618..25766,SPGE,SPGE16
+255.0,414,Nicotiana tabacum,NC_006581.1,atp8,+,257736:258207,257736:258207,correct,the annotation is correct and no correction is needed
+256.0,415,Nicotiana tabacum,NC_006581.1,atp9,-,145758..145991,145767..145991,SPGE,SPGE17
+257.0,416,Nicotiana tabacum,NC_006581.1,ccmb,+,359373..359993,359373..359993,correct,the annotation is correct and no correction is needed
+258.0,417,Nicotiana tabacum,NC_006581.1,ccmc,-,19014..19766,19014..19766,correct,the annotation is correct and no correction is needed
+259.0,418,Nicotiana tabacum,NC_006581.1,ccmfc,+,307057..307823,307057..307823,correct,the annotation is correct and no correction is needed
+417.0,419,Nicotiana tabacum,NC_006581.1,ccmfc,+,308778..309327,308778..309327,correct,the annotation is correct and no correction is needed
+260.0,420,Nicotiana tabacum,NC_006581.1,ccmfn,-,124378..126102,124378..126102,correct,the annotation is correct and no correction is needed
+261.0,421,Nicotiana tabacum,NC_006581.1,cob,-,40866..42047,40866..42047,correct,the annotation is correct and no correction is needed
+262.0,422,Nicotiana tabacum,NC_006581.1,cox1,-,128704..130287,128704..130287,correct,the annotation is correct and no correction is needed
+263.0,423,Nicotiana tabacum,NC_006581.1,cox2,+,156352..156733,156352..156733,correct,the annotation is correct and no correction is needed
+264.0,425,Nicotiana tabacum,NC_006581.1,cox3,+,258844..259641,258844..259641,correct,the annotation is correct and no correction is needed
+265.0,426,Nicotiana tabacum,NC_006581.1,matr,-,4036..6012,4036..6012,correct,the annotation is correct and no correction is needed
+266.0,427,Nicotiana tabacum,NC_006581.1,mttb,-,350540:351380,350540:351380,correct,the annotation is correct and no correction is needed
+267.0,428,Nicotiana tabacum,NC_006581.1,nad1,+,288448..288832,288448..288832,correct,the annotation is correct and no correction is needed
+427.0,429,Nicotiana tabacum,NC_006581.1,nad1,-,144307..144389,144307..144389,correct,the annotation is correct and no correction is needed
+428.0,430,Nicotiana tabacum,NC_006581.1,nad1,-,142903..143094,142903..143094,correct,the annotation is correct and no correction is needed
+429.0,431,Nicotiana tabacum,NC_006581.1,nad1,-,6674..6732,6674..6732,correct,the annotation is correct and no correction is needed
+430.0,432,Nicotiana tabacum,NC_006581.1,nad1,-,44549..44807,44549..44807,correct,the annotation is correct and no correction is needed
+268.0,433,Nicotiana tabacum,NC_006581.1,nad2,-,76469..76621,277969..278121,correct,the annotation is correct and no correction is needed
+432.0,434,Nicotiana tabacum,NC_006581.1,nad2,-,276547..276938,276547..276938,correct,the annotation is correct and no correction is needed
+433.0,435,Nicotiana tabacum,NC_006581.1,nad2,+,201081..201241,201081..201241,correct,the annotation is correct and no correction is needed
+434.0,436,Nicotiana tabacum,NC_006581.1,nad2,+,203656..204228,203656..204228,correct,the annotation is correct and no correction is needed
+435.0,437,Nicotiana tabacum,NC_006581.1,nad2,+,205689..205876,205689..205876,correct,the annotation is correct and no correction is needed
+269.0,438,Nicotiana tabacum,NC_006581.1,nad3_copy1,+,86395..86751,86395..86751,correct,the annotation is correct and no correction is needed
+270.0,439,Nicotiana tabacum,NC_006581.1,nad3_copy2,+,287895..288251,287895..288251,correct,the annotation is correct and no correction is needed
+271.0,440,Nicotiana tabacum,NC_006581.1,nad4,+,182370..182830,182370..182830,correct,the annotation is correct and no correction is needed
+439.0,441,Nicotiana tabacum,NC_006581.1,nad4,+,184249..184763,184249..184763,correct,the annotation is correct and no correction is needed
+440.0,442,Nicotiana tabacum,NC_006581.1,nad4,+,187902..188324,187902..188324,correct,the annotation is correct and no correction is needed
+441.0,443,Nicotiana tabacum,NC_006581.1,nad4,+,190764..190852,190764..190852,correct,the annotation is correct and no correction is needed
+272.0,444,Nicotiana tabacum,NC_006581.1,nad4l,-,114638..114940,114638..114940,correct,the annotation is correct and no correction is needed
+273.0,445,Nicotiana tabacum,NC_006581.1,nad5,+,192149..192378,192149..192378,correct,the annotation is correct and no correction is needed
+444.0,446,Nicotiana tabacum,NC_006581.1,nad5,+,193223..194438,193223..194438,correct,the annotation is correct and no correction is needed
+445.0,447,Nicotiana tabacum,NC_006581.1,nad5,-,222166..222187,222166..222187,correct,the annotation is correct and no correction is needed
+446.0,448,Nicotiana tabacum,NC_006581.1,nad5,+,172723..173117,172723..173117,correct,the annotation is correct and no correction is needed
+447.0,449,Nicotiana tabacum,NC_006581.1,nad5,+,174209..174355,174209..174355,correct,the annotation is correct and no correction is needed
+274.0,450,Nicotiana tabacum,NC_006581.1,nad6,-,312777..313463,312777..313463,correct,the annotation is correct and no correction is needed
+275.0,451,Nicotiana tabacum,NC_006581.1,nad7,-,380473..380615,380473..380615,correct,the annotation is correct and no correction is needed
+276.0,455,Nicotiana tabacum,NC_006581.1,nad9,+,336111..336683,336111..336683,correct,the annotation is correct and no correction is needed
+277.0,456,Nicotiana tabacum,NC_006581.1,rpl16,+,155570..156085,155570..156085,correct,the annotation is correct and no correction is needed
+278.0,457,Nicotiana tabacum,NC_006581.1,rpl2,-,363071..363948,363071..363948,correct,the annotation is correct and no correction is needed
+279.0,459,Nicotiana tabacum,NC_006581.1,rpl5,-,43703..44257,43703..44257,correct,the annotation is correct and no correction is needed
+280.0,460,Nicotiana tabacum,NC_006581.1,rps10,-,131338..131587,131338..131587,correct,the annotation is correct and no correction is needed
+459.0,461,Nicotiana tabacum,NC_006581.1,rps10,-,130451..130563,130481..130563,SPGE,SPGE18
+281.0,462,Nicotiana tabacum,NC_006581.1,rps12,+,86800..87177,86800..87177,correct,the annotation is correct and no correction is needed
+282.0,463,Nicotiana tabacum,NC_006581.1,rps13,-,144929..145279,144929..145279,correct,the annotation is correct and no correction is needed
+283.0,464,Nicotiana tabacum,NC_006581.1,rps14,-,43342..43701,43342..43701,correct,the annotation is correct and no correction is needed
+284.0,465,Nicotiana tabacum,NC_006581.1,rps19,+,152215..152499,152215..152499,correct,the annotation is correct and no correction is needed
+285.0,466,Nicotiana tabacum,NC_006581.1,rps3,+,152513..152586,152513..152586,correct,the annotation is correct and no correction is needed
+465.0,467,Nicotiana tabacum,NC_006581.1,rps3,+,154062..155679,154062..155679,correct,the annotation is correct and no correction is needed
+286.0,468,Nicotiana tabacum,NC_006581.1,rps4,-,314124..>315173,314124..>315173,correct,the annotation is correct and no correction is needed
+287.0,469,Nicotiana tabacum,NC_006581.1,sdh3_copy1,-,77198..77524,77198..77524,correct,the annotation is correct and no correction is needed
+288.0,470,Nicotiana tabacum,NC_006581.1,sdh3_copy2,-,278698..279024,278698..279024,correct,the annotation is correct and no correction is needed
+289.0,471,Nicotiana tabacum,NC_006581.1,sdh3_copy3,-,427948..428274,427948..428274,correct,the annotation is correct and no correction is needed
+290.0,472,Raphanus sativus,MN056359.2,atp1,+,77592..79115,77592..79115,correct,the annotation is correct and no correction is needed
+291.0,473,Raphanus sativus,MN056359.2,atp4,-,56280..56858,56280..56858,correct,the annotation is correct and no correction is needed
+292.0,474,Raphanus sativus,MN056359.2,atp6,+,95813..96598,95813..96598,correct,the annotation is correct and no correction is needed
+293.0,475,Raphanus sativus,MN056359.2,atp8,-,67355..67831,67355..67831,correct,the annotation is correct and no correction is needed
+294.0,476,Raphanus sativus,MN056359.2,atp9,+,49092..49316,49092..49316,correct,the annotation is correct and no correction is needed
+295.0,477,Raphanus sativus,MN056359.2,ccmb,-,236592..237212,236592..237212,correct,the annotation is correct and no correction is needed
+296.0,478,Raphanus sativus,MN056359.2,ccmc,-,111655..112398,111655..112398,correct,the annotation is correct and no correction is needed
+297.0,479,Raphanus sativus,MN056359.2,ccmfc,-,30480..31258,30480..31258,correct,the annotation is correct and no correction is needed
+298.0,481,Raphanus sativus,MN056359.2,ccmfn1,-,43303..44448,43303..44448,correct,the annotation is correct and no correction is needed
+299.0,482,Raphanus sativus,MN056359.2,ccmfn2,+,<226980..227615,<226980..227615,correct,the annotation is correct and no correction is needed
+300.0,483,Raphanus sativus,MN056359.2,cob,+,16622..17803,16622..17803,correct,the annotation is correct and no correction is needed
+301.0,484,Raphanus sativus,MN056359.2,cox1,+,130729..132312,130729..132312,correct,the annotation is correct and no correction is needed
+302.0,485,Raphanus sativus,MN056359.2,cox2,-,20880..21579,20880..21579,correct,the annotation is correct and no correction is needed
+484.0,486,Raphanus sativus,MN056359.2,cox2,-,19448..19530,19448..19530,correct,the annotation is correct and no correction is needed
+303.0,487,Raphanus sativus,MN056359.2,cox3,+,33127..33924,33127..33924,correct,the annotation is correct and no correction is needed
+304.0,488,Raphanus sativus,MN056359.2,matr,+,<184893..186926,<184893..186926,correct,the annotation is correct and no correction is needed
+305.0,489,Raphanus sativus,MN056359.2,mttb,-,<166905..167708,<166905..167708,correct,the annotation is correct and no correction is needed
+306.0,490,Raphanus sativus,MN056359.2,nad1,+,133625..134012,133625..134009,SSE,SSE43
+489.0,491,Raphanus sativus,MN056359.2,nad1,+,37799..37878,37796..37878,SSE,SSE44
+490.0,492,Raphanus sativus,MN056359.2,nad1,+,38804..38995,38804..38995,correct,the annotation is correct and no correction is needed
+491.0,493,Raphanus sativus,MN056359.2,nad1,+,184198..184255,184198..184256,SSE,SSE45
+492.0,494,Raphanus sativus,MN056359.2,nad1,+,187705..187964,187706..187964,SSE,SSE46
+307.0,495,Raphanus sativus,MN056359.2,nad2,+,105958..106110,105958..106110,correct,the annotation is correct and no correction is needed
+494.0,496,Raphanus sativus,MN056359.2,nad2,+,107093..107484,107093..107484,correct,the annotation is correct and no correction is needed
+495.0,497,Raphanus sativus,MN056359.2,nad2,-,126549..126709,126549..126709,correct,the annotation is correct and no correction is needed
+496.0,498,Raphanus sativus,MN056359.2,nad2,-,123801..124373,123801..124373,correct,the annotation is correct and no correction is needed
+497.0,499,Raphanus sativus,MN056359.2,nad2,-,121897..122084,121897..122084,correct,the annotation is correct and no correction is needed
+308.0,500,Raphanus sativus,MN056359.2,nad3,-,207746..208102,207746..208102,correct,the annotation is correct and no correction is needed
+309.0,501,Raphanus sativus,MN056359.2,nad4,-,163140..163600,163140..163600,correct,the annotation is correct and no correction is needed
+500.0,502,Raphanus sativus,MN056359.2,nad4,-,161166..161680,161166..161680,correct,the annotation is correct and no correction is needed
+501.0,503,Raphanus sativus,MN056359.2,nad4,-,157674..158095,157673..158095,SSE,SSE47
+502.0,504,Raphanus sativus,MN056359.2,nad4,-,155655..155744,155655..155743,SSE,SSE48
+310.0,505,Raphanus sativus,MN056359.2,nad4l,-,57093..57395,57093..57395,correct,the annotation is correct and no correction is needed
+311.0,506,Raphanus sativus,MN056359.2,nad5,+,188178..188406,188178..188407,SSE,SSE49
+505.0,507,Raphanus sativus,MN056359.2,nad5,+,189246..190462,189247..190462,SSE,SSE50
+506.0,508,Raphanus sativus,MN056359.2,nad5,-,58164..58185,58164..58185,correct,the annotation is correct and no correction is needed
+507.0,509,Raphanus sativus,MN056359.2,nad5,-,220643..221036,220642..221036,SSE,SSE51
+508.0,510,Raphanus sativus,MN056359.2,nad5,-,219505..219652,219505..219651,SSE,SSE52
+312.0,511,Raphanus sativus,MN056359.2,nad6,-,145439..146056,145439..146056,correct,the annotation is correct and no correction is needed
+313.0,512,Raphanus sativus,MN056359.2,nad7,-,65728..65870,65728..65870,correct,the annotation is correct and no correction is needed
+511.0,513,Raphanus sativus,MN056359.2,nad7,-,64664..64732,64664..64732,correct,the annotation is correct and no correction is needed
+512.0,514,Raphanus sativus,MN056359.2,nad7,-,63099..63565,63099..63565,correct,the annotation is correct and no correction is needed
+513.0,515,Raphanus sativus,MN056359.2,nad7,-,61802..62045,61802..62045,correct,the annotation is correct and no correction is needed
+514.0,516,Raphanus sativus,MN056359.2,nad7,-,59724..59985,59724..59985,correct,the annotation is correct and no correction is needed
+314.0,517,Raphanus sativus,MN056359.2,nad9,-,222636..223208,222636..223208,correct,the annotation is correct and no correction is needed
+315.0,518,Raphanus sativus,MN056359.2,rpl16,+,13587..14126,13587..14126,correct,the annotation is correct and no correction is needed
+316.0,519,Raphanus sativus,MN056359.2,rpl2,-,169724..170640,169724..170640,correct,the annotation is correct and no correction is needed
+518.0,520,Raphanus sativus,MN056359.2,rpl2,-,167882..168014,167882..168014,correct,the annotation is correct and no correction is needed
+317.0,521,Raphanus sativus,MN056359.2,rpl5,+,14251..14808,14251..14808,correct,the annotation is correct and no correction is needed
+318.0,522,Raphanus sativus,MN056359.2,rps12,-,207321..207698,207321..207698,correct,the annotation is correct and no correction is needed
+319.0,523,Raphanus sativus,MN056359.2,rps14,+,14810..15112,14810..15112,correct,the annotation is correct and no correction is needed
+320.0,524,Raphanus sativus,MN056359.2,rps3,+,10331..10405,10331..10404,SSE,SSE53
+523.0,525,Raphanus sativus,MN056359.2,rps3,+,12131..13720,12130..13720,SSE,SSE54
+321.0,526,Raphanus sativus,MN056359.2,rps4,+,104045..105133,104045..105133,correct,the annotation is correct and no correction is needed
+322.0,527,Raphanus sativus,MN056359.2,rps7,-,171786..>172232,171786..>172232,correct,the annotation is correct and no correction is needed
+323.0,528,Saccharum officinarum,LC107874.1,atp1,-,8023..9549,8023..9549,correct,the annotation is correct and no correction is needed
+324.0,529,Saccharum officinarum,LC107874.1,atp4,-,155544..156170,155544..156170,correct,the annotation is correct and no correction is needed
+325.0,530,Saccharum officinarum,LC107875.1,atp6,+,48705..49811,48705..49802,SPGE,SPGE20
+326.0,531,Saccharum officinarum,LC107874.1,atp8_copy1,+,101947..102414,101947..102414,correct,the annotation is correct and no correction is needed
+327.0,532,Saccharum officinarum,LC107874.1,atp8_copy2,+,289665..290132,289665..290132,correct,the annotation is correct and no correction is needed
+328.0,533,Saccharum officinarum,LC107875.1,atp9,+,31012..31290,31012..31236,SPGE,SPGE21
+329.0,534,Saccharum officinarum,LC107874.1,ccmb,-,134772..135392,134772..135392,correct,the annotation is correct and no correction is needed
+330.0,535,Saccharum officinarum,LC107874.1,ccmc,-,80130..80852,80130..80852,correct,the annotation is correct and no correction is needed
+331.0,536,Saccharum officinarum,LC107875.1,ccmfc,+,11682..12436,11682..12436,correct,the annotation is correct and no correction is needed
+332.0,538,Saccharum officinarum,LC107874.1,ccmfn,-,247126..248952,247126..248952,correct,the annotation is correct and no correction is needed
+333.0,539,Saccharum officinarum,LC107875.1,cob,-,121330..122496,121330..122496,correct,the annotation is correct and no correction is needed
+334.0,540,Saccharum officinarum,LC107874.1,cox1,+,111285..112877,111285..112877,correct,the annotation is correct and no correction is needed
+335.0,541,Saccharum officinarum,LC107874.1,cox2,+,120889..121276,120889..121276,correct,the annotation is correct and no correction is needed
+540.0,542,Saccharum officinarum,LC107874.1,cox2,+,122520..122914,122520..122914,correct,the annotation is correct and no correction is needed
+336.0,543,Saccharum officinarum,LC107875.1,cox3,+,59731..60528,59731..60528,correct,the annotation is correct and no correction is needed
+337.0,544,Saccharum officinarum,LC107874.1,matr,-,240831..>242867,240831..>242867,correct,the annotation is correct and no correction is needed
+338.0,545,Saccharum officinarum,LC107874.1,mttb,+,25..840,25..840,correct,the annotation is correct and no correction is needed
+339.0,546,Saccharum officinarum,LC107874.1,nad1,-,164775..165160,164776..165160,SSE,SSE55
+545.0,547,Saccharum officinarum,LC107874.1,nad1,-,149712..149793,149712..149794,SSE,SSE56
+546.0,548,Saccharum officinarum,LC107874.1,nad1,-,148113..148304,148113..148304,correct,the annotation is correct and no correction is needed
+547.0,549,Saccharum officinarum,LC107874.1,nad1,-,74743..74801,74743..74801,correct,the annotation is correct and no correction is needed
+548.0,550,Saccharum officinarum,LC107874.1,nad1,-,240054..240312,240054..240312,correct,the annotation is correct and no correction is needed
+340.0,551,Saccharum officinarum,LC107875.1,nad2,+,191447..191599,191447..191599,correct,the annotation is correct and no correction is needed
+550.0,552,Saccharum officinarum,LC107875.1,nad2,+,192421..192812,192421..192812,correct,the annotation is correct and no correction is needed
+551.0,553,Saccharum officinarum,LC107875.1,nad2,-,89453..89613,89453..89613,correct,the annotation is correct and no correction is needed
+552.0,554,Saccharum officinarum,LC107875.1,nad2,-,87002..87574,87002..87574,correct,the annotation is correct and no correction is needed
+553.0,555,Saccharum officinarum,LC107875.1,nad2,-,85410..85597,85410..85597,correct,the annotation is correct and no correction is needed
+341.0,556,Saccharum officinarum,LC107875.1,nad3,-,52395..52751,52395..52751,correct,the annotation is correct and no correction is needed
+342.0,557,Saccharum officinarum,LC107875.1,nad4,+,132290..132750,132290..132750,correct,the annotation is correct and no correction is needed
+556.0,558,Saccharum officinarum,LC107875.1,nad4,+,134006..134520,134006..134520,correct,the annotation is correct and no correction is needed
+557.0,559,Saccharum officinarum,LC107875.1,nad4,+,137974..138396,137974..138396,correct,the annotation is correct and no correction is needed
+558.0,560,Saccharum officinarum,LC107875.1,nad4,+,141056..141144,141056..141144,correct,the annotation is correct and no correction is needed
+343.0,561,Saccharum officinarum,LC107875.1,nad4l,-,93429..93731,93429..93731,correct,the annotation is correct and no correction is needed
+344.0,562,Saccharum officinarum,LC107874.1,nad5,+,208331..208561,208331..208560,SSE,SSE57
+561.0,563,Saccharum officinarum,LC107874.1,nad5,+,209430..210645,209429..210644,SSE,"SSE58,59"
+562.0,564,Saccharum officinarum,LC107874.1,nad5,-,239670..239690,239671..239691,SSE,"SSE60,61"
+563.0,565,Saccharum officinarum,LC107875.1,nad5,+,5347..5741,5347..5741,correct,the annotation is correct and no correction is needed
+564.0,566,Saccharum officinarum,LC107875.1,nad5,+,6670..6819,6670..6819,correct,the annotation is correct and no correction is needed
+345.0,567,Saccharum officinarum,LC107874.1,nad6,-,159110..159913,159110..159913,correct,the annotation is correct and no correction is needed
+346.0,568,Saccharum officinarum,LC107874.1,nad7,-,63025..63167,63025..63167,correct,the annotation is correct and no correction is needed
+567.0,569,Saccharum officinarum,LC107874.1,nad7,-,62089..62157,62089..62157,correct,the annotation is correct and no correction is needed
+568.0,570,Saccharum officinarum,LC107874.1,nad7,-,60320..60786,60320..60786,correct,the annotation is correct and no correction is needed
+569.0,571,Saccharum officinarum,LC107874.1,nad7,-,59074..59317,59074..59317,correct,the annotation is correct and no correction is needed
+570.0,572,Saccharum officinarum,LC107874.1,nad7,-,57126..57387,57126..57387,correct,the annotation is correct and no correction is needed
+347.0,573,Saccharum officinarum,LC107874.1,nad9,+,29033..29605,29033..29605,correct,the annotation is correct and no correction is needed
+348.0,574,Saccharum officinarum,LC107875.1,rpl16,-,35966..36523,35966..36523,correct,the annotation is correct and no correction is needed
+349.0,575,Saccharum officinarum,LC107874.1,rps1,-,246390..246941,246390..246941,correct,the annotation is correct and no correction is needed
+350.0,576,Saccharum officinarum,LC107875.1,rps12,-,51973..52350,51973..52350,correct,the annotation is correct and no correction is needed
+351.0,577,Saccharum officinarum,LC107874.1,rps13,-,150719..151069,150719..151069,correct,the annotation is correct and no correction is needed
+352.0,578,Saccharum officinarum,LC107874.1,rps2,+,39317..40846,39317..40846,correct,the annotation is correct and no correction is needed
+353.0,579,Saccharum officinarum,LC107875.1,rps3,-,39811..39884,39811..39884,correct,the annotation is correct and no correction is needed
+578.0,580,Saccharum officinarum,LC107875.1,rps3,-,36372..37977,36372..37977,correct,the annotation is correct and no correction is needed
+354.0,581,Saccharum officinarum,LC107875.1,rps4,+,69541..70692,69541..70692,correct,the annotation is correct and no correction is needed
+355.0,582,Saccharum officinarum,LC107874.1,rps7,-,69266..69712,69266..69712,correct,the annotation is correct and no correction is needed
+356.0,583,Aglaia odorata,OR680718.1,atp1,-,305391..306917,305391..306917,correct,the annotation is correct and no correction is needed
+357.0,584,Aglaia odorata,OR680718.1,atp4,+,358491..358982,358491..358982,correct,the annotation is correct and no correction is needed
+358.0,585,Aglaia odorata,OR680718.1,atp6,-,193811..194530,193811..194530,correct,the annotation is correct and no correction is needed
+359.0,586,Aglaia odorata,OR680718.1,atp8,-,286826..287317,286826..287317,correct,the annotation is correct and no correction is needed
+360.0,587,Aglaia odorata,OR680718.1,atp9,-,469441..469665,469441..469665,correct,the annotation is correct and no correction is needed
+361.0,588,Aglaia odorata,OR680718.1,ccmb,-,160555..161175,160555..161175,correct,the annotation is correct and no correction is needed
+362.0,589,Aglaia odorata,OR680718.1,ccmc,+,360726..361478,360726..361478,correct,the annotation is correct and no correction is needed
+363.0,590,Aglaia odorata,OR680718.1,ccmfc,+,176000..176775,176000..176775,correct,the annotation is correct and no correction is needed
+364.0,592,Aglaia odorata,OR680718.1,ccmfn,-,369536..371266,369536..371266,correct,the annotation is correct and no correction is needed
+365.0,593,Aglaia odorata,OR680718.1,cob,+,207424..208605,207424..208605,correct,the annotation is correct and no correction is needed
+366.0,594,Aglaia odorata,OR680718.1,cox1,-,463281..464006,463281..464006,correct,the annotation is correct and no correction is needed
+367.0,596,Aglaia odorata,OR680718.1,cox2,+,32102..32801,32102..32801,correct,the annotation is correct and no correction is needed
+368.0,598,Aglaia odorata,OR680718.1,cox3,-,284812..285609,284812..285609,correct,the annotation is correct and no correction is needed
+369.0,599,Aglaia odorata,OR680718.1,matr,+,272796..274769,272796..274769,correct,the annotation is correct and no correction is needed
+370.0,600,Aglaia odorata,OR680718.1,mttb,+,109824..110612,109824..110612,correct,the annotation is correct and no correction is needed
+371.0,601,Aglaia odorata,OR680718.1,nad1,+,156225..156609,156225..156609,correct,the annotation is correct and no correction is needed
+372.0,606,Aglaia odorata,OR680718.1,nad2,-,223587..223739,223587..223739,correct,the annotation is correct and no correction is needed
+373.0,611,Aglaia odorata,OR680718.1,nad3,-,136942..137298,136942..137298,correct,the annotation is correct and no correction is needed
+374.0,612,Aglaia odorata,OR680718.1,nad4,-,253844..254304,253844..254304,correct,the annotation is correct and no correction is needed
+375.0,613,Aglaia odorata,OR680718.1,nad4,-,251475..252412,251475..252412,correct,the annotation is correct and no correction is needed
+376.0,614,Aglaia odorata,OR680718.1,nad4,-,248589..248677,248589..248677,correct,the annotation is correct and no correction is needed
+377.0,615,Aglaia odorata,OR680718.1,nad4l,-,18098..18400,18098..18400,correct,the annotation is correct and no correction is needed
+378.0,616,Aglaia odorata,OR680718.1,nad5,-,468939..469168,468939..469168,correct,the annotation is correct and no correction is needed
+379.0,621,Aglaia odorata,OR680718.1,nad6,-,42827..43444,42827..43444,correct,the annotation is correct and no correction is needed
+380.0,622,Aglaia odorata,OR680718.1,nad7,-,77063..77205,77063..77205,correct,the annotation is correct and no correction is needed
+381.0,627,Aglaia odorata,OR680718.1,nad9,+,147825..148397,147825..148397,correct,the annotation is correct and no correction is needed
+382.0,628,Aglaia odorata,OR680718.1,rpl10,-,90369..90857,90369..90857,correct,the annotation is correct and no correction is needed
+383.0,629,Aglaia odorata,OR680718.1,rpl16,+,395638..396072,395638..396072,correct,the annotation is correct and no correction is needed
+384.0,630,Aglaia odorata,OR680718.1,rpl2,-,77799..78824,77799..78824,correct,the annotation is correct and no correction is needed
+385.0,631,Aglaia odorata,OR680718.1,rpl5,-,533680..534234,533680..534234,correct,the annotation is correct and no correction is needed
+386.0,632,Aglaia odorata,OR680718.1,rps1,-,385535..386140,385535..386140,correct,the annotation is correct and no correction is needed
+387.0,633,Aglaia odorata,OR680718.1,rps10,-,465175..465505,465175..465505,correct,the annotation is correct and no correction is needed
+388.0,635,Aglaia odorata,OR680718.1,rps12,-,136515..136892,136515..136892,correct,the annotation is correct and no correction is needed
+389.0,636,Aglaia odorata,OR680718.1,rps3,+,393975..395666,393975..395666,correct,the annotation is correct and no correction is needed
+390.0,637,Aglaia odorata,OR680718.1,rps4,-,98950..100008,98950..100008,correct,the annotation is correct and no correction is needed
+391.0,638,Aglaia odorata,OR680718.1,sdh3,-,224390..224758,224390..224758,correct,the annotation is correct and no correction is needed
+392.0,639,Aglaia odorata,OR680718.1,sdh4,-,284465..284884,284465..284884,correct,the annotation is correct and no correction is needed
+393.0,640,Eucommia ulmoides,OQ101613.1,atp1,+,29404..30933,29404..30933,correct,the annotation is correct and no correction is needed
+394.0,641,Eucommia ulmoides,OQ101613.1,atp4,-,33643..34221,33643..34221,correct,the annotation is correct and no correction is needed
+395.0,642,Eucommia ulmoides,OQ101613.1,atp6,+,245325..246044,245325..246044,correct,the annotation is correct and no correction is needed
+396.0,643,Eucommia ulmoides,OQ101613.1,atp8,-,298113..298637,298113..298637,correct,the annotation is correct and no correction is needed
+397.0,644,Eucommia ulmoides,OQ101613.1,atp9,+,206487..206711,206487..206711,correct,the annotation is correct and no correction is needed
+398.0,645,Eucommia ulmoides,OQ101613.1,ccmb,-,227409..228029,227409..228029,correct,the annotation is correct and no correction is needed
+399.0,646,Eucommia ulmoides,OQ101613.1,ccmc,+,195661..196413,195661..196413,correct,the annotation is correct and no correction is needed
+400.0,647,Eucommia ulmoides,OQ101614.1,ccmfc,+,255..1030,255..1030,correct,the annotation is correct and no correction is needed
+401.0,649,Eucommia ulmoides,OQ101614.1,ccmfn,-,86166..87962,86166..87962,correct,the annotation is correct and no correction is needed
+402.0,650,Eucommia ulmoides,OQ101613.1,cob,-,183296..184477,183296..184477,correct,the annotation is correct and no correction is needed
+403.0,651,Eucommia ulmoides,OQ101613.1,cox1,+,21222..22805,21222..22805,correct,the annotation is correct and no correction is needed
+404.0,652,Eucommia ulmoides,OQ101613.1,cox2,+,145353..145734,145353..145734,correct,the annotation is correct and no correction is needed
+405.0,655,Eucommia ulmoides,OQ101613.1,cox3,-,296349..297146,296349..297146,correct,the annotation is correct and no correction is needed
+406.0,656,Eucommia ulmoides,OQ101613.1,matr,-,85379..87361,85379..87361,correct,the annotation is correct and no correction is needed
+407.0,657,Eucommia ulmoides,OQ101615.1,mttb,-,1690..2574,1690..2574,correct,the annotation is correct and no correction is needed
+408.0,658,Eucommia ulmoides,OQ101613.1,nad1,-,155667..156051,155667..156051,correct,the annotation is correct and no correction is needed
+409.0,663,Eucommia ulmoides,OQ101613.1,nad2,+,214525..214677,214525..214677,correct,the annotation is correct and no correction is needed
+500.0,668,Eucommia ulmoides,OQ101613.1,nad3,-,323875..324231,323875..324231,correct,the annotation is correct and no correction is needed
+501.0,669,Eucommia ulmoides,OQ101613.1,nad4,+,162992..163452,162992..163452,correct,the annotation is correct and no correction is needed
+502.0,673,Eucommia ulmoides,OQ101613.1,nad4l,-,34380..34682,34380..34682,correct,the annotation is correct and no correction is needed
+503.0,674,Eucommia ulmoides,OQ101613.1,nad5,+,238960..239189,238960..239189,correct,the annotation is correct and no correction is needed
+504.0,679,Eucommia ulmoides,OQ101614.1,nad6,+,35677..36300,35677..36300,correct,the annotation is correct and no correction is needed
+505.0,680,Eucommia ulmoides,OQ101613.1,nad7,+,72035..72177,72035..72177,correct,the annotation is correct and no correction is needed
+506.0,685,Eucommia ulmoides,OQ101613.1,nad9,+,207378..207950,207378..207950,correct,the annotation is correct and no correction is needed
+507.0,686,Eucommia ulmoides,OQ101613.1,rpl10,+,225906..226397,225906..226397,correct,the annotation is correct and no correction is needed
+508.0,687,Eucommia ulmoides,OQ101613.1,rpl5,-,185900..186388,185900..186463,correct,
+509.0,688,Eucommia ulmoides,OQ101613.1,rps1,-,328795..329397,328795..329397,correct,the annotation is correct and no correction is needed
+510.0,689,Eucommia ulmoides,OQ101613.1,rps10,+,19722..20031,19722..20031,correct,the annotation is correct and no correction is needed
+511.0,691,Eucommia ulmoides,OQ101613.1,rps12,-,323449..323826,323449..323826,correct,the annotation is correct and no correction is needed
+512.0,692,Eucommia ulmoides,OQ101614.1,rps13,-,57782..58132,57782..58132,correct,the annotation is correct and no correction is needed
+513.0,693,Eucommia ulmoides,OQ101613.1,rps14,-,185596..185898,185596..185898,correct,the annotation is correct and no correction is needed
+514.0,694,Eucommia ulmoides,OQ101613.1,rps19,+,18294..18578,18294..18578,correct,the annotation is correct and no correction is needed
+515.0,695,Eucommia ulmoides,OQ101613.1,rps3,+,174413..174486,174413..174486,correct,the annotation is correct and no correction is needed
+516.0,697,Eucommia ulmoides,OQ101614.1,rps4,+,33934..35013,33934..35013,correct,the annotation is correct and no correction is needed
+517.0,698,Eucommia ulmoides,OQ101613.1,rps7,+,305805..306251,305805..306251,correct,the annotation is correct and no correction is needed
+518.0,699,Eucommia ulmoides,OQ101613.1,sdh3,+,213574..213891,213574..213891,correct,the annotation is correct and no correction is needed
+519.0,700,Eucommia ulmoides,OQ101613.1,sdh4,-,295966..296421,295966..296421,correct,the annotation is correct and no correction is needed
+520.0,701,Gossypium hirsutum,NC_027406.1,atp1,+,616317..617840,616317..617840,correct,the annotation is correct and no correction is needed
+521.0,702,Gossypium hirsutum,NC_027406.1,atp4,-,463013..463597,463013..463597,correct,the annotation is correct and no correction is needed
+522.0,703,Lagenaria siceraria,OR680814.1,atp1,+,31468..32997,31468..32997,correct,the annotation is correct and no correction is needed
+523.0,704,Lagenaria siceraria,OR680814.1,atp4,-,5829..6425,5829..6425,correct,the annotation is correct and no correction is needed
+524.0,705,Lagenaria siceraria,OR680814.1,atp6,+,53075..53794,53075..53794,correct,the annotation is correct and no correction is needed
+525.0,706,Lagenaria siceraria,OR680814.1,atp8,+,300954..301433,300954..301433,correct,the annotation is correct and no correction is needed
+526.0,707,Lagenaria siceraria,OR680814.1,atp9,+,324266..324490,324266..324490,correct,the annotation is correct and no correction is needed
+527.0,708,Lagenaria siceraria,OR680814.1,ccmb,+,192361..192981,192361..192981,correct,the annotation is correct and no correction is needed
+528.0,709,Lagenaria siceraria,OR680814.1,ccmc,-,3481..4179,3481..4179,correct,the annotation is correct and no correction is needed
+529.0,710,Lagenaria siceraria,OR680814.1,ccmfc,-,335840..336606,335840..336606,correct,the annotation is correct and no correction is needed
+530.0,712,Lagenaria siceraria,OR680814.1,ccmfn,-,24938..26671,24938..26671,correct,the annotation is correct and no correction is needed
+531.0,713,Lagenaria siceraria,OR680814.1,cob,-,169724..170896,169724..170896,correct,the annotation is correct and no correction is needed
+532.0,714,Lagenaria siceraria,OR680814.1,cox1,-,112581..114164,112581..114164,correct,the annotation is correct and no correction is needed
+533.0,715,Lagenaria siceraria,OR680814.1,cox2,-,110637..111336,110637..111336,correct,the annotation is correct and no correction is needed
+534.0,717,Lagenaria siceraria,OR680814.1,cox3,+,302046..302843,302046..302843,correct,the annotation is correct and no correction is needed
+535.0,718,Lagenaria siceraria,OR680814.1,matr,-,207018..208964,207018..208964,correct,the annotation is correct and no correction is needed
+536.0,719,Lagenaria siceraria,OR680814.1,mttb,+,184982..185830,184982..185830,correct,the annotation is correct and no correction is needed
+537.0,720,Lagenaria siceraria,OR680814.1,nad1,-,103212..103596,103212..103596,correct,the annotation is correct and no correction is needed
+538.0,725,Lagenaria siceraria,OR680814.1,nad2,+,264010..264162,264010..264162,correct,the annotation is correct and no correction is needed
+539.0,730,Lagenaria siceraria,OR680814.1,nad3,+,51051..51407,51051..51407,correct,the annotation is correct and no correction is needed
+540.0,731,Lagenaria siceraria,OR680814.1,nad4,-,89240..89700,89240..89700,correct,the annotation is correct and no correction is needed
+541.0,735,Lagenaria siceraria,OR680814.1,nad4l,-,6641..6943,6641..6943,correct,the annotation is correct and no correction is needed
+542.0,736,Lagenaria siceraria,OR680814.1,nad5,+,324787..325016,324787..325016,correct,the annotation is correct and no correction is needed
+543.0,741,Lagenaria siceraria,OR680814.1,nad6,+,249009..249626,249009..249626,correct,the annotation is correct and no correction is needed
+544.0,742,Lagenaria siceraria,OR680814.1,nad7,+,236915..237057,236915..237057,correct,the annotation is correct and no correction is needed
+545.0,747,Lagenaria siceraria,OR680814.1,nad9,-,149541..150113,149541..150113,correct,the annotation is correct and no correction is needed
+546.0,748,Lagenaria siceraria,OR680814.1,rpl16,-,339472..339906,339472..339906,correct,the annotation is correct and no correction is needed
+547.0,749,Lagenaria siceraria,OR680814.1,rpl2,-,345576..346462,345576..346462,correct,the annotation is correct and no correction is needed
+548.0,751,Lagenaria siceraria,OR680814.1,rpl5,-,171821..172378,171821..172378,correct,the annotation is correct and no correction is needed
+549.0,752,Lagenaria siceraria,OR680814.1,rps1,-,162589..163194,162589..163194,correct,the annotation is correct and no correction is needed
+550.0,753,Lagenaria siceraria,OR680814.1,rps10,-,115341..115650,115341..115650,correct,the annotation is correct and no correction is needed
+551.0,755,Lagenaria siceraria,OR680814.1,rps12,+,51456..51833,51456..51833,correct,the annotation is correct and no correction is needed
+552.0,756,Lagenaria siceraria,OR680814.1,rps13,+,39577..39927,39577..39927,correct,the annotation is correct and no correction is needed
+553.0,757,Lagenaria siceraria,OR680814.1,rps19,-,343341..343619,343341..343619,correct,the annotation is correct and no correction is needed
+554.0,758,Lagenaria siceraria,OR680814.1,rps3,-,343249..343322,343249..343322,correct,the annotation is correct and no correction is needed
+555.0,760,Lagenaria siceraria,OR680814.1,rps4,-,7586..8632,7586..8632,correct,the annotation is correct and no correction is needed
+556.0,761,Lagenaria siceraria,OR680814.1,rps7,-,67433..67879,67433..67879,correct,the annotation is correct and no correction is needed
+557.0,762,Lagenaria siceraria,OR680814.1,sdh3,+,263106..263414,263106..263414,correct,the annotation is correct and no correction is needed
+558.0,763,Lagenaria siceraria,OR680814.1,sdh4,+,302771..303178,302771..303178,correct,the annotation is correct and no correction is needed
+559.0,764,Paeonia lactiflora,NC_070189.1,atp1,+,171152..172693,171152..172693,correct,the annotation is correct and no correction is needed
+560.0,765,Paeonia lactiflora,NC_070189.1,atp4,+,86515..87111,86515..87111,correct,the annotation is correct and no correction is needed
+561.0,766,Paeonia lactiflora,NC_070189.1,atp6,-,40887..41558,40887..41558,correct,the annotation is correct and no correction is needed
+562.0,767,Paeonia lactiflora,NC_070189.1,atp8,-,125522..126001,125522..126001,correct,the annotation is correct and no correction is needed
+563.0,768,Paeonia lactiflora,NC_070189.1,atp9,+,31317..31610,31317..31610,correct,the annotation is correct and no correction is needed
+564.0,769,Paeonia lactiflora,NC_070189.1,ccmb,+,153149..153769,153149..153769,correct,the annotation is correct and no correction is needed
+565.0,770,Paeonia lactiflora,NC_070189.1,ccmc,+,110869..111621,110869..111621,correct,the annotation is correct and no correction is needed
+566.0,771,Paeonia lactiflora,NC_070189.1,ccmfc,-,2588..3351,2588..3351,correct,the annotation is correct and no correction is needed
+567.0,773,Paeonia lactiflora,NC_070189.1,ccmfn,-,88708..90462,88708..90462,correct,the annotation is correct and no correction is needed
+568.0,774,Paeonia lactiflora,NC_070189.1,cob,-,48113..49294,48113..49294,correct,the annotation is correct and no correction is needed
+569.0,775,Paeonia lactiflora,NC_070189.1,cox1,-,3739..5322,3739..5322,correct,the annotation is correct and no correction is needed
+570.0,776,Paeonia lactiflora,NC_070189.1,cox2,+,84723..85499,84723..85499,correct,the annotation is correct and no correction is needed
+571.0,777,Paeonia lactiflora,NC_070189.1,cox3,-,124120..124917,124120..124917,correct,the annotation is correct and no correction is needed
+572.0,778,Paeonia lactiflora,NC_070189.1,matr,+,150703..152679,150703..152679,correct,the annotation is correct and no correction is needed
+573.0,779,Paeonia lactiflora,NC_070189.1,mttb,-,38027..38815,38027..38815,correct,the annotation is correct and no correction is needed
+574.0,780,Paeonia lactiflora,NC_070189.1,nad1,+,156434..156818,156434..156818,correct,the annotation is correct and no correction is needed
+575.0,785,Paeonia lactiflora,NC_070189.1,nad2,+,97575..97727,97575..97727,correct,the annotation is correct and no correction is needed
+576.0,790,Paeonia lactiflora,NC_070189.1,nad3,-,65683..66039,65683..66039,correct,the annotation is correct and no correction is needed
+577.0,791,Paeonia lactiflora,NC_070189.1,nad4,-,143892..144352,143892..144352,correct,the annotation is correct and no correction is needed
+578.0,795,Paeonia lactiflora,NC_070189.1,nad4l,+,86014..86286,85984..86286,STGE,STGE5
+579.0,796,Paeonia lactiflora,NC_070189.1,nad5,+,31868..32097,31868..32097,correct,the annotation is correct and no correction is needed
+580.0,801,Paeonia lactiflora,NC_070189.1,nad6,-,19514..20131,19514..20131,correct,the annotation is correct and no correction is needed
+581.0,802,Paeonia lactiflora,NC_070189.1,nad7,+,112849..112991,112849..112991,correct,the annotation is correct and no correction is needed
+582.0,807,Paeonia lactiflora,NC_070189.1,nad9,-,178220..178792,178220..178792,correct,the annotation is correct and no correction is needed
+583.0,808,Paeonia lactiflora,NC_070189.1,rpl5,-,50833..51384,50833..51384,correct,the annotation is correct and no correction is needed
+584.0,809,Paeonia lactiflora,NC_070189.1,rps12,-,65256..65633,65256..65633,correct,the annotation is correct and no correction is needed
+585.0,810,Paeonia lactiflora,NC_070189.1,rps4,-,20800..21816,20800..21816,correct,the annotation is correct and no correction is needed
+586.0,811,Pontederia crassipes,OR680719.1,atp1,+,126454..127983,126454..127983,correct,the annotation is correct and no correction is needed
+587.0,812,Pontederia crassipes,OR680719.1,atp4,-,109926..110507,109926..110507,correct,the annotation is correct and no correction is needed
+588.0,813,Pontederia crassipes,OR680719.1,atp6,-,293127..293846,293127..293846,correct,the annotation is correct and no correction is needed
+589.0,814,Pontederia crassipes,OR680719.1,atp8,-,308389..308859,308389..308859,correct,the annotation is correct and no correction is needed
+590.0,815,Pontederia crassipes,OR680719.1,atp9_copy1,-,124271..124495,124271..124495,correct,the annotation is correct and no correction is needed
+591.0,816,Pontederia crassipes,OR680719.1,atp9_copy2,+,341660..341884,341660..341884,correct,the annotation is correct and no correction is needed
+592.0,817,Pontederia crassipes,OR680719.1,ccmb,+,148750..149370,148750..149370,correct,the annotation is correct and no correction is needed
+593.0,818,Pontederia crassipes,OR680719.1,ccmc,-,282599..283321,282599..283321,correct,the annotation is correct and no correction is needed
+594.0,819,Pontederia crassipes,OR680719.1,ccmfc,+,106251..107008,106251..107008,correct,the annotation is correct and no correction is needed
+595.0,821,Pontederia crassipes,OR680719.1,ccmfn,+,252826..254610,252826..254610,correct,the annotation is correct and no correction is needed
+596.0,822,Pontederia crassipes,OR680719.1,cob,-,172640..173812,172640..173812,correct,the annotation is correct and no correction is needed
+597.0,823,Pontederia crassipes,OR680719.1,cox1,+,297465..299048,297465..299048,correct,the annotation is correct and no correction is needed
+598.0,824,Pontederia crassipes,OR680719.1,cox2,-,95957..96332,95957..96332,correct,the annotation is correct and no correction is needed
+599.0,826,Pontederia crassipes,OR680719.1,cox3,-,26358..27155,26358..27155,correct,the annotation is correct and no correction is needed
+600.0,827,Pontederia crassipes,OR680719.1,matr,-,310064..312040,310064..312040,correct,the annotation is correct and no correction is needed
+601.0,828,Pontederia crassipes,OR680719.1,mttb,+,255426..256247,255426..256247,correct,the annotation is correct and no correction is needed
+602.0,829,Pontederia crassipes,OR680719.1,nad1,+,337964..338348,337964..338348,correct,the annotation is correct and no correction is needed
+603.0,834,Pontederia crassipes,OR680719.1,nad2,+,273549..273701,273549..273701,correct,the annotation is correct and no correction is needed
+604.0,839,Pontederia crassipes,OR680719.1,nad3,+,23148..23504,23148..23504,correct,the annotation is correct and no correction is needed
+605.0,840,Pontederia crassipes,OR680719.1,nad4,+,136093..136553,136093..136553,correct,the annotation is correct and no correction is needed
+606.0,844,Pontederia crassipes,OR680719.1,nad4l,-,110657..110959,110657..110959,correct,the annotation is correct and no correction is needed
+607.0,845,Pontederia crassipes,OR680719.1,nad5,+,45218..45447,45218..45447,correct,the annotation is correct and no correction is needed
+608.0,850,Pontederia crassipes,OR680719.1,nad6,-,290928..291551,290928..291551,correct,the annotation is correct and no correction is needed
+609.0,851,Pontederia crassipes,OR680719.1,nad7,-,181920..182062,181920..182062,correct,the annotation is correct and no correction is needed
+610.0,856,Pontederia crassipes,OR680719.1,nad9,+,368115..368687,368115..368687,correct,the annotation is correct and no correction is needed
+611.0,857,Pontederia crassipes,OR680719.1,rpl16,-,385402..385836,385402..385836,correct,the annotation is correct and no correction is needed
+612.0,858,Pontederia crassipes,OR680719.1,rpl2,-,391939..392912,391939..392912,correct,the annotation is correct and no correction is needed
+613.0,860,Pontederia crassipes,OR680719.1,rpl5,-,175008..175559,175008..175559,correct,the annotation is correct and no correction is needed
+614.0,861,Pontederia crassipes,OR680719.1,rps1,+,32859..33539,32859..33539,correct,the annotation is correct and no correction is needed
+615.0,862,Pontederia crassipes,OR680719.1,rps10,+,33827..34079,33827..34079,correct,the annotation is correct and no correction is needed
+616.0,864,Pontederia crassipes,OR680719.1,rps12,+,23549..23926,23549..23926,correct,the annotation is correct and no correction is needed
+617.0,865,Pontederia crassipes,OR680719.1,rps13,+,299189..299539,299189..299539,correct,the annotation is correct and no correction is needed
+618.0,866,Pontederia crassipes,OR680719.1,rps14,-,174704..175006,174704..175006,correct,the annotation is correct and no correction is needed
+619.0,867,Pontederia crassipes,OR680719.1,rps2,+,351705..352625,351705..352625,correct,the annotation is correct and no correction is needed
+620.0,868,Pontederia crassipes,OR680719.1,rps3,-,389368..389441,389368..389441,correct,the annotation is correct and no correction is needed
+621.0,870,Pontederia crassipes,OR680719.1,rps4,+,332583..333605,332583..333605,correct,the annotation is correct and no correction is needed
+622.0,871,Pontederia crassipes,OR680719.1,rps7,-,353816..354262,353816..354262,correct,the annotation is correct and no correction is needed
+623.0,872,Pontederia crassipes,OR680719.1,sdh4,-,26224..26430,26224..26430,correct,the annotation is correct and no correction is needed
+624.0,873,Punica granatum,OP874592.1,atp1,+,127879..129414,127879..129414,correct,the annotation is correct and no correction is needed
+625.0,874,Punica granatum,OP874592.1,atp4,+,188751..189347,188751..189347,correct,the annotation is correct and no correction is needed
+626.0,875,Punica granatum,OP874592.1,atp6,+,268905..269624,268905..269624,correct,the annotation is correct and no correction is needed
+627.0,876,Punica granatum,OP874592.1,atp8,-,193138..193617,193138..193617,correct,the annotation is correct and no correction is needed
+628.0,877,Punica granatum,OP874592.1,atp9_copy1,+,14812..15036,14812..15036,correct,the annotation is correct and no correction is needed
+629.0,878,Punica granatum,OP874592.1,atp9_copy2,+,110196..110420,110196..110420,correct,the annotation is correct and no correction is needed
+630.0,879,Punica granatum,OP874592.1,ccmb,-,235802..236422,235802..236422,correct,the annotation is correct and no correction is needed
+631.0,880,Punica granatum,OP874592.1,ccmc,-,198931..199683,198931..199683,correct,the annotation is correct and no correction is needed
+632.0,881,Punica granatum,OP874592.1,ccmfc,+,249044..249810,249044..249810,correct,the annotation is correct and no correction is needed
+633.0,883,Punica granatum,OP874592.1,ccmfn,-,161895..163631,161895..163631,correct,the annotation is correct and no correction is needed
+634.0,884,Punica granatum,OP874592.1,cob,+,227027..228916,227027..228916,correct,the annotation is correct and no correction is needed
+635.0,885,Punica granatum,OP874592.1,cox1,+,336423..338006,336423..338006,correct,the annotation is correct and no correction is needed
+636.0,886,Punica granatum,OP874592.1,cox2,+,376269..376968,376269..376968,correct,the annotation is correct and no correction is needed
+637.0,888,Punica granatum,OP874592.1,cox3,-,191960..192757,191960..192757,correct,the annotation is correct and no correction is needed
+638.0,889,Punica granatum,OP874592.1,matr,+,260648..262573,260648..262573,correct,the annotation is correct and no correction is needed
+639.0,890,Punica granatum,OP874592.1,mttb_copy1,+,76217..76972,76217..76972,correct,the annotation is correct and no correction is needed
+640.0,891,Punica granatum,OP874592.1,mttb_copy2,-,402965..403720,402965..403720,correct,the annotation is correct and no correction is needed
+641.0,892,Punica granatum,OP874592.1,nad1,-,282203..282587,282203..282587,correct,the annotation is correct and no correction is needed
+642.0,897,Punica granatum,OP874592.1,nad2,+,121652..121804,121652..121804,correct,the annotation is correct and no correction is needed
+643.0,902,Punica granatum,OP874592.1,nad3,+,173454..173810,173454..173810,correct,the annotation is correct and no correction is needed
+644.0,903,Punica granatum,OP874592.1,nad4,-,152630..153090,152630..153090,correct,the annotation is correct and no correction is needed
+645.0,907,Punica granatum,OP874592.1,nad4l,+,188263..188565,188263..188565,correct,the annotation is correct and no correction is needed
+646.0,908,Punica granatum,OP874592.1,nad5,+,110715..110944,110715..110944,correct,the annotation is correct and no correction is needed
+647.0,913,Punica granatum,OP874592.1,nad6,-,48637..49254,48637..49254,correct,the annotation is correct and no correction is needed
+648.0,914,Punica granatum,OP874592.1,nad7,-,353657..353799,353657..353799,correct,the annotation is correct and no correction is needed
+649.0,919,Punica granatum,OP874592.1,nad9,+,180140..180712,180140..180712,correct,the annotation is correct and no correction is needed
+650.0,920,Punica granatum,OP874592.1,rpl10,+,234990..235478,234990..235478,correct,the annotation is correct and no correction is needed
+651.0,921,Punica granatum,OP874592.1,rpl16,+,291000..291434,291000..291434,correct,the annotation is correct and no correction is needed
+652.0,922,Punica granatum,OP874592.1,rpl2,+,52364..53256,52364..53256,correct,the annotation is correct and no correction is needed
+653.0,924,Punica granatum,OP874592.1,rpl5,+,225246..225809,225246..225809,correct,the annotation is correct and no correction is needed
+654.0,925,Punica granatum,OP874592.1,rps1,-,372547..373170,372547..373170,correct,the annotation is correct and no correction is needed
+655.0,926,Punica granatum,OP874592.1,rps10_copy1,+,73429..73678,73429..73678,correct,the annotation is correct and no correction is needed
+656.0,928,Punica granatum,OP874592.1,rps10_copy2,+,335051..335300,335051..335300,correct,the annotation is correct and no correction is needed
+657.0,930,Punica granatum,OP874592.1,rps12,+,173859..174236,173859..174236,correct,the annotation is correct and no correction is needed
+658.0,931,Punica granatum,OP874592.1,rps14,+,225811..226113,225811..226113,correct,the annotation is correct and no correction is needed
+659.0,932,Punica granatum,OP874592.1,rps19,+,287367..287651,287367..287651,correct,the annotation is correct and no correction is needed
+660.0,933,Punica granatum,OP874592.1,rps3,+,287665..287738,287665..287738,correct,the annotation is correct and no correction is needed
+661.0,935,Punica granatum,OP874592.1,rps4,-,49883..50929,49883..50929,correct,the annotation is correct and no correction is needed
+662.0,936,Punica granatum,OP874592.1,rps7,-,83604..84050,83604..84050,correct,the annotation is correct and no correction is needed
+663.0,937,Punica granatum,OP874592.1,sdh4,-,191499..192032,191499..192032,correct,the annotation is correct and no correction is needed
+664.0,938,Quercus acutissima,ON398338.1,atp1,+,39190..40719,39190..40719,correct,the annotation is correct and no correction is needed
+665.0,939,Quercus acutissima,ON398339.1,atp4,-,41147..41743,41147..41743,correct,the annotation is correct and no correction is needed
+666.0,940,Quercus acutissima,ON398338.1,atp6,+,109458..110438,109458..110438,correct,the annotation is correct and no correction is needed
+667.0,941,Quercus acutissima,ON398338.1,atp8,-,10553..11032,10553..11032,correct,the annotation is correct and no correction is needed
+668.0,942,Quercus acutissima,ON398339.1,atp9,-,81869..82093,81869..82093,correct,the annotation is correct and no correction is needed
+669.0,943,Quercus acutissima,ON398338.1,ccmb,-,41939..42559,41939..42559,correct,the annotation is correct and no correction is needed
+670.0,944,Quercus acutissima,ON398338.1,ccmc,-,127574..128326,127574..128326,correct,the annotation is correct and no correction is needed
+671.0,945,Quercus acutissima,ON398339.1,ccmfc,-,116123..116889,116123..116889,correct,the annotation is correct and no correction is needed
+672.0,947,Quercus acutissima,ON398338.1,ccmfn,+,50381..52174,50381..52174,correct,the annotation is correct and no correction is needed
+673.0,948,Quercus acutissima,ON398338.1,cob,+,65126..66307,65126..66307,correct,the annotation is correct and no correction is needed
+674.0,949,Quercus acutissima,ON398339.1,cox1,-,184143..185726,184143..185726,correct,the annotation is correct and no correction is needed
+675.0,950,Quercus acutissima,ON398338.1,cox2,+,147870..148569,147870..148569,correct,the annotation is correct and no correction is needed
+676.0,952,Quercus acutissima,ON398338.1,cox3,-,9133..9930,9133..9930,correct,the annotation is correct and no correction is needed
+677.0,953,Quercus acutissima,ON398339.1,matr,+,96823..98790,96823..98790,correct,the annotation is correct and no correction is needed
+678.0,954,Quercus acutissima,ON398340.1,mttb,-,2749..3537,2749..3537,correct,the annotation is correct and no correction is needed
+679.0,955,Quercus acutissima,ON398339.1,nad1,-,31870..32254,31870..32254,correct,the annotation is correct and no correction is needed
+680.0,960,Quercus acutissima,ON398339.1,nad2,-,172172..172324,172172..172324,correct,the annotation is correct and no correction is needed
+681.0,965,Quercus acutissima,ON398339.1,nad3,+,16189..16545,16189..16545,correct,the annotation is correct and no correction is needed
+682.0,966,Quercus acutissima,ON398338.1,nad4,+,137230..137690,137230..137690,correct,the annotation is correct and no correction is needed
+683.0,970,Quercus acutissima,ON398339.1,nad4l,-,41929..42231,41929..42231,correct,the annotation is correct and no correction is needed
+684.0,971,Quercus acutissima,ON398339.1,nad5,-,81339..81568,81339..81568,correct,the annotation is correct and no correction is needed
+685.0,976,Quercus acutissima,ON398338.1,nad6,-,80757..81374,80757..81374,correct,the annotation is correct and no correction is needed
+686.0,977,Quercus acutissima,ON398338.1,nad7,+,160495..160637,160495..160637,correct,the annotation is correct and no correction is needed
+687.0,982,Quercus acutissima,ON398339.1,nad9,-,143213..143785,143213..143785,correct,the annotation is correct and no correction is needed
+688.0,983,Quercus acutissima,ON398338.1,rpl10,+,41132..41620,41132..41620,correct,the annotation is correct and no correction is needed
+689.0,984,Quercus acutissima,ON398339.1,rpl16,-,119799..120233,119799..120233,correct,the annotation is correct and no correction is needed
+690.0,985,Quercus acutissima,ON398338.1,rpl2,-,130901..131797,130901..131797,correct,the annotation is correct and no correction is needed
+691.0,986,Quercus acutissima,ON398338.1,rpl5,+,63244..63801,63244..63801,correct,the annotation is correct and no correction is needed
+692.0,987,Quercus acutissima,ON398339.1,rps12,+,16594..16971,16594..16971,correct,the annotation is correct and no correction is needed
+693.0,988,Quercus acutissima,ON398339.1,rps19,-,123504..123851,123504..123851,correct,the annotation is correct and no correction is needed
+694.0,989,Quercus acutissima,ON398339.1,rps3,-,123480..123553,123480..123553,correct,the annotation is correct and no correction is needed
+695.0,991,Quercus acutissima,ON398339.1,sdh3,-,172971..173480,172971..173480,correct,the annotation is correct and no correction is needed
+696.0,992,Quercus acutissima,ON398338.1,sdh4,-,8747..9205,8747..9205,correct,the annotation is correct and no correction is needed
+697.0,993,Solanum muricatum,OR501824.1,atp1,+,381149..382684,381149..382684,correct,the annotation is correct and no correction is needed
+698.0,994,Solanum muricatum,OR501824.1,atp4,+,48076..48672,48076..48672,correct,the annotation is correct and no correction is needed
+699.0,995,Solanum muricatum,OR501824.1,atp6,+,420857..422044,420857..422044,correct,the annotation is correct and no correction is needed
+700.0,996,Solanum muricatum,OR501824.1,atp8,-,82503..82973,82503..82973,correct,the annotation is correct and no correction is needed
+701.0,997,Solanum muricatum,OR501824.1,atp9,-,343175..343399,343175..343399,correct,the annotation is correct and no correction is needed
+702.0,998,Solanum muricatum,OR501824.1,ccmb,-,399369..399989,399369..399989,correct,the annotation is correct and no correction is needed
+703.0,999,Solanum muricatum,OR501824.1,ccmc,-,332556..333383,332556..333383,correct,the annotation is correct and no correction is needed
+704.0,1000,Solanum muricatum,OR501824.1,ccmfc,+,393178..393944,393178..393944,correct,the annotation is correct and no correction is needed
+705.0,1002,Solanum muricatum,OR501824.1,ccmfn,+,299444..301213,299444..301213,correct,the annotation is correct and no correction is needed
+706.0,1003,Solanum muricatum,OR501824.1,cob,+,2879..4060,2879..4060,correct,the annotation is correct and no correction is needed
+707.0,1004,Solanum muricatum,OR501824.1,cox1,+,295229..296812,295229..296812,correct,the annotation is correct and no correction is needed
+708.0,1005,Solanum muricatum,OR501824.1,cox2_copy1,+,44572..44953,44572..44953,correct,the annotation is correct and no correction is needed
+709.0,1008,Solanum muricatum,OR501824.1,cox2_copy2,-,182013..182398,182013..182398,correct,the annotation is correct and no correction is needed
+710.0,1011,Solanum muricatum,OR501824.1,cox3,-,81068..81865,81068..81865,correct,the annotation is correct and no correction is needed
+711.0,1012,Solanum muricatum,OR501824.1,matr,+,231525..233483,231525..233483,correct,the annotation is correct and no correction is needed
+712.0,1013,Solanum muricatum,OR501824.1,mttb,+,112908..113747,112908..113747,correct,the annotation is correct and no correction is needed
+713.0,1014,Solanum muricatum,OR501824.1,nad1,-,28376..28760,28376..28760,correct,the annotation is correct and no correction is needed
+714.0,1019,Solanum muricatum,OR501824.1,nad2,-,172520..172672,172520..172672,correct,the annotation is correct and no correction is needed
+715.0,1024,Solanum muricatum,OR501824.1,nad3,-,84674..85030,84674..85030,correct,the annotation is correct and no correction is needed
+716.0,1025,Solanum muricatum,OR501824.1,nad4,-,156280..156740,156280..156740,correct,the annotation is correct and no correction is needed
+717.0,1029,Solanum muricatum,OR501824.1,nad4l,+,47585..47887,47585..47887,correct,the annotation is correct and no correction is needed
+718.0,1030,Solanum muricatum,OR501824.1,nad5,+,91744..91973,91744..91973,correct,the annotation is correct and no correction is needed
+719.0,1035,Solanum muricatum,OR501824.1,nad6,-,213371..214024,213371..214024,correct,the annotation is correct and no correction is needed
+720.0,1036,Solanum muricatum,OR501824.1,nad7,-,356655..356797,356655..356797,correct,the annotation is correct and no correction is needed
+721.0,1040,Solanum muricatum,OR501824.1,nad9,+,416643..417215,416643..417215,correct,the annotation is correct and no correction is needed
+722.0,1041,Solanum muricatum,OR501824.1,rpl10,-,180702..181181,180702..181181,correct,the annotation is correct and no correction is needed
+723.0,1042,Solanum muricatum,OR501824.1,rpl16_copy1,+,43888..44322,43888..44322,correct,the annotation is correct and no correction is needed
+724.0,1043,Solanum muricatum,OR501824.1,rpl16_copy2,-,336591..337025,336591..337025,correct,the annotation is correct and no correction is needed
+725.0,1044,Solanum muricatum,OR501824.1,rpl2,-,427723..428606,427723..428606,correct,the annotation is correct and no correction is needed
+726.0,1046,Solanum muricatum,OR501824.1,rpl5,+,668..1216,668..1216,correct,the annotation is correct and no correction is needed
+727.0,1047,Solanum muricatum,OR501824.1,rps1,+,320372..320872,320273..320872,correct,
+728.0,1048,Solanum muricatum,OR501824.1,rps10,+,293842..294148,293842..294148,correct,the annotation is correct and no correction is needed
+729.0,1050,Solanum muricatum,OR501824.1,rps12,-,84248..84625,84248..84625,correct,the annotation is correct and no correction is needed
+730.0,1051,Solanum muricatum,OR501824.1,rps13,-,374245..374595,374245..374595,correct,the annotation is correct and no correction is needed
+731.0,1052,Solanum muricatum,OR501824.1,rps19,+,40857..41141,40857..41141,correct,the annotation is correct and no correction is needed
+732.0,1053,Solanum muricatum,OR501824.1,rps19,-,339772..340056,339772..340056,correct,the annotation is correct and no correction is needed
+733.0,1054,Solanum muricatum,OR501824.1,rps3_copy1,+,41155..41228,41155..41228,correct,the annotation is correct and no correction is needed
+734.0,1056,Solanum muricatum,OR501824.1,rps3_copy2,-,339685..339758,339685..339758,correct,the annotation is correct and no correction is needed
+735.0,1058,Solanum muricatum,OR501824.1,rps4,-,214715..215764,214715..215764,correct,the annotation is correct and no correction is needed
+736.0,1059,Solanum muricatum,OR501824.1,sdh3,-,173249..173575,173249..173575,correct,the annotation is correct and no correction is needed
+737.0,1060,Solanum muricatum,OR501824.1,sdh4,-,80763..81140,80763..81140,correct,the annotation is correct and no correction is needed
+738.0,1061,Syzygium samarangense,NC_079700.1,atp1,+,431208..432737,431208..432737,correct,the annotation is correct and no correction is needed
+739.0,1062,Syzygium samarangense,NC_079700.1,atp4_copy1,+,202314..202910,202314..202910,correct,the annotation is correct and no correction is needed
+740.0,1063,Syzygium samarangense,NC_079700.1,atp4_copy2,+,459917..460513,459917..460513,correct,the annotation is correct and no correction is needed
+741.0,1064,Syzygium samarangense,NC_079700.1,atp6,+,237233..238390,237233..238390,correct,the annotation is correct and no correction is needed
+742.0,1065,Syzygium samarangense,NC_079700.1,atp8_copy1,-,262727..263206,262727..263206,correct,the annotation is correct and no correction is needed
+743.0,1066,Syzygium samarangense,NC_079700.1,atp8_copy2,+,494833..495312,494833..495312,correct,the annotation is correct and no correction is needed
+744.0,1067,Syzygium samarangense,NC_079700.1,atp9,+,390860..391084,390860..391084,correct,the annotation is correct and no correction is needed
+745.0,1068,Syzygium samarangense,NC_079700.1,ccmb,+,458243..458863,458243..458863,correct,the annotation is correct and no correction is needed
+746.0,1069,Syzygium samarangense,NC_079700.1,ccmc,-,105415..106167,105415..106167,correct,the annotation is correct and no correction is needed
+747.0,1070,Syzygium samarangense,NC_079700.1,ccmfc,+,245069..245835,245069..245835,correct,the annotation is correct and no correction is needed
+748.0,1072,Syzygium samarangense,NC_079700.1,ccmfn,-,387563..389365,387563..389365,correct,the annotation is correct and no correction is needed
+749.0,1073,Syzygium samarangense,NC_079700.1,cob,-,121533..122714,121533..122714,correct,the annotation is correct and no correction is needed
+750.0,1074,Syzygium samarangense,NC_079700.1,cox1,+,199727..201310,199727..201310,correct,the annotation is correct and no correction is needed
+751.0,1075,Syzygium samarangense,NC_079700.1,cox2,-,506514..507294,506514..507294,correct,the annotation is correct and no correction is needed
+752.0,1077,Syzygium samarangense,NC_079700.1,cox3_copy1,-,260438..261235,260438..261235,correct,the annotation is correct and no correction is needed
+753.0,1078,Syzygium samarangense,NC_079700.1,cox3_copy2,+,496804..497601,496804..497601,correct,the annotation is correct and no correction is needed
+754.0,1079,Syzygium samarangense,NC_079700.1,matr,-,376085..378052,376085..378052,correct,the annotation is correct and no correction is needed
+755.0,1080,Syzygium samarangense,NC_079700.1,mttb,-,332153..333004,332153..333004,correct,the annotation is correct and no correction is needed
+756.0,1081,Syzygium samarangense,NC_079700.1,nad1,+,155288..155672,155288..155672,correct,the annotation is correct and no correction is needed
+757.0,1086,Syzygium samarangense,NC_079700.1,nad2,-,84910..85062,84910..85062,correct,the annotation is correct and no correction is needed
+758.0,1091,Syzygium samarangense,NC_079700.1,nad3,+,47272..47628,47272..47628,correct,the annotation is correct and no correction is needed
+759.0,1092,Syzygium samarangense,NC_079700.1,nad4,+,447527..447987,447527..447987,correct,the annotation is correct and no correction is needed
+760.0,1096,Syzygium samarangense,NC_079700.1,nad4l_copy1,+,201842..202144,201842..202144,correct,the annotation is correct and no correction is needed
+761.0,1097,Syzygium samarangense,NC_079700.1,nad4l_copy2,+,459445..459747,459445..459747,correct,the annotation is correct and no correction is needed
+762.0,1098,Syzygium samarangense,NC_079700.1,nad5,+,216376..216605,216376..216605,correct,the annotation is correct and no correction is needed
+763.0,1103,Syzygium samarangense,NC_079700.1,nad6,+,184526..185143,184526..185143,correct,the annotation is correct and no correction is needed
+764.0,1104,Syzygium samarangense,NC_079700.1,nad7,-,343316..343458,343316..343458,correct,the annotation is correct and no correction is needed
+765.0,1109,Syzygium samarangense,NC_079700.1,nad9,+,296274..296846,296274..296846,correct,the annotation is correct and no correction is needed
+766.0,1110,Syzygium samarangense,NC_079700.1,rpl10,-,414729..415259,414729..415259,correct,the annotation is correct and no correction is needed
+767.0,1111,Syzygium samarangense,NC_079700.1,rpl2,-,115149..116023,115149..116023,correct,the annotation is correct and no correction is needed
+768.0,1113,Syzygium samarangense,NC_079700.1,rpl5,-,124381..124944,124381..124944,correct,the annotation is correct and no correction is needed
+769.0,1114,Syzygium samarangense,NC_079700.1,rps1,+,48853..49458,48853..49458,correct,the annotation is correct and no correction is needed
+770.0,1115,Syzygium samarangense,NC_079700.1,rps10,+,198361..198610,198361..198610,correct,the annotation is correct and no correction is needed
+771.0,1117,Syzygium samarangense,NC_079700.1,rps12,+,47677..48054,47677..48054,correct,the annotation is correct and no correction is needed
+772.0,1118,Syzygium samarangense,NC_079700.1,rps13,-,276173..276523,276173..276523,correct,the annotation is correct and no correction is needed
+773.0,1119,Syzygium samarangense,NC_079700.1,rps14,-,124077..124379,124077..124379,correct,the annotation is correct and no correction is needed
+774.0,1120,Syzygium samarangense,NC_079700.1,rps3,-,311831..311904,311831..311904,correct,the annotation is correct and no correction is needed
+775.0,1122,Syzygium samarangense,NC_079700.1,rps4,+,182869..183909,182869..183909,correct,the annotation is correct and no correction is needed
+776.0,1123,Syzygium samarangense,NC_079700.1,sdh3,-,85645..85956,85645..85956,correct,the annotation is correct and no correction is needed
+777.0,1124,Syzygium samarangense,NC_079700.1,sdh4_copy1,-,260076..260510,260076..260510,correct,the annotation is correct and no correction is needed
+778.0,1125,Syzygium samarangense,NC_079700.1,sdh4_copy2,+,497529..497951,497529..497951,correct,the annotation is correct and no correction is needed
+779.0,1126,Angelica dahurica,PP049073.1,atp1,+,17611..19152,17611..19152,correct,the annotation is correct and no correction is needed
+780.0,1127,Angelica dahurica,PP049080.1,atp4,+,984..1562,984..1562,correct,the annotation is correct and no correction is needed
+781.0,1128,Angelica dahurica,PP085524.1,atp6,-,669..1388,669..1388,correct,the annotation is correct and no correction is needed
+782.0,1129,Angelica dahurica,PP049077.1,atp8,-,13705..14184,13705..14184,correct,the annotation is correct and no correction is needed
+783.0,1130,Angelica dahurica,PP049078.1,atp9,+,51..275,51..275,correct,the annotation is correct and no correction is needed
+784.0,1131,Angelica dahurica,PP049079.1,ccmb,-,5108..5728,5108..5728,correct,the annotation is correct and no correction is needed
+785.0,1132,Angelica dahurica,PP049079.1,ccmc,-,16219..16971,16219..16971,correct,the annotation is correct and no correction is needed
+786.0,1133,Angelica dahurica,PP049076.1,ccmfc,+,10830..11596,10830..11596,correct,the annotation is correct and no correction is needed
+787.0,1135,Angelica dahurica,PP049078.1,ccmfn,-,9874..11613,9874..11613,correct,the annotation is correct and no correction is needed
+788.0,1136,Angelica dahurica,PP049082.1,cob,+,7091..8263,7091..8263,correct,the annotation is correct and no correction is needed
+789.0,1137,Angelica dahurica,PP049077.1,cox1,-,328..1911,328..1911,correct,the annotation is correct and no correction is needed
+790.0,1138,Angelica dahurica,PP049072.1,cox2,+,12248..12632,12248..12632,correct,the annotation is correct and no correction is needed
+791.0,1141,Angelica dahurica,PP049073.1,cox3,+,13331..14128,13331..14128,correct,the annotation is correct and no correction is needed
+792.0,1142,Angelica dahurica,PP049072.1,matr,+,3315..5282,3315..5282,correct,the annotation is correct and no correction is needed
+793.0,1143,Angelica dahurica,PP049075.1,mttb,-,19013..19801,19013..19801,correct,the annotation is correct and no correction is needed
+794.0,1144,Angelica dahurica,PP049072.1,nad1,+,17840..18224,17840..18224,correct,the annotation is correct and no correction is needed
+795.0,1149,Angelica dahurica,PP085524.1,nad2,-,6993..7145,6993..7145,correct,the annotation is correct and no correction is needed
+796.0,1154,Angelica dahurica,PP049074.1,nad3,+,14549..14905,14549..14905,correct,the annotation is correct and no correction is needed
+797.0,1155,Angelica dahurica,PP049080.1,nad4,-,11011..11471,11011..11471,correct,the annotation is correct and no correction is needed
+798.0,1159,Angelica dahurica,PP049072.1,nad4l,+,52..354,52..354,correct,the annotation is correct and no correction is needed
+799.0,1160,Angelica dahurica,PP049072.1,nad5,+,6497..6726,6497..6726,correct,the annotation is correct and no correction is needed
+800.0,1165,Angelica dahurica,PP049074.1,nad6,+,1834..2451,1834..2451,correct,the annotation is correct and no correction is needed
+801.0,1166,Angelica dahurica,PP049081.1,nad7,-,8193..8335,8193..8335,correct,the annotation is correct and no correction is needed
+802.0,1171,Angelica dahurica,PP049075.1,nad9,-,6958..7530,6958..7530,correct,the annotation is correct and no correction is needed
+803.0,1172,Angelica dahurica,PP049072.1,rpl10,+,11096..11590,11096..11590,correct,the annotation is correct and no correction is needed
+804.0,1173,Angelica dahurica,PP049072.1,rpl16,+,25568..26002,25568..26002,correct,the annotation is correct and no correction is needed
+805.0,1174,Angelica dahurica,PP049073.1,rpl5,+,25294..25848,25294..25848,correct,the annotation is correct and no correction is needed
+806.0,1175,Angelica dahurica,PP049074.1,rps1,+,13615..14220,13615..14220,correct,the annotation is correct and no correction is needed
+807.0,1176,Angelica dahurica,PP049074.1,rps12,+,14954..15331,14954..15331,correct,the annotation is correct and no correction is needed
+808.0,1177,Angelica dahurica,PP049076.1,rps13,-,6234..6584,6234..6584,correct,the annotation is correct and no correction is needed
+809.0,1178,Angelica dahurica,PP049072.1,rps3,+,22125..22198,22125..22198,correct,the annotation is correct and no correction is needed
+810.0,1180,Angelica dahurica,PP049072.1,rps4,+,634..1692,634..1692,correct,the annotation is correct and no correction is needed
+811.0,1181,Angelica dahurica,PP049077.1,rps7,-,2206..2652,2206..2652,correct,the annotation is correct and no correction is needed
+812.0,1182,Angelica dahurica,PP049073.1,sdh4,+,14359..14523,14359..14523,correct,the annotation is correct and no correction is needed
+813.0,1183,Astragalus membranaceus,ON930434.1,atp1,+,136328..137851,136328..137851,correct,the annotation is correct and no correction is needed
+814.0,1184,Astragalus membranaceus,ON930434.1,atp4,+,100463..101029,100463..101029,correct,the annotation is correct and no correction is needed
+815.0,1185,Astragalus membranaceus,ON930434.1,atp6,-,36066..36803,36066..36803,correct,the annotation is correct and no correction is needed
+816.0,1186,Astragalus membranaceus,ON930434.1,atp8,+,122572..123054,122572..123054,correct,the annotation is correct and no correction is needed
+817.0,1187,Astragalus membranaceus,ON930434.1,atp9_copy1,+,114489..114713,114489..114713,correct,the annotation is correct and no correction is needed
+818.0,1188,Astragalus membranaceus,ON930433.1,atp9_copy2,-,252668..252892,252668..252892,correct,the annotation is correct and no correction is needed
+819.0,1189,Astragalus membranaceus,ON930433.1,ccmb,-,249919..250539,249919..250539,correct,the annotation is correct and no correction is needed
+820.0,1190,Astragalus membranaceus,ON930434.1,ccmc,-,60334..61035,60334..61035,correct,the annotation is correct and no correction is needed
+822.0,1191,Astragalus membranaceus,ON930433.1,ccmfc,-,17817..18595,17817..18595,correct,the annotation is correct and no correction is needed
+823.0,1193,Astragalus membranaceus,ON930434.1,ccmfn,-,16038..17912,16038..17912,correct,the annotation is correct and no correction is needed
+824.0,1194,Astragalus membranaceus,ON930433.1,cob,+,187675..188853,187675..188853,correct,the annotation is correct and no correction is needed
+825.0,1195,Astragalus membranaceus,ON930434.1,cox1,+,103613..105196,103613..105196,correct,the annotation is correct and no correction is needed
+826.0,1196,Astragalus membranaceus,ON930433.1,cox2,+,261695..262387,261695..262387,correct,the annotation is correct and no correction is needed
+827.0,1197,Astragalus membranaceus,ON930433.1,cox3,-,143438..144235,143438..144235,correct,the annotation is correct and no correction is needed
+828.0,1198,Astragalus membranaceus,ON930433.1,matr,+,30868..32898,30868..32898,correct,the annotation is correct and no correction is needed
+829.0,1199,Astragalus membranaceus,ON930433.1,mttb,-,132469..133218,132469..133218,correct,the annotation is correct and no correction is needed
+830.0,1200,Astragalus membranaceus,ON930433.1,nad1,-,147894..148278,147894..148278,correct,the annotation is correct and no correction is needed
+831.0,1205,Astragalus membranaceus,ON930433.1,nad2,-,198187..198339,198187..198339,correct,the annotation is correct and no correction is needed
+832.0,1210,Astragalus membranaceus,ON930434.1,nad3,+,131592..131948,131592..131948,correct,the annotation is correct and no correction is needed
+833.0,1211,Astragalus membranaceus,ON930433.1,nad4,-,177699..178159,177699..178159,correct,the annotation is correct and no correction is needed
+834.0,1215,Astragalus membranaceus,ON930434.1,nad4l,+,99986..100258,99956..100258,STGE,STGE6
+835.0,1216,Astragalus membranaceus,ON930434.1,nad5,-,28973..29202,28973..29202,correct,the annotation is correct and no correction is needed
+836.0,1221,Astragalus membranaceus,ON930433.1,nad6,+,42310..42927,42310..42927,correct,the annotation is correct and no correction is needed
+837.0,1222,Astragalus membranaceus,ON930433.1,nad7,+,71680..71822,71680..71822,correct,the annotation is correct and no correction is needed
+838.0,1227,Astragalus membranaceus,ON930433.1,nad9,-,210167..210751,210167..210751,correct,the annotation is correct and no correction is needed
+839.0,1228,Astragalus membranaceus,ON930433.1,rpl5,+,185471..186022,185471..186022,correct,the annotation is correct and no correction is needed
+840.0,1229,Astragalus membranaceus,ON930434.1,rps10,+,102080..102391,102080..102391,correct,the annotation is correct and no correction is needed
+841.0,1231,Astragalus membranaceus,ON930434.1,rps12,+,131993..132370,131993..132370,correct,the annotation is correct and no correction is needed
+842.0,1232,Astragalus membranaceus,ON930433.1,rps14,+,186026..186328,186026..186328,correct,the annotation is correct and no correction is needed
+843.0,1233,Astragalus membranaceus,ON930434.1,rps3,+,109628..111310,109628..111310,correct,the annotation is correct and no correction is needed
+844.0,1234,Astragalus membranaceus,ON930433.1,rps4,+,40591..41628,40591..41628,correct,the annotation is correct and no correction is needed
+845.0,1235,Rehmannia glutinosa,ON951335.1,atp1,-,424574..426091,424574..426091,correct,the annotation is correct and no correction is needed
+846.0,1236,Rehmannia glutinosa,ON951335.1,atp4,+,311883..312479,311883..312479,correct,the annotation is correct and no correction is needed
+847.0,1237,Rehmannia glutinosa,ON951335.1,atp6,-,437955..438908,437955..438908,correct,the annotation is correct and no correction is needed
+848.0,1238,Rehmannia glutinosa,ON951335.1,atp8,-,212338..212817,212338..212817,correct,the annotation is correct and no correction is needed
+849.0,1239,Rehmannia glutinosa,ON951335.1,atp9,+,280659..280883,280659..280883,correct,the annotation is correct and no correction is needed
+850.0,1240,Rehmannia glutinosa,ON951335.1,ccmb,-,153561..154181,153561..154181,correct,the annotation is correct and no correction is needed
+851.0,1241,Rehmannia glutinosa,ON951335.1,ccmc,+,303046..303798,303046..303798,correct,the annotation is correct and no correction is needed
+852.0,1242,Rehmannia glutinosa,ON951335.1,ccmfc,-,200531..201297,200531..201297,correct,the annotation is correct and no correction is needed
+853.0,1244,Rehmannia glutinosa,ON951335.1,ccmfn,-,369805..371538,369805..371538,correct,the annotation is correct and no correction is needed
+854.0,1245,Rehmannia glutinosa,ON951335.1,cob,+,67566..68765,67566..68765,correct,the annotation is correct and no correction is needed
+855.0,1246,Rehmannia glutinosa,ON951335.1,cox1,-,227220..227935,227220..227935,correct,the annotation is correct and no correction is needed
+856.0,1248,Rehmannia glutinosa,ON951335.1,cox2,-,20190..20889,20190..20889,correct,the annotation is correct and no correction is needed
+857.0,1250,Rehmannia glutinosa,ON951335.1,cox3,-,210946..211743,210946..211743,correct,the annotation is correct and no correction is needed
+858.0,1251,Rehmannia glutinosa,ON951336.1,matr,-,360..2327,360..2327,correct,the annotation is correct and no correction is needed
+859.0,1252,Rehmannia glutinosa,ON951336.1,mttb,-,3655..4485,3655..4485,correct,the annotation is correct and no correction is needed
+860.0,1253,Rehmannia glutinosa,ON951335.1,nad1,-,189985..190369,189985..190369,correct,the annotation is correct and no correction is needed
+861.0,1258,Rehmannia glutinosa,ON951335.1,nad2,-,471955..472107,471955..472107,correct,the annotation is correct and no correction is needed
+862.0,1263,Rehmannia glutinosa,ON951335.1,nad3,-,134202..134558,134202..134558,correct,the annotation is correct and no correction is needed
+863.0,1264,Rehmannia glutinosa,ON951335.1,nad4,-,341062..341513,341062..341513,correct,the annotation is correct and no correction is needed
+864.0,1268,Rehmannia glutinosa,ON951335.1,nad4l,+,311432..311704,311402..311704,STGE,STGE7
+865.0,1269,Rehmannia glutinosa,ON951335.1,nad5,-,423138..423367,423138..423367,correct,the annotation is correct and no correction is needed
+866.0,1274,Rehmannia glutinosa,ON951335.1,nad6,+,402609..403226,402609..403226,correct,the annotation is correct and no correction is needed
+867.0,1275,Rehmannia glutinosa,ON951335.1,nad7,+,455066..455208,455066..455208,correct,the annotation is correct and no correction is needed
+868.0,1280,Rehmannia glutinosa,ON951335.1,rpl10,+,152776..153258,152776..153258,correct,the annotation is correct and no correction is needed
+869.0,1281,Rehmannia glutinosa,ON951335.1,rpl2,-,98..1063,98..1063,correct,the annotation is correct and no correction is needed
+870.0,1282,Rehmannia glutinosa,ON951335.1,rpl5,+,65811..66365,65811..66365,correct,the annotation is correct and no correction is needed
+871.0,1283,Rehmannia glutinosa,ON951335.1,rps10,-,228995..229222,228995..229222,correct,the annotation is correct and no correction is needed
+872.0,1285,Rehmannia glutinosa,ON951335.1,rps12,-,133776..134153,133776..134153,correct,the annotation is correct and no correction is needed
+873.0,1286,Rehmannia glutinosa,ON951335.1,rps13,+,38620..38970,38620..38970,correct,the annotation is correct and no correction is needed
+874.0,1287,Rehmannia glutinosa,ON951335.1,rps14,+,66367..66669,66367..66669,correct,the annotation is correct and no correction is needed
+875.0,1288,Rehmannia glutinosa,ON951335.1,rps3,-,299096..299169,299096..299169,correct,the annotation is correct and no correction is needed
+876.0,1290,Rehmannia glutinosa,ON951335.1,rps4,-,299681..300727,299681..300727,correct,the annotation is correct and no correction is needed
+877.0,1291,Ribes nigrum,OR296460.1,atp1,+,399608..401152,399608..401152,correct,the annotation is correct and no correction is needed
+878.0,1292,Ribes nigrum,OR296460.1,atp4,+,358959..359555,358959..359555,correct,the annotation is correct and no correction is needed
+879.0,1293,Ribes nigrum,OR296460.1,atp6,+,325138..325857,325138..325857,correct,the annotation is correct and no correction is needed
+880.0,1294,Ribes nigrum,OR296460.1,atp8,+,229089..229562,229089..229562,correct,the annotation is correct and no correction is needed
+881.0,1295,Ribes nigrum,OR296460.1,atp9,+,201078..201302,201078..201302,correct,the annotation is correct and no correction is needed
+882.0,1296,Ribes nigrum,OR296460.1,ccmb,+,134094..134714,134094..134714,correct,the annotation is correct and no correction is needed
+883.0,1297,Ribes nigrum,OR296460.1,ccmc,+,361375..362127,361375..362127,correct,the annotation is correct and no correction is needed
+884.0,1298,Ribes nigrum,OR296460.1,ccmfc,-,81813..82579,81813..82579,correct,the annotation is correct and no correction is needed
+885.0,1300,Ribes nigrum,OR296460.1,ccmfn,-,278039..279772,278039..279772,correct,the annotation is correct and no correction is needed
+886.0,1301,Ribes nigrum,OR296460.1,cob,-,292151..293332,292151..293332,correct,the annotation is correct and no correction is needed
+887.0,1302,Ribes nigrum,OR296460.1,cox1,+,114203..115786,114203..115786,correct,the annotation is correct and no correction is needed
+888.0,1303,Ribes nigrum,OR296460.1,cox2,+,395020..395401,395020..395401,correct,the annotation is correct and no correction is needed
+889.0,1306,Ribes nigrum,OR296460.1,cox3,+,230369..231166,230369..231166,correct,the annotation is correct and no correction is needed
+890.0,1307,Ribes nigrum,OR296460.1,matr,-,152587..154554,152587..154554,correct,the annotation is correct and no correction is needed
+891.0,1308,Ribes nigrum,OR296460.1,mttb,+,25564..26352,25564..26352,correct,the annotation is correct and no correction is needed
+892.0,1309,Ribes nigrum,OR296460.1,nad1,-,49370..49754,49370..49754,correct,the annotation is correct and no correction is needed
+893.0,1314,Ribes nigrum,OR296460.1,nad2,-,129486..129638,129486..129638,correct,the annotation is correct and no correction is needed
+894.0,1319,Ribes nigrum,OR296460.1,nad3,+,211718..212074,211718..212074,correct,the annotation is correct and no correction is needed
+895.0,1320,Ribes nigrum,OR296460.1,nad4,-,257980..258440,257980..258440,correct,the annotation is correct and no correction is needed
+896.0,1324,Ribes nigrum,OR296460.1,nad4l,+,358471..358773,358471..358773,correct,the annotation is correct and no correction is needed
+897.0,1325,Ribes nigrum,OR296460.1,nad5,-,409481..409710,409481..409710,correct,the annotation is correct and no correction is needed
+898.0,1330,Ribes nigrum,OR296460.1,nad6,+,179762..180379,179762..180379,correct,the annotation is correct and no correction is needed
+899.0,1331,Ribes nigrum,OR296460.1,nad7,+,431512..431654,431512..431654,correct,the annotation is correct and no correction is needed
+900.0,1336,Ribes nigrum,OR296460.1,nad9,-,332740..333312,332740..333312,correct,the annotation is correct and no correction is needed
+901.0,1337,Ribes nigrum,OR296460.1,rpl10,-,135021..135509,135021..135509,correct,the annotation is correct and no correction is needed
+902.0,1338,Ribes nigrum,OR296460.1,rpl16,+,238407..238841,238407..238841,correct,the annotation is correct and no correction is needed
+903.0,1339,Ribes nigrum,OR296460.1,rpl2,+,109265..110154,109265..110154,correct,the annotation is correct and no correction is needed
+904.0,1341,Ribes nigrum,OR296460.1,rpl5,-,295002..295559,295002..295559,correct,the annotation is correct and no correction is needed
+905.0,1342,Ribes nigrum,OR296460.1,rps1,-,38139..38744,38139..38744,correct,the annotation is correct and no correction is needed
+906.0,1343,Ribes nigrum,OR296460.1,rps10,+,112737..113046,112737..113046,correct,the annotation is correct and no correction is needed
+907.0,1345,Ribes nigrum,OR296460.1,rps12,+,212124..212501,212124..212501,correct,the annotation is correct and no correction is needed
+908.0,1346,Ribes nigrum,OR296460.1,rps13,-,300039..300389,300039..300389,correct,the annotation is correct and no correction is needed
+909.0,1347,Ribes nigrum,OR296460.1,rps14,-,294698..295000,294698..295000,correct,the annotation is correct and no correction is needed
+910.0,1348,Ribes nigrum,OR296460.1,rps19,+,234645..234929,234645..234929,correct,the annotation is correct and no correction is needed
+911.0,1349,Ribes nigrum,OR296460.1,rps3,+,234943..235016,234943..235016,correct,the annotation is correct and no correction is needed
+912.0,1351,Ribes nigrum,OR296460.1,rps4,+,178022..179101,178022..179101,correct,the annotation is correct and no correction is needed
+913.0,1352,Ribes nigrum,OR296460.1,rps7,-,151862..152308,151862..152308,correct,the annotation is correct and no correction is needed
+914.0,1353,Ribes nigrum,OR296460.1,sdh3,-,130275..130601,130275..130601,correct,the annotation is correct and no correction is needed
+915.0,1354,Ribes nigrum,OR296460.1,sdh4,+,231094..231543,231094..231543,correct,the annotation is correct and no correction is needed
+916.0,1355,Selenicereus monacanthus,OQ835513.1,atp1,-,2872..4401,2872..4401,correct,the annotation is correct and no correction is needed
+917.0,1356,Selenicereus monacanthus,OQ835513.1,atp4,-,1541224..1541775,1541224..1541775,correct,the annotation is correct and no correction is needed
+918.0,1357,Selenicereus monacanthus,OQ835513.1,atp6,+,1722022..1722741,1722022..1722741,correct,the annotation is correct and no correction is needed
+919.0,1358,Selenicereus monacanthus,OQ835513.1,atp8,+,1781628..1782116,1781628..1782116,correct,the annotation is correct and no correction is needed
+920.0,1359,Selenicereus monacanthus,OQ835513.1,atp9_copy1,+,305258..305482,305258..305482,correct,the annotation is correct and no correction is needed
+921.0,1360,Selenicereus monacanthus,OQ835513.1,atp9_copy2,-,707024..707248,707024..707248,correct,the annotation is correct and no correction is needed
+922.0,1361,Selenicereus monacanthus,OQ835513.1,atp9_copy3,-,1949190..1949414,1949190..1949414,correct,the annotation is correct and no correction is needed
+923.0,1362,Selenicereus monacanthus,OQ835513.1,ccmb_copy1,+,20878..21498,20878..21498,correct,the annotation is correct and no correction is needed
+924.0,1363,Selenicereus monacanthus,OQ835513.1,ccmb_copy2,-,561263..561883,561263..561883,correct,the annotation is correct and no correction is needed
+925.0,1364,Selenicereus monacanthus,OQ835513.1,ccmc,-,1540012..1540788,1540012..1540788,correct,the annotation is correct and no correction is needed
+926.0,1365,Selenicereus monacanthus,OQ835513.1,ccmfc,-,516892..517658,516892..517658,correct,the annotation is correct and no correction is needed
+927.0,1367,Selenicereus monacanthus,OQ835513.1,ccmfn,-,557013..558746,557013..558746,correct,the annotation is correct and no correction is needed
+928.0,1368,Selenicereus monacanthus,OQ835513.1,cob_copy1,+,1116975..1118156,1116975..1118156,correct,the annotation is correct and no correction is needed
+929.0,1369,Selenicereus monacanthus,OQ835513.1,cob_copy2,+,1613422..1614603,1613422..1614603,correct,the annotation is correct and no correction is needed
+930.0,1370,Selenicereus monacanthus,OQ835513.1,cox1,+,1878601..1880175,1878601..1880175,correct,the annotation is correct and no correction is needed
+933.0,1371,Selenicereus monacanthus,OQ835513.1,cox2,+,267130..267511,267130..267511,correct,the annotation is correct and no correction is needed
+934.0,1374,Selenicereus monacanthus,OQ835513.1,cox3,+,1783203..1784000,1783203..1784000,correct,the annotation is correct and no correction is needed
+935.0,1375,Selenicereus monacanthus,OQ835513.1,matr,-,1438508..1440529,1438508..1440529,correct,the annotation is correct and no correction is needed
+936.0,1376,Selenicereus monacanthus,OQ835513.1,mttb,+,72075..72863,72075..72863,correct,the annotation is correct and no correction is needed
+937.0,1377,Selenicereus monacanthus,OQ835513.1,nad1,-,390016..390400,390016..390400,correct,the annotation is correct and no correction is needed
+938.0,1382,Selenicereus monacanthus,OQ835513.1,nad2,+,1118913..1119065,1118913..1119065,correct,the annotation is correct and no correction is needed
+939.0,1387,Selenicereus monacanthus,OQ835513.1,nad3,-,1428919..1429275,1428919..1429275,correct,the annotation is correct and no correction is needed
+940.0,1388,Selenicereus monacanthus,OQ835513.1,nad4,+,1885995..1886455,1885995..1886455,correct,the annotation is correct and no correction is needed
+941.0,1391,Selenicereus monacanthus,OQ835513.1,nad4l,-,1541940..1542242,1541940..1542242,correct,the annotation is correct and no correction is needed
+942.0,1392,Selenicereus monacanthus,OQ835513.1,nad5,-,1948653..1948882,1948653..1948882,correct,the annotation is correct and no correction is needed
+943.0,1397,Selenicereus monacanthus,OQ835513.1,nad6_copy1,+,1173081..1173770,1173081..1173770,correct,the annotation is correct and no correction is needed
+944.0,1398,Selenicereus monacanthus,OQ835513.1,nad6_copy2,+,1559573..1560109,1559573..1560109,correct,the annotation is correct and no correction is needed
+945.0,1399,Selenicereus monacanthus,OQ835513.1,nad6_copy3,+,1669528..1670217,1669528..1670217,correct,the annotation is correct and no correction is needed
+946.0,1400,Selenicereus monacanthus,OQ835513.1,nad7_copy1,-,848060..848109,848060..848208,correct,
+947.0,1405,Selenicereus monacanthus,OQ835513.1,nad7_copy2,-,2090226..2090275,2090226..2090383,correct,
+948.0,1410,Selenicereus monacanthus,OQ835513.1,nad9_copy1,-,709426..710004,709426..710004,correct,the annotation is correct and no correction is needed
+949.0,1411,Selenicereus monacanthus,OQ835513.1,nad9_copy2,-,1951592..1952170,1951592..1952170,correct,the annotation is correct and no correction is needed
+950.0,1412,Selenicereus monacanthus,OQ835513.1,rpl5_copy1,+,1115188..1115742,1115188..1115742,correct,the annotation is correct and no correction is needed
+951.0,1413,Selenicereus monacanthus,OQ835513.1,rpl5_copy2,+,1611635..1612189,1611635..1612189,correct,the annotation is correct and no correction is needed
+952.0,1414,Selenicereus monacanthus,OQ835513.1,rps1,-,166288..166893,166288..166893,correct,the annotation is correct and no correction is needed
+953.0,1415,Selenicereus monacanthus,OQ835513.1,rps12,-,1428493..1428870,1428493..1428870,correct,the annotation is correct and no correction is needed
+954.0,1416,Selenicereus monacanthus,OQ835513.1,rps13,+,271021..271371,271021..271371,correct,the annotation is correct and no correction is needed
+955.0,1417,Selenicereus monacanthus,OQ835513.1,rps4_copy1,+,1171499..1172608,1171499..1172608,correct,the annotation is correct and no correction is needed
+956.0,1418,Selenicereus monacanthus,OQ835513.1,rps4_copy2,+,1667946..1669055,1667946..1669055,correct,the annotation is correct and no correction is needed
+957.0,1419,Selenicereus monacanthus,OQ835513.1,rps7,+,1424767..1425213,1424767..1425213,correct,the annotation is correct and no correction is needed
+958.0,1420,Selenicereus monacanthus,OQ835513.1,sdh4,+,1783928..1784350,1783928..1784350,correct,the annotation is correct and no correction is needed
+959.0,1421,Cardiocrinum giganteum,PQ073106.1,atp1,-,111816..113363,111816..113363,correct,the annotation is correct and no correction is needed
+960.0,1422,Cardiocrinum giganteum,PQ073108.1,atp4,-,126550..127122,126550..127122,correct,the annotation is correct and no correction is needed
+961.0,1423,Cardiocrinum giganteum,PQ073107.1,atp6,+,29476..30198,29476..30198,correct,the annotation is correct and no correction is needed
+962.0,1424,Cardiocrinum giganteum,PQ073119.1,atp8,-,32827..33297,32827..33297,correct,the annotation is correct and no correction is needed
+963.0,1425,Cardiocrinum giganteum,PQ073114.1,atp9_copy1,-,24457..24681,24457..24681,correct,the annotation is correct and no correction is needed
+964.0,1426,Cardiocrinum giganteum,PQ073109.1,atp9_copy2,+,40606..40830,40606..40830,correct,the annotation is correct and no correction is needed
+965.0,1427,Cardiocrinum giganteum,PQ073119.1,atp9_copy3,-,32339..32563,32339..32563,correct,the annotation is correct and no correction is needed
+966.0,1428,Cardiocrinum giganteum,PQ073105.1,ccmb,+,17210..17821,17210..17821,correct,the annotation is correct and no correction is needed
+967.0,1429,Cardiocrinum giganteum,PQ073123.1,ccmc,+,12098..12919,12098..12919,correct,the annotation is correct and no correction is needed
+968.0,1430,Cardiocrinum giganteum,PQ073111.1,ccmfc,+,48928..49685,48928..49685,correct,the annotation is correct and no correction is needed
+969.0,1432,Cardiocrinum giganteum,PQ073115.1,ccmfn,+,13869..15119,13869..15119,correct,the annotation is correct and no correction is needed
+970.0,1433,Cardiocrinum giganteum,PQ073109.1,cob,-,130527..131708,130527..131708,correct,the annotation is correct and no correction is needed
+971.0,1434,Cardiocrinum giganteum,PQ073116.1,cox1,+,66127..67692,66127..67692,correct,the annotation is correct and no correction is needed
+972.0,1435,Cardiocrinum giganteum,PQ073105.1,cox2,-,156865..157246,156865..157246,correct,the annotation is correct and no correction is needed
+973.0,1438,Cardiocrinum giganteum,PQ073107.1,cox3,-,64046..64843,64046..64843,correct,the annotation is correct and no correction is needed
+974.0,1439,Cardiocrinum giganteum,PQ073118.1,matr,+,"join(14034..15480, 15652..16088)",14034..16088,correct,
+975.0,1440,Cardiocrinum giganteum,PQ073114.1,mttb_copy1,-,25309..26085,25309..26085,correct,the annotation is correct and no correction is needed
+976.0,1441,Cardiocrinum giganteum,PQ073109.1,mttb_copy2,+,39202..39978,39202..39978,correct,the annotation is correct and no correction is needed
+977.0,1442,Cardiocrinum giganteum,PQ073117.1,nad1,+,48614..48998,48614..48998,correct,the annotation is correct and no correction is needed
+978.0,1447,Cardiocrinum giganteum,PQ073113.1,nad2,-,75733..77211,75733..77211,correct,the annotation is correct and no correction is needed
+979.0,1448,Cardiocrinum giganteum,PQ073121.1,nad3,+,37431..37787,37431..37787,correct,the annotation is correct and no correction is needed
+980.0,1449,Cardiocrinum giganteum,PQ073112.1,nad4,+,41769..42229,41769..42229,correct,the annotation is correct and no correction is needed
+981.0,1452,Cardiocrinum giganteum,PQ073108.1,nad4l,-,127275..127577,127275..127577,correct,the annotation is correct and no correction is needed
+982.0,1453,Cardiocrinum giganteum,PQ073117.1,nad5,+,68294..68523,68294..68523,correct,the annotation is correct and no correction is needed
+983.0,1458,Cardiocrinum giganteum,PQ073109.1,nad6,-,126603..127316,126603..127316,correct,the annotation is correct and no correction is needed
+984.0,1459,Cardiocrinum giganteum,PQ073110.1,nad7,-,14140..14282,14140..14282,correct,the annotation is correct and no correction is needed
+985.0,1462,Cardiocrinum giganteum,PQ073120.1,nad9,-,22125..22697,22125..22697,correct,the annotation is correct and no correction is needed
+986.0,1463,Cardiocrinum giganteum,PQ073106.1,rpl16_copy1,-,223484..223918,223484..223918,correct,the annotation is correct and no correction is needed
+987.0,1464,Cardiocrinum giganteum,PQ073107.1,rpl16_copy2,-,185015..185449,185015..185449,correct,the annotation is correct and no correction is needed
+988.0,1465,Cardiocrinum giganteum,PQ073109.1,rpl5,-,132803..133351,132803..133351,correct,the annotation is correct and no correction is needed
+989.0,1466,Cardiocrinum giganteum,PQ073106.1,rps1,+,8003..8611,8003..8611,correct,the annotation is correct and no correction is needed
+990.0,1467,Cardiocrinum giganteum,PQ073105.1,rps10,-,100270..100522,100270..100522,correct,the annotation is correct and no correction is needed
+991.0,1469,Cardiocrinum giganteum,PQ073121.1,rps12,+,37836..38213,37836..38213,correct,the annotation is correct and no correction is needed
+992.0,1470,Cardiocrinum giganteum,PQ073108.1,rps13_copy1,+,88860..89210,88860..89210,correct,the annotation is correct and no correction is needed
+993.0,1471,Cardiocrinum giganteum,PQ073105.1,rps13_copy2,+,246410..246760,246410..246760,correct,the annotation is correct and no correction is needed
+994.0,1472,Cardiocrinum giganteum,PQ073109.1,rps14,-,132495..132797,132495..132797,correct,the annotation is correct and no correction is needed
+995.0,1473,Cardiocrinum giganteum,PQ073106.1,rps19_copy1,-,226778..227059,226778..227059,correct,the annotation is correct and no correction is needed
+996.0,1474,Cardiocrinum giganteum,PQ073107.1,rps19_copy2,-,2022..2303,2022..2303,correct,the annotation is correct and no correction is needed
+997.0,1475,Cardiocrinum giganteum,PQ073106.1,rps2,+,88959..89612,88959..89612,correct,the annotation is correct and no correction is needed
+998.0,1476,Cardiocrinum giganteum,PQ073106.1,rps3,-,226689..226762,226689..226762,correct,the annotation is correct and no correction is needed
+999.0,1478,Cardiocrinum giganteum,PQ073116.1,rps4,+,19738..20772,19738..20772,correct,the annotation is correct and no correction is needed
+1000.0,1479,Cardiocrinum giganteum,PQ073109.1,rps7,-,133589..134035,133589..134035,correct,the annotation is correct and no correction is needed
+1001.0,1480,Cardiocrinum giganteum,PQ073107.1,sdh4,-,63891..64118,63891..64118,correct,the annotation is correct and no correction is needed
+1002.0,1481,Gossypium hirsutum,NC_027406.1,atp6,+,385008..385823,385008..385796,SPGE,SPGE23
+1003.0,1482,Gossypium hirsutum,NC_027406.1,atp8,-,27968..28432,27968..28432,correct,the annotation is correct and no correction is needed
+1004.0,1483,Gossypium hirsutum,NC_027406.1,atp9,-,89749..90060,89836..90060,SPGE,SPGE24
+1005.0,1484,Gossypium hirsutum,NC_027406.1,ccmb,-,161289..161909,161289..161909,correct,the annotation is correct and no correction is needed
+1006.0,1485,Gossypium hirsutum,NC_027406.1,ccmc,-,552870..553622,552870..553622,correct,the annotation is correct and no correction is needed
+1007.0,1486,Gossypium hirsutum,NC_027406.1,ccmfc_copy1,-,208482..209254,208482..209254,SPGE,SPGE25
+1008.0,1488,Gossypium hirsutum,NC_027406.1,ccmfc_copy2,-,662732..663504,662732..663504,correct,
+1009.0,1490,Gossypium hirsutum,NC_027406.1,ccmfn,-,371479..373215,371479..373215,correct,the annotation is correct and no correction is needed
+1010.0,1491,Gossypium hirsutum,NC_027406.1,cob,+,331285..332463,331285..332463,correct,the annotation is correct and no correction is needed
+1011.0,1492,Gossypium hirsutum,NC_027406.1,cox1,+,632025..633617,632025..633617,correct,the annotation is correct and no correction is needed
+1012.0,1493,Gossypium hirsutum,NC_027406.1,cox2,-,301502..302200,301501..302200,SSE,SSE62
+1013.0,1495,Gossypium hirsutum,NC_027406.1,cox3,+,635035..635832,635035..635832,correct,the annotation is correct and no correction is needed
+1014.0,1496,Gossypium hirsutum,NC_027406.1,matr,+,172751..174718,172751..174718,correct,the annotation is correct and no correction is needed
+1015.0,1497,Gossypium hirsutum,NC_027406.1,mttb,+,<584944..585744,584944..585744,correct,the annotation is correct and no correction is needed
+1016.0,1498,Gossypium hirsutum,NC_027406.1,nad1,-,,40814..41198,SSE,SSE64
+1017.0,1503,Gossypium hirsutum,NC_027406.1,nad2,+,,474058..474210,SSE,SSE72
+1018.0,1508,Gossypium hirsutum,NC_027406.1,nad3,+,122736..123092,122736..123092,correct,the annotation is correct and no correction is needed
+1019.0,1509,Gossypium hirsutum,NC_027406.1,nad4,+,571714..572174,571714..572174,correct,the annotation is correct and no correction is needed
+1020.0,1513,Gossypium hirsutum,NC_027406.1,nad4l,+,412965..413267,412965..413267,correct,the annotation is correct and no correction is needed
+1021.0,1514,Gossypium hirsutum,NC_027406.1,nad5,-,,89299..89528,SSE,SSE82
+1022.0,1519,Gossypium hirsutum,NC_027406.1,nad6,-,514883..515503,514883..515503,correct,the annotation is correct and no correction is needed
+1023.0,1520,Gossypium hirsutum,NC_027406.1,nad7,+,130806..130948,130806..130948,correct,the annotation is correct and no correction is needed
+1024.0,1525,Gossypium hirsutum,NC_027406.1,nad9,+,584187..584759,584187..584759,correct,the annotation is correct and no correction is needed
+1025.0,1526,Gossypium hirsutum,NC_027406.1,rpl10,+,62105..62593,62105..62593,correct,the annotation is correct and no correction is needed
+1026.0,1527,Gossypium hirsutum,NC_027406.1,rpl16,+,<286530..286964,286530..286964,correct,the annotation is correct and no correction is needed
+1027.0,1528,Gossypium hirsutum,NC_027406.1,rpl2,+,346685..347689,346685..347689,correct,the annotation is correct and no correction is needed
+1028.0,1529,Gossypium hirsutum,NC_027406.1,rpl5,+,345606..346187,345606..346187,correct,the annotation is correct and no correction is needed
+1029.0,1530,Gossypium hirsutum,NC_027406.1,rps10,+,630657..630906,630657..630906,correct,the annotation is correct and no correction is needed
+1030.0,1532,Gossypium hirsutum,NC_027406.1,rps12,+,123141..123512,123141..123512,correct,the annotation is correct and no correction is needed
+1031.0,1533,Gossypium hirsutum,NC_027406.1,rps14,+,329622..329924,329622..329924,correct,the annotation is correct and no correction is needed
+1032.0,1534,Gossypium hirsutum,NC_027406.1,rps3,+,283159..283233,283159..283232,SSE,SSE92
+1033.0,1536,Gossypium hirsutum,NC_027406.1,rps4,-,313751..314848,313751..314848,correct,the annotation is correct and no correction is needed
+1034.0,1537,Gossypium hirsutum,NC_027406.1,rps7,+,257378..257824,257378..257824,correct,the annotation is correct and no correction is needed
+1035.0,1538,Gossypium hirsutum,NC_027406.1,sdh3,+,472717..473151,472717..473151,correct,the annotation is correct and no correction is needed
+1036.0,1539,Gossypium hirsutum,NC_027406.1,sdh4,+,635760..636158,635760..636158,correct,the annotation is correct and no correction is needed
+1037.0,1540,Colocasia esculenta,PP389240.1,atp1,-,53728..55245,53728..55245,correct,the annotation is correct and no correction is needed
+1038.0,1541,Colocasia esculenta,PP389238.1,atp4,-,192889..193470,192889..193470,correct,the annotation is correct and no correction is needed
+1039.0,1542,Colocasia esculenta,PP389242.1,atp6,+,22759..23604,22420..23604,SPGE,SPGE26
+1040.0,1543,Colocasia esculenta,PP389238.1,atp8,-,61755..62225,61755..62225,correct,the annotation is correct and no correction is needed
+1041.0,1544,Colocasia esculenta,PP389240.1,atp9,-,52894..53118,52894..53118,correct,the annotation is correct and no correction is needed
+1042.0,1545,Colocasia esculenta,PP389241.1,ccmb,-,25991..26611,25991..26611,correct,the annotation is correct and no correction is needed
+1043.0,1546,Colocasia esculenta,PP389239.1,ccmc,+,38281..39063,38281..39063,correct,the annotation is correct and no correction is needed
+1044.0,1547,Colocasia esculenta,PP389238.1,ccmfc,-,137343..138101,137344..138101,SSE,SSE94
+1045.0,1549,Colocasia esculenta,PP389242.1,ccmfn,+,14637..16355,14637..16355,correct,the annotation is correct and no correction is needed
+1046.0,1550,Colocasia esculenta,PP389238.1,cob,+,105318..106499,105318..106499,correct,the annotation is correct and no correction is needed
+1047.0,1551,Colocasia esculenta,PP389239.1,cox1,-,67838..68563,67838..68563,correct,the annotation is correct and no correction is needed
+1048.0,1553,Colocasia esculenta,PP389238.1,cox2,-,202820..203203,202816..203203,SSE,SSE96
+1049.0,1556,Colocasia esculenta,PP389238.1,cox3,-,236858..237655,236858..237655,correct,the annotation is correct and no correction is needed
+1050.0,1557,Colocasia esculenta,PP389239.1,matr,+,98347..100308,98347..100308,correct,the annotation is correct and no correction is needed
+1051.0,1558,Colocasia esculenta,PP389241.1,mttb,+,65065..65406,64630..65406,correct,
+1052.0,1559,Colocasia esculenta,PP389241.1,nad1,-,23229..23616,23232..23616,SSE,SSE98
+1053.0,1564,Colocasia esculenta,PP389240.1,nad2,-,20929..21081,20929..21081,correct,the annotation is correct and no correction is needed
+1054.0,1569,Colocasia esculenta,PP389238.1,nad3,+,227667..228023,227667..228023,correct,the annotation is correct and no correction is needed
+1055.0,1570,Colocasia esculenta,PP389242.1,nad4,-,39056..39516,39056..39516,correct,the annotation is correct and no correction is needed
+1056.0,1574,Colocasia esculenta,PP389238.1,nad4l,-,193686..193988,193686..193988,correct,the annotation is correct and no correction is needed
+1057.0,1575,Colocasia esculenta,PP389240.1,nad5,-,83910..84138,83909..84138,SSE,SSE104
+1058.0,1580,Colocasia esculenta,PP389241.1,nad6,+,18170..18874,18170..18874,correct,the annotation is correct and no correction is needed
+1059.0,1581,Colocasia esculenta,PP389238.1,nad7,-,98867..99009,98867..99009,correct,the annotation is correct and no correction is needed
+1060.0,1586,Colocasia esculenta,PP389241.1,nad9,+,42836..43408,42836..43408,correct,the annotation is correct and no correction is needed
+1061.0,1587,Colocasia esculenta,PP389241.1,rpl10,+,4507..4998,4507..4998,correct,the annotation is correct and no correction is needed
+1062.0,1588,Colocasia esculenta,PP389239.1,rpl16,-,131915..132430,131915..132349,correct,
+1063.0,1589,Colocasia esculenta,PP389238.1,rpl5,+,103575..104135,103575..104135,correct,the annotation is correct and no correction is needed
+1064.0,1590,Colocasia esculenta,PP389238.1,rps1,+,28324..28914,28324..28914,correct,the annotation is correct and no correction is needed
+1065.0,1591,Colocasia esculenta,PP389238.1,rps12,+,228067..228444,228067..228444,correct,the annotation is correct and no correction is needed
+1066.0,1592,Colocasia esculenta,PP389242.1,rps13,+,1544..1894,1544..1894,correct,the annotation is correct and no correction is needed
+1067.0,1593,Colocasia esculenta,PP389238.1,rps14,+,104137..104427,104137..104427,correct,the annotation is correct and no correction is needed
+1068.0,1594,Colocasia esculenta,PP389238.1,rps2,-,143626..144285,143626..144285,correct,the annotation is correct and no correction is needed
+1069.0,1595,Colocasia esculenta,PP389239.1,rps3,-,831..904,831..904,correct,the annotation is correct and no correction is needed
+1070.0,1596,Colocasia esculenta,PP389239.1,rps7,+,8166..8612,8223..8612,correct,
+1071.0,1597,Colocasia esculenta,PP389238.1,sdh4,-,236535..236930,236478..236930,correct,
+1072.0,1598,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,atp1,-,306155..307705,306155..307705,correct,the annotation is correct and no correction is needed
+1073.0,1599,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,atp4,+,303482..304060,303482..304060,correct,the annotation is correct and no correction is needed
+1074.0,1600,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,atp6,+,188845..189726,188965..189636,SPGE,SPGE27
+1075.0,1601,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,atp8,+,234399..234887,234399..234887,correct,the annotation is correct and no correction is needed
+1076.0,1602,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,atp9,+,331662..331886,331662..331886,correct,the annotation is correct and no correction is needed
+1077.0,1603,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,ccmb,+,54266..54886,54266..54886,correct,the annotation is correct and no correction is needed
+1078.0,1604,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,ccmc,+,95687..96406,95687..96406,correct,the annotation is correct and no correction is needed
+1079.0,1605,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,ccmfc,+,315239..316001,315239..316002,SSE,SSE108
+1080.0,1607,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,ccmfn,-,288140..289822,288140..289822,correct,the annotation is correct and no correction is needed
+1081.0,1608,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,cob,+,326574..327755,326574..327755,correct,the annotation is correct and no correction is needed
+1082.0,1609,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,cox1,-,85563..87146,85563..87146,correct,the annotation is correct and no correction is needed
+1083.0,1610,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,cox2,+,297042..297424,297042..297423,SSE,SSE110
+1084.0,1613,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,cox3,+,153278..154075,153278..154075,correct,the annotation is correct and no correction is needed
+1085.0,1614,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,matr,+,97431..99380,97431..99380,correct,the annotation is correct and no correction is needed
+1086.0,1615,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,mttb,+,71303..72100,71351..72100,correct,
+1087.0,1616,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad1,+,107290..107674,107290..107674,correct,the annotation is correct and no correction is needed
+1088.0,1621,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad2,-,275325..275477,275325..275477,correct,the annotation is correct and no correction is needed
+1089.0,1626,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad3,-,166077..166433,166077..166433,correct,the annotation is correct and no correction is needed
+1090.0,1627,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad4,+,223007..223467,223007..223467,correct,the annotation is correct and no correction is needed
+1091.0,1631,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad4l,+,260727..261029,260727..261029,correct,the annotation is correct and no correction is needed
+1092.0,1632,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad5,-,164094..164323,164094..164323,correct,the annotation is correct and no correction is needed
+1093.0,1637,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad6,+,261477..262169,261477..262169,correct,the annotation is correct and no correction is needed
+1094.0,1638,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad7,+,252261..252394,252261..252394,correct,the annotation is correct and no correction is needed
+1095.0,1643,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,nad9,+,150507..151076,150507..151076,correct,the annotation is correct and no correction is needed
+1096.0,1644,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rpl10,+,122819..123274,122819..123274,correct,the annotation is correct and no correction is needed
+1097.0,1645,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rpl16,+,180648..181082,180648..181082,correct,the annotation is correct and no correction is needed
+1098.0,1646,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rpl2,+,172512..173507,172512..173506,SSE,SSE118
+1099.0,1648,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rpl5,+,324902..325450,324902..325450,correct,the annotation is correct and no correction is needed
+1100.0,1649,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps1,-,278541..279164,278541..279164,correct,the annotation is correct and no correction is needed
+1101.0,1650,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps10,-,88907..89156,88907..89156,correct,the annotation is correct and no correction is needed
+1102.0,1652,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps11,-,283971..284483,283971..284414,correct,
+1103.0,1653,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps12,-,165641..166024,165641..166024,correct,the annotation is correct and no correction is needed
+1104.0,1654,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps13,+,53156..53503,53156..53503,correct,the annotation is correct and no correction is needed
+1105.0,1655,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps14,+,325451..325753,325451..325753,correct,the annotation is correct and no correction is needed
+1106.0,1656,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps19_copy1,+,119267..119620,119267..119620,correct,the annotation is correct and no correction is needed
+1107.0,1657,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps19_copy2,+,175842..176195,175842..176195,correct,the annotation is correct and no correction is needed
+1108.0,1658,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps3,+,176210..176283,176210..176283,correct,the annotation is correct and no correction is needed
+1109.0,1660,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps4,-,125505..126512,125505..126512,correct,the annotation is correct and no correction is needed
+1110.0,1661,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,rps7,+,330656..331102,330713..331102,correct,
+1111.0,1662,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,sdh3_copy1,+,205212..205544,205212..205544,correct,the annotation is correct and no correction is needed
+1112.0,1663,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,sdh3_copy2,+,10576..10908,10576..10908,correct,the annotation is correct and no correction is needed
+1113.0,1664,Nymphaea hybrid cultivar Joey Tomocik,MW644617.1,sdh4,+,154003..154569,154003..154569,correct,the annotation is correct and no correction is needed
+1114.0,1665,Populus davidiana,NC_035157.1,atp1,+,276500..278023,276500..278023,correct,the annotation is correct and no correction is needed
+1115.0,1666,Populus davidiana,NC_035157.1,atp4,+,151840..152436,151840..152436,correct,the annotation is correct and no correction is needed
+1116.0,1667,Populus davidiana,NC_035157.1,atp6,+,486688..487401,486688..487401,correct,the annotation is correct and no correction is needed
+1117.0,1668,Populus davidiana,NC_035157.1,atp8,-,612307..612780,612307..612780,correct,the annotation is correct and no correction is needed
+1118.0,1669,Populus davidiana,NC_035157.1,atp9,+,747110..747334,747110..747334,correct,the annotation is correct and no correction is needed
+1119.0,1670,Populus davidiana,NC_035157.1,ccmb,-,141696..142310,141696..142310,correct,the annotation is correct and no correction is needed
+1120.0,1671,Populus davidiana,NC_035157.1,ccmc,+,598275..599027,598275..599027,correct,the annotation is correct and no correction is needed
+1121.0,1672,Populus davidiana,NC_035157.1,ccmfc,+,691895..692661,691895..692661,correct,the annotation is correct and no correction is needed
+1122.0,1674,Populus davidiana,NC_035157.1,ccmfn,-,633087..634817,633087..634817,correct,the annotation is correct and no correction is needed
+1123.0,1675,Populus davidiana,NC_035157.1,cob,+,470430..471611,470430..471611,correct,the annotation is correct and no correction is needed
+1124.0,1676,Populus davidiana,NC_035157.1,cox1,+,529148..530731,529148..530731,correct,the annotation is correct and no correction is needed
+1125.0,1677,Populus davidiana,NC_035157.1,cox2,-,90312..90986,90312..90986,correct,the annotation is correct and no correction is needed
+1126.0,1678,Populus davidiana,NC_035157.1,cox3,+,246032..246829,246032..246829,correct,the annotation is correct and no correction is needed
+1127.0,1679,Populus davidiana,NC_035157.1,matr,+,267073..269016,267073..269016,correct,the annotation is correct and no correction is needed
+1128.0,1680,Populus davidiana,NC_035157.1,mttb,-,464631..>465416,464631..465416,correct,the annotation is correct and no correction is needed
+1129.0,1681,Populus davidiana,NC_035157.1,nad1,-,412001..412298,412004..412388,STGE,"STGE9, SSE120"
+1130.0,1686,Populus davidiana,NC_035157.1,nad2,-,202820..202972,202820..202972,correct,the annotation is correct and no correction is needed
+1131.0,1691,Populus davidiana,NC_035157.1,nad3,-,325530..325886,325530..325886,correct,the annotation is correct and no correction is needed
+1132.0,1692,Populus davidiana,NC_035157.1,nad4,-,342298..342758,342298..342758,correct,the annotation is correct and no correction is needed
+1133.0,1696,Populus davidiana,NC_035157.1,nad4l,+,151303..151605,151303..151605,correct,the annotation is correct and no correction is needed
+1134.0,1697,Populus davidiana,NC_035157.1,nad5,+,449502..449731,449502..449731,correct,the annotation is correct and no correction is needed
+1135.0,1702,Populus davidiana,NC_035157.1,nad6,-,424073..424702,424073..424702,correct,the annotation is correct and no correction is needed
+1136.0,1703,Populus davidiana,NC_035157.1,nad7,-,716912..717054,716912..717054,correct,the annotation is correct and no correction is needed
+1137.0,1708,Populus davidiana,NC_035157.1,nad9,+,379599..380171,379599..380171,correct,the annotation is correct and no correction is needed
+1138.0,1709,Populus davidiana,NC_035157.1,rpl10,+,562579..563067,562579..563067,correct,the annotation is correct and no correction is needed
+1139.0,1710,Populus davidiana,NC_035157.1,rpl16,-,,46282..46692,correct,
+1140.0,1711,Populus davidiana,NC_035157.1,rpl2,+,498430..499326,498430..499326,correct,the annotation is correct and no correction is needed
+1141.0,1712,Populus davidiana,NC_035157.1,rps1,-,311143..311778,311143..311631,correct,
+1142.0,1713,Populus davidiana,NC_035157.1,rps12,+,485944..486321,485944..486321,correct,the annotation is correct and no correction is needed
+1143.0,1714,Populus davidiana,NC_035157.1,rps14,+,468838..469083,468838..469083,correct,the annotation is correct and no correction is needed
+1144.0,1715,Populus davidiana,NC_035157.1,rps3,-,733893..733966,733893..733966,correct,the annotation is correct and no correction is needed
+1145.0,1717,Populus davidiana,NC_035157.1,rps4,+,443011..443979,443011..443979,correct,the annotation is correct and no correction is needed
+1146.0,1718,Populus davidiana,NC_035157.1,rps7,+,347448..347894,347448..347894,correct,the annotation is correct and no correction is needed
+1147.0,1719,Populus davidiana,NC_035157.1,sdh4,+,246757..247152,246757..247152,correct,the annotation is correct and no correction is needed

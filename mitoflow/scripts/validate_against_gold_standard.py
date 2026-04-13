@@ -1,0 +1,497 @@
+#!/usr/bin/env python3
+"""
+MitoFlow金标准验证脚本
+
+基于PMGA修正数据验证MitoFlow注释准确性
+对标PMGA论文（Plant Communications, 2025）评估标准
+
+输入:
+  - NCBI原始GenBank文件
+  - PMGA修正数据 (corrections.csv)
+  - MitoFlow输出
+
+输出:
+  - validation_report.md (详细报告)
+  - validation_summary.csv (汇总数据)
+  - validation_details.json (详细数据)
+"""
+
+import argparse
+import json
+import logging
+from pathlib import Path
+from collections import defaultdict
+from typing import Dict, List, Tuple
+from Bio import SeqIO
+import pandas as pd
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+# 核心线粒体基因列表 (对标PMGA)
+CORE_PCG_41 = [
+    "nad1", "nad2", "nad3", "nad4", "nad4l", "nad5", "nad6", "nad7", "nad9",
+    "cob", "cox1", "cox2", "cox3",
+    "atp1", "atp4", "atp6", "atp8", "atp9",
+    "ccmb", "ccmc", "ccmfc", "ccmfn",
+    "rpl2", "rpl5", "rpl10", "rpl16",
+    "rps1", "rps2", "rps3", "rps4", "rps7", "rps10", "rps12", "rps13", "rps14", "rps19",
+    "matr", "mttb", "sdh3", "sdh4",
+]
+
+# RNA编辑相关基因
+STGE_GENES = ["cox1", "nad1", "nad4l", "rps10"]
+SPGE_GENES = ["atp6", "atp9", "ccmfc", "mttb"]
+
+
+def normalize_gene_name(name: str) -> str:
+    """标准化基因名称"""
+    if not name:
+        return ""
+    name = name.lower().strip()
+    name = name.split(".")[0]  # 移除版本号
+    # 处理别名
+    aliases = {
+        "ccmfn": "ccmfn",
+        "ccmfc": "ccmfc",
+        "ccmfc1": "ccmfc",
+        "ccmfc2": "ccmfc",
+        "nad4l": "nad4l",
+        "matr": "matr",
+        "mttb": "mttb",
+    }
+    return aliases.get(name, name)
+
+
+def parse_genbank_features(gb_file: Path, source_name: str = "") -> Tuple[List[Dict], int]:
+    """解析GenBank文件，提取所有基因特征"""
+    try:
+        record = SeqIO.read(gb_file, "genbank")
+    except Exception as e:
+        logger.warning(f"Error reading {gb_file}: {e}")
+        return [], 0
+
+    features = []
+    genome_length = len(record.seq)
+
+    for feat in record.features:
+        if feat.type in ['source', 'repeat_region', 'misc_feature', 'ncRNA', "5'UTR", "3'UTR", 'D-loop']:
+            continue
+
+        gene_name = ""
+        if 'gene' in feat.qualifiers:
+            gene_name = feat.qualifiers['gene'][0]
+        elif 'name' in feat.qualifiers:
+            gene_name = feat.qualifiers['name'][0]
+
+        gene_name = normalize_gene_name(gene_name)
+
+        if feat.type in ['gene', 'CDS', 'tRNA', 'rRNA', 'exon']:
+            features.append({
+                'type': feat.type,
+                'gene': gene_name,
+                'start': int(feat.location.start),
+                'end': int(feat.location.end),
+                'strand': feat.location.strand,
+                'product': feat.qualifiers.get('product', [''])[0],
+            })
+
+    return features, genome_length
+
+
+def load_corrections(corrections_file: Path) -> Dict[str, Dict]:
+    """加载PMGA修正数据"""
+    df = pd.read_csv(corrections_file)
+
+    # 按物种和基因组织修正数据
+    corrections = defaultdict(lambda: defaultdict(list))
+
+    for row in df.itertuples():
+        species = row.species
+        gene = row.gene
+        correction_type = row.correction_type
+
+        if correction_type != 'correct':
+            corrections[species][gene].append({
+                'before': row.position_before,
+                'after': row.position_after,
+                'type': correction_type,
+                'note': row.correction_note,
+            })
+
+    return dict(corrections)
+
+
+def compare_gene_positions(
+    ncbi_features: List[Dict],
+    mitoflow_features: List[Dict],
+    pmga_corrections: Dict[str, List],
+    species: str
+) -> Dict:
+    """比较基因位置差异"""
+
+    # 构建基因位置字典
+    ncbi_pos = defaultdict(list)
+    mito_pos = defaultdict(list)
+
+    for f in ncbi_features:
+        if f['gene'] and f['type'] == 'CDS':
+            ncbi_pos[f['gene']].append(f)
+
+    for f in mitoflow_features:
+        if f['gene'] and f['type'] == 'CDS':
+            mito_pos[f['gene']].append(f)
+
+    # 计算偏差
+    position_diffs = []
+
+    common_genes = set(ncbi_pos.keys()) & set(mito_pos.keys())
+
+    for gene in common_genes:
+        ncbi_f = ncbi_pos[gene][0]
+        mito_f = mito_pos[gene][0]
+
+        start_diff = abs(mito_f['start'] - ncbi_f['start'])
+        end_diff = abs(mito_f['end'] - ncbi_f['end'])
+        max_diff = max(start_diff, end_diff)
+
+        # 分类偏差级别
+        if max_diff < 50:
+            diff_level = "precise"
+        elif max_diff < 100:
+            diff_level = "small"
+        elif max_diff < 1000:
+            diff_level = "medium"
+        else:
+            diff_level = "large"
+
+        # 检查是否有PMGA修正
+        pmga_correction = pmga_corrections.get(gene, [])
+        has_correction = len(pmga_correction) > 0
+
+        position_diffs.append({
+            'gene': gene,
+            'ncbi_start': ncbi_f['start'],
+            'ncbi_end': ncbi_f['end'],
+            'mito_start': mito_f['start'],
+            'mito_end': mito_f['end'],
+            'start_diff': start_diff,
+            'end_diff': end_diff,
+            'max_diff': max_diff,
+            'diff_level': diff_level,
+            'has_pmga_correction': has_correction,
+            'pmga_correction_type': pmga_correction[0]['type'] if pmga_correction else None,
+        })
+
+    return position_diffs
+
+
+def calculate_metrics(
+    ncbi_genes: set,
+    mitoflow_genes: set,
+    core_genes: set = set(CORE_PCG_41)
+) -> Dict:
+    """计算基因检出指标"""
+
+    # 全基因集合比较
+    tp = len(ncbi_genes & mitoflow_genes)  # 共有基因
+    fp = len(mitoflow_genes - ncbi_genes)  # MitoFlow独有（可能是误检）
+    fn = len(ncbi_genes - mitoflow_genes)  # NCBI独有（漏检）
+
+    # 基因总数（假设所有NCBI基因都是真实存在的）
+    total_real = len(ncbi_genes)
+
+    # 计算指标
+    if tp + fp + fn == 0:
+        accuracy = sensitivity = precision = f1 = 0
+    else:
+        accuracy = tp / (tp + fp + fn) if (tp + fp + fn) > 0 else 0
+        sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        f1 = 2 * precision * sensitivity / (precision + sensitivity) if (precision + sensitivity) > 0 else 0
+
+    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+
+    # 核心基因统计
+    core_tp = len(set(core_genes) & ncbi_genes & mitoflow_genes)
+    core_fn = len(set(core_genes) & ncbi_genes - mitoflow_genes)
+    core_detected_ncbi = len(set(core_genes) & ncbi_genes)
+    core_detected_mito = len(set(core_genes) & mitoflow_genes)
+
+    return {
+        'tp': tp,
+        'fp': fp,
+        'fn': fn,
+        'accuracy': accuracy,
+        'sensitivity': sensitivity,
+        'precision': precision,
+        'fnr': fnr,
+        'f1': f1,
+        'core_detected_ncbi': core_detected_ncbi,
+        'core_detected_mito': core_detected_mito,
+        'core_tp': core_tp,
+        'core_fn': core_fn,
+    }
+
+
+def count_error_types(
+    ncbi_genes: set,
+    mitoflow_genes: set,
+    position_diffs: List[Dict]
+) -> Dict:
+    """统计三类错误数量"""
+
+    # A类: 基因检出错误
+    a_errors = len(ncbi_genes - mitoflow_genes) + len(mitoflow_genes - ncbi_genes)
+
+    # B类: 起始/终止位置错误 (>50bp偏差)
+    b_errors = len([d for d in position_diffs if d['start_diff'] > 50 or d['end_diff'] > 50])
+
+    # C类: 剪接位点错误（多外显子基因位置偏差 >10bp）
+    # 这里简化处理，用位置偏差>10bp且不是SSE修正的基因
+    c_errors = len([d for d in position_diffs
+                    if d['max_diff'] > 10
+                    and not d['has_pmga_correction']])
+
+    return {
+        'a_errors': a_errors,
+        'b_errors': b_errors,
+        'c_errors': c_errors,
+        'total_errors': a_errors + b_errors + c_errors,
+    }
+
+
+def validate_single_species(
+    species: str,
+    ncbi_file: Path,
+    mitoflow_dir: Path,
+    corrections: Dict
+) -> Dict:
+    """验证单个物种"""
+
+    # 解析NCBI原始注释
+    ncbi_features, ncbi_length = parse_genbank_features(ncbi_file, "NCBI")
+
+    # 解析MitoFlow输出
+    mitoflow_file = mitoflow_dir / "genbank" / f"{species}.gb"
+    if not mitoflow_file.exists():
+        mitoflow_file = mitoflow_dir / "genbank" / f"{species}.gbk"
+
+    if not mitoflow_file.exists():
+        logger.warning(f"MitoFlow file not found for {species}")
+        return None
+
+    mitoflow_features, mito_length = parse_genbank_features(mitoflow_file, "MitoFlow")
+
+    # 提取基因集合
+    ncbi_genes = {f['gene'] for f in ncbi_features if f['type'] == 'CDS' and f['gene']}
+    mito_genes = {f['gene'] for f in mitoflow_features if f['type'] == 'CDS' and f['gene']}
+
+    # 获取该物种的修正数据
+    species_corrections = corrections.get(species, {})
+
+    # 比较位置
+    position_diffs = compare_gene_positions(ncbi_features, mitoflow_features, species_corrections, species)
+
+    # 计算指标
+    metrics = calculate_metrics(ncbi_genes, mito_genes)
+
+    # 统计错误类型
+    error_counts = count_error_types(ncbi_genes, mito_genes, position_diffs)
+
+    return {
+        'species': species,
+        'genome_length_ncbi': ncbi_length,
+        'genome_length_mitoflow': mito_length,
+        'ncbi_genes': list(ncbi_genes),
+        'mitoflow_genes': list(mito_genes),
+        'metrics': metrics,
+        'error_counts': error_counts,
+        'position_diffs': position_diffs,
+        'corrections': species_corrections,
+    }
+
+
+def generate_report(
+    results: List[Dict],
+    output_dir: Path
+):
+    """生成验证报告"""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 生成汇总CSV
+    summary_data = []
+    for r in results:
+        summary_data.append({
+            'species': r['species'],
+            'genome_length': r['genome_length_ncbi'],
+            'ncbi_genes_count': len(r['ncbi_genes']),
+            'mitoflow_genes_count': len(r['mitoflow_genes']),
+            'accuracy': r['metrics']['accuracy'],
+            'sensitivity': r['metrics']['sensitivity'],
+            'precision': r['metrics']['precision'],
+            'f1': r['metrics']['f1'],
+            'fnr': r['metrics']['fnr'],
+            'core_detected': r['metrics']['core_detected_mito'],
+            'a_errors': r['error_counts']['a_errors'],
+            'b_errors': r['error_counts']['b_errors'],
+            'c_errors': r['error_counts']['c_errors'],
+            'total_errors': r['error_counts']['total_errors'],
+        })
+
+    summary_df = pd.DataFrame(summary_data)
+    summary_df.to_csv(output_dir / "validation_summary.csv", index=False)
+
+    # 生成JSON详情
+    details = {r['species']: r for r in results}
+    with open(output_dir / "validation_details.json", 'w') as f:
+        json.dump(details, f, indent=2)
+
+    # 生成Markdown报告
+    report_lines = []
+    report_lines.append("# MitoFlow金标准验证报告\n\n")
+    report_lines.append(f"验证物种数: {len(results)}\n\n")
+    report_lines.append("---\n\n")
+
+    # 汇总统计
+    report_lines.append("## 1. 整体性能汇总\n\n")
+
+    avg_accuracy = sum(r['metrics']['accuracy'] for r in results) / len(results)
+    avg_sensitivity = sum(r['metrics']['sensitivity'] for r in results) / len(results)
+    avg_f1 = sum(r['metrics']['f1'] for r in results) / len(results)
+
+    report_lines.append(f"- 平均Accuracy: {avg_accuracy:.2%}\n")
+    report_lines.append(f"- 平均Sensitivity: {avg_sensitivity:.2%}\n")
+    report_lines.append(f"- 平均F1-measure: {avg_f1:.2%}\n\n")
+
+    # 偏差统计
+    all_diffs = []
+    for r in results:
+        all_diffs.extend(r['position_diffs'])
+
+    precise_count = len([d for d in all_diffs if d['diff_level'] == 'precise'])
+    small_count = len([d for d in all_diffs if d['diff_level'] == 'small'])
+    medium_count = len([d for d in all_diffs if d['diff_level'] == 'medium'])
+    large_count = len([d for d in all_diffs if d['diff_level'] == 'large'])
+
+    report_lines.append("## 2. 位置偏差统计\n\n")
+    report_lines.append(f"- 精确匹配(<50bp): {precise_count} ({precise_count/len(all_diffs):.1%})\n")
+    report_lines.append(f"- 小偏差(50-100bp): {small_count} ({small_count/len(all_diffs):.1%})\n")
+    report_lines.append(f"- 中偏差(100-1000bp): {medium_count} ({medium_count/len(all_diffs):.1%})\n")
+    report_lines.append(f"- 大偏差(>1000bp): {large_count} ({large_count/len(all_diffs):.1%})\n\n")
+
+    # 错误统计
+    report_lines.append("## 3. 错误类型统计\n\n")
+    total_a = sum(r['error_counts']['a_errors'] for r in results)
+    total_b = sum(r['error_counts']['b_errors'] for r in results)
+    total_c = sum(r['error_counts']['c_errors'] for r in results)
+
+    report_lines.append(f"- A类错误（基因检出）: {total_a}\n")
+    report_lines.append(f"- B类错误（位置偏差）: {total_b}\n")
+    report_lines.append(f"- C类错误（剪接位点）: {total_c}\n\n")
+
+    # 各物种详情
+    report_lines.append("## 4. 各物种验证详情\n\n")
+    for r in results:
+        report_lines.append(f"### {r['species']}\n\n")
+        report_lines.append(f"- Accuracy: {r['metrics']['accuracy']:.2%}\n")
+        report_lines.append(f"- F1: {r['metrics']['f1']:.2%}\n")
+        report_lines.append(f"- A/B/C错误: {r['error_counts']['a_errors']}/{r['error_counts']['b_errors']}/{r['error_counts']['c_errors']}\n\n")
+
+        # 列出位置偏差>50bp的基因
+        large_diffs = [d for d in r['position_diffs'] if d['max_diff'] > 50]
+        if large_diffs:
+            report_lines.append("**位置偏差>50bp的基因:**\n")
+            for d in sorted(large_diffs, key=lambda x: -x['max_diff'])[:10]:
+                report_lines.append(f"- {d['gene']}: 偏差{d['max_diff']}bp ({d['diff_level']})\n")
+            report_lines.append("\n")
+
+    # 写入文件
+    with open(output_dir / "validation_report.md", 'w') as f:
+        f.writelines(report_lines)
+
+    logger.info(f"报告已生成: {output_dir}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='MitoFlow金标准验证')
+    parser.add_argument('--ncbi-dir', required=True, help='NCBI GenBank文件目录')
+    parser.add_argument('--mitoflow-dir', required=True, help='MitoFlow输出目录')
+    parser.add_argument('--corrections', required=True, help='PMGA修正数据CSV文件')
+    parser.add_argument('--output', required=True, help='输出目录')
+    parser.add_argument('--species-list', required=True, help='物种列表CSV文件')
+
+    args = parser.parse_args()
+
+    ncbi_dir = Path(args.ncbi_dir)
+    mitoflow_base = Path(args.mitoflow_dir)
+    corrections_file = Path(args.corrections)
+    output_dir = Path(args.output)
+    species_file = Path(args.species_list)
+
+    # 加载修正数据
+    logger.info("加载PMGA修正数据...")
+    corrections = load_corrections(corrections_file)
+    logger.info(f"加载 {len(corrections)} 个物种的修正数据")
+
+    # 加载物种列表
+    species_df = pd.read_csv(species_file)
+    species_list = species_df['species'].tolist()
+
+    logger.info(f"待验证物种: {len(species_list)}")
+
+    # 执行验证
+    results = []
+    for species in species_list:
+        # 标准化物种名（处理空格和特殊字符）
+        species_name = species.replace(' ', '_').replace('.', '')
+
+        # 查找NCBI文件
+        genbank_acc = species_df[species_df['species'] == species]['genbank'].iloc[0]
+        # GenBank可能有多个编号（分号分隔）
+        gb_files = []
+        for acc in genbank_acc.split(';'):
+            acc = acc.strip()
+            gb_file = ncbi_dir / f"{acc}.gb"
+            if gb_file.exists():
+                gb_files.append(gb_file)
+
+        if not gb_files:
+            logger.warning(f"NCBI文件未找到: {species} ({genbank_acc})")
+            continue
+
+        # MitoFlow输出目录
+        mitoflow_dir = mitoflow_base / species_name
+
+        if not mitoflow_dir.exists():
+            logger.warning(f"MitoFlow目录未找到: {species_name}")
+            continue
+
+        logger.info(f"验证: {species}")
+        result = validate_single_species(species, gb_files[0], mitoflow_dir, corrections)
+
+        if result:
+            results.append(result)
+
+    # 生成报告
+    logger.info("生成验证报告...")
+    generate_report(results, output_dir)
+
+    # 输出汇总
+    print("\n=== 验证完成 ===")
+    print(f"验证物种数: {len(results)}")
+
+    if results:
+        avg_f1 = sum(r['metrics']['f1'] for r in results) / len(results)
+        print(f"平均F1-measure: {avg_f1:.2%}")
+
+        all_diffs = []
+        for r in results:
+            all_diffs.extend(r['position_diffs'])
+        small_diff_rate = len([d for d in all_diffs if d['max_diff'] < 100]) / len(all_diffs)
+        print(f"小偏差率(<100bp): {small_diff_rate:.1%}")
+
+
+if __name__ == '__main__':
+    main()

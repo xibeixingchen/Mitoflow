@@ -1,0 +1,30 @@
+id,order,family,genus,species,genbank,dataset,sra
+1,Brassicales,Brassicaceae,Arabidopsis,Arabidopsis thaliana,NC_037304.1,Dataset 1,SRR8511570
+2,Brassicales,Brassicaceae,Raphanus,Raphanus sativus,NC_018551.1,Dataset 1,SRR8980857
+3,Ericales,Theaceae,Camellia,Camellia sinensis var. assamica,MK574876.1; MK574877.1,Dataset 1,SRR13425452
+4,Fabales,Fabaceae,Glycine,Glycine max,NC_020455.1,Dataset 1,SRR8447156
+5,Magnoliales,Magnoliaceae,Liriodendron,Liriodendron tulipifera,NC_021152.1,Dataset 1,"SRR9849700, SRR9849652, SRR16546803"
+6,Poales,Poaceae,Saccharum,Saccharum officinarum,"LC107874.1, LC107875.1",Dataset 1,SRR28285813
+7,Rosales,Rosaceae,Malus,Malus x domestica,NC_018554.1,Dataset 1,SRR8835130
+8,Solanales,Convolvulaceae,Ipomoea,Ipomoea aquatica,MZ240730.1,Dataset 1,SRR10895459
+9,Solanales,Solanaceae,Capsicum,Capsicum annuum cultivar Jeju,NC_024624.1,Dataset 1,SRR12417747
+10,Solanales,Solanaceae,Nicotiana,Nicotiana tabacum ,MN651324.1,Dataset 1,SRR8706334
+11,Myrtales,Lythraceae ,Punica ,Punica granatum,OP874592.1,Dataset 1,SRR22890448
+12,Cucurbitales,Cucurbitaceae ,Lagenaria,Lagenaria siceraria,OR680814.1,Dataset 1,SRR30895493
+13,Liliales,Liliaceae ,Cardiocrinum ,Cardiocrinum giganteum,PQ073105.1; PQ073106.1; PQ073107.1; PQ073108.1; PQ073109.1; PQ073110.1; PQ073111.1; PQ073112.1; PQ073113.1; PQ073114.1; PQ073115.1; PQ073116.1; PQ073117.1; PQ073118.1; PQ073119.1; PQ073120.1; PQ073121.1; PQ073122.1; PQ073123.1,Dataset 1,SRR30895492
+14,Solanales,Solanaceae,Solanum,Solanum muricatum,OR501824.1,Dataset 1,SRR25885158
+15,Saxifragales,Grossulariaceae,Ribes,Ribes nigrum,OR296460.1,Dataset 1,SRR25211460
+16,Sapindales,Meliaceae,Aglaia,Aglaia odorata,OR680718.1,Dataset 1,SRR26513847 
+17,Commelinales,Pontederiaceae,Pontederia,Pontederia crassipes,OR680719.1,Dataset 1,SRR26510776
+18,Caryophyllales,Cactaceae,Selenicereus,Selenicereus monacanthus,OQ835513.1,Dataset 1,SRR24044980 
+19,Fagales,Fagaceae,Quercus,Quercus acutissima,ON398338.1; ON398339.1; ON398340.1,Dataset 1,SRR15860170
+20,Saxifragales,Paeoniaceae,Paeonia,Paeonia lactiflora,NC_070189.1,Dataset 1,SRR30895494
+21,Fabales,Fabaceae,Astragalus,Astragalus membranaceus,ON930433.1; ON930434.1,Dataset 1,SRR26057439
+22,Myrtales,Myrtaceae,Syzygium,Syzygium samarangense,NC_079700.1,Dataset 1,SRR24058007
+23,Garryales,Eucommiaceae,Eucommia,Eucommia ulmoides,OQ101613.1; OQ101614.1; OQ101615.1,Dataset 1,SRR23055733
+24,Apiales,Apiaceae,Angelica,Angelica dahurica,PP049072.1; PP049073.1; PP049074.1; PP049075.1; PP049076.1; PP049077.1; PP049078.1; PP049079.1; PP049080.1; PP049081.1; PP049082.1; PP085524.1,Dataset 1,SRR27406829	
+25,Lamiales,Orobanchaceae,Rehmannia,Rehmannia glutinosa,ON951335.1; ON951336.1,Dataset 1,SRR26039033
+26,Malpighiales,Salicaceae,Populus,Populus tomentosa,NC_035157.1,Dataset 1,SRR11614647
+27,Alismatales,Araceae,Colocasia,Colocasia esculenta,PP389238.1; PP389239.1; PP389240.1; PP389241.1; PP389242.1,Dataset 1,SRR15584573
+28,Malvales,Malvaceae,Gossypium,Gossypium hirsutum,NC_027406.1,Dataset 1,SRR16902665
+29,Nymphaeales,Nymphaeaceae,Nymphaea,Nymphaea hybrid cultivar 'Joey Tomocik',MW644617.1,Dataset 1,SRR15402843

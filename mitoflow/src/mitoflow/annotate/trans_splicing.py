@@ -344,6 +344,7 @@ TRANS_SPLICED_CONFIG = {
     "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},  # Prefer tight exons
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},  # Limit to 50kb, avoid 308kb false positives
+    "cox1": {"exons": 2, "max_span": 100000, "min_exon_bp": 700, "max_exon_gap": 10000},  # Some species have 2 exons (trans-spliced), use BLASTn for precise boundaries
 }
 
 

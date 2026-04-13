@@ -226,15 +226,16 @@ def _validate_gene_span(gene_name: str, start: int, end: int) -> bool:
     span = abs(end - start)
 
     # Max allowed spans for trans-spliced genes (already merged)
+    # Increased to accommodate large genomes (e.g., Cucumis ~1.5Mb)
     max_spans = {
-        "nad1": 500000,
-        "nad2": 300000,
-        "nad5": 500000,
-        "nad4": 200000,
-        "nad7": 200000,
-        "cox2": 100000,
-        "rpl2": 100000,
-        "rps3": 100000,
+        "nad1": 1500000,
+        "nad2": 500000,
+        "nad5": 2000000,
+        "nad4": 500000,
+        "nad7": 500000,
+        "cox2": 200000,
+        "rpl2": 200000,
+        "rps3": 500000,
     }
 
     # Regular genes shouldn't exceed 50kb

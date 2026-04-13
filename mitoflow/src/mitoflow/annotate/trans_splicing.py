@@ -332,15 +332,18 @@ def is_trans_spliced_gene(gene_name: str) -> bool:
 # =============================================================================
 
 # Configuration for trans-spliced genes: expected exons, max genomic span, min exon length
+# max_span values increased to accommodate large genomes (e.g., Cucumis ~1.5Mb)
+# Trans-spliced genes can legitimately span nearly the entire genome
+# max_exon_gap: maximum gap between consecutive exons (None = no limit for truly trans-spliced)
 TRANS_SPLICED_CONFIG = {
-    "nad1": {"exons": 5, "max_span": 500000, "min_exon_bp": 15},
-    "nad2": {"exons": 5, "max_span": 300000, "min_exon_bp": 15},
-    "nad5": {"exons": 5, "max_span": 500000, "min_exon_bp": 20},
-    "nad4": {"exons": 4, "max_span": 200000, "min_exon_bp": 30},
-    "nad7": {"exons": 4, "max_span": 200000, "min_exon_bp": 30},
-    "cox2": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
-    "rpl2": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
-    "rps3": {"exons": 2, "max_span": 100000, "min_exon_bp": 50},
+    "nad1": {"exons": 5, "max_span": 1500000, "min_exon_bp": 15, "max_exon_gap": None},  # Truly trans-spliced
+    "nad2": {"exons": 5, "max_span": 500000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad5": {"exons": 5, "max_span": 2000000, "min_exon_bp": 20, "max_exon_gap": None},  # Truly trans-spliced
+    "nad4": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
+    "nad7": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
+    "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},  # Prefer tight exons
+    "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
+    "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": None},
 }
 
 
@@ -546,13 +549,14 @@ def merge_exons_to_gene(
         logger.debug(f"{gene_name}: missing exons {missing}, cannot merge")
         return None
 
-    # Select best hit per exon (highest identity)
+    # Only select hits for expected exon numbers (ignore extra hits like exon_3 for 2-exon genes)
     best_exons: list[tuple[int, int, Strand, int]] = []  # (start, end, strand, exon_num)
 
-    for exon_num in sorted(found_exon_nums):
-        hits = exon_hits[exon_num]
+    for exon_num in sorted(expected_nums):  # Only iterate expected exon numbers
+        hits = exon_hits.get(exon_num, [])
         if not hits:
-            continue
+            logger.debug(f"{gene_name}: no hits for expected exon {exon_num}")
+            return None
 
         # Sort by identity descending, take best
         hits_sorted = sorted(hits, key=lambda h: h[3], reverse=True)
@@ -569,6 +573,52 @@ def merge_exons_to_gene(
     gene_start = min(e[0] for e in best_exons)
     gene_end = max(e[1] for e in best_exons)
     gene_span = gene_end - gene_start + 1
+
+    # For genes with max_exon_gap constraint, try alternative hits if span is too large
+    max_exon_gap = config.get("max_exon_gap")
+    if max_exon_gap is not None and gene_span > max_exon_gap * 2:
+        # Try to find alternative hit combinations with smaller span
+        logger.debug(
+            f"{gene_name}: span {gene_span}bp > 2x max_exon_gap {max_exon_gap}, "
+            f"trying alternative hits"
+        )
+
+        # Get all hits for exon 1 (the anchor)
+        exon1_hits = exon_hits.get(1, [])
+        if exon1_hits:
+            # Sort exon 1 hits by identity
+            exon1_sorted = sorted(exon1_hits, key=lambda h: h[3], reverse=True)
+            # Try each exon 1 hit as anchor, find compatible exon 2+ hits
+            for e1_hit in exon1_sorted[:3]:  # Try top 3 exon 1 hits
+                e1_start, e1_end, e1_strand, e1_id = e1_hit
+
+                # Find exon 2+ hits close to this exon 1
+                alt_exons = [(e1_start, e1_end, e1_strand, 1)]
+
+                for exon_num in range(2, expected_exons + 1):
+                    hits_n = exon_hits.get(exon_num, [])
+                    # Find hits within max_exon_gap of exon 1
+                    compatible = [
+                        h for h in hits_n
+                        if abs(h[0] - e1_end) < max_exon_gap or abs(e1_start - h[1]) < max_exon_gap
+                    ]
+                    if compatible:
+                        # Take best compatible hit
+                        compatible.sort(key=lambda h: h[3], reverse=True)
+                        alt_exons.append((compatible[0][0], compatible[0][1], compatible[0][2], exon_num))
+
+                if len(alt_exons) == expected_exons:
+                    alt_span = max(e[1] for e in alt_exons) - min(e[0] for e in alt_exons)
+                    if alt_span < gene_span:
+                        logger.info(
+                            f"{gene_name}: using alternative hits with smaller span "
+                            f"{alt_span}bp (was {gene_span}bp)"
+                        )
+                        best_exons = alt_exons
+                        gene_start = min(e[0] for e in best_exons)
+                        gene_end = max(e[1] for e in best_exons)
+                        gene_span = alt_span
+                        break
 
     # Validate span
     if gene_span > max_span:

@@ -79,6 +79,30 @@ STOP_CODONS = {"TAA", "TAG", "TGA"}
 STOP_GAIN_CODONS = {"CAA", "CAG", "CGA", "TGG"}  # RNA editing: C->U creates stop
 MAX_CONSERVATIVE_SLIDE = 10  # Maximum adjustment in conservative refinement (bp)
 
+# Expected gene lengths with ±10% tolerance for validation
+# Based on plant mitochondrial gene lengths (approximate bp)
+# reject_below/reject_above are ~±22% from typical expected length
+EXPECTED_LENGTHS_WITH_TOLERANCE = {
+    "atp1": {"min": 1400, "max": 1600, "reject_below": 1260, "reject_above": 1760},
+    "atp4": {"min": 500, "max": 650, "reject_below": 450, "reject_above": 720},
+    "atp6": {"min": 900, "max": 1200, "reject_below": 810, "reject_above": 1320},
+    "atp8": {"min": 400, "max": 550, "reject_below": 360, "reject_above": 605},
+    "atp9": {"min": 200, "max": 280, "reject_below": 180, "reject_above": 310},
+    "cob": {"min": 1100, "max": 1300, "reject_below": 990, "reject_above": 1430},
+    "cox1": {"min": 1500, "max": 1650, "reject_below": 1350, "reject_above": 1815},
+    "cox2": {"min": 700, "max": 900, "reject_below": 630, "reject_above": 990},
+    "cox3": {"min": 750, "max": 900, "reject_below": 675, "reject_above": 990},
+    "nad1": {"min": 900, "max": 1100, "reject_below": 810, "reject_above": 1210},
+    "nad2": {"min": 1100, "max": 1400, "reject_below": 990, "reject_above": 1540},
+    "nad3": {"min": 300, "max": 400, "reject_below": 270, "reject_above": 440},
+    "nad4": {"min": 1300, "max": 1600, "reject_below": 1170, "reject_above": 1760},
+    "nad4L": {"min": 250, "max": 350, "reject_below": 225, "reject_above": 385},
+    "nad5": {"min": 1800, "max": 2300, "reject_below": 1620, "reject_above": 2530},
+    "nad6": {"min": 550, "max": 700, "reject_below": 495, "reject_above": 770},
+    "nad7": {"min": 1100, "max": 1400, "reject_below": 990, "reject_above": 1540},
+    "nad9": {"min": 500, "max": 650, "reject_below": 450, "reject_above": 720},
+}
+
 
 def translate_codon(codon: str) -> str:
     """Translate a single codon using standard genetic code (Table 1)."""
@@ -128,6 +152,47 @@ def six_frame_translation(sequence: str) -> list[tuple[str, int]]:
         frames.append((prot, -(frame + 1)))  # frames -1, -2, -3
 
     return frames
+
+
+def _validate_hit_length(hit: HMMHit) -> bool:
+    """Validate hit length against expected range.
+
+    Returns True if hit is within acceptable range.
+    Returns False if hit is significantly over-extended or fragmented.
+
+    This validation prevents genes from being annotated with lengths
+    significantly deviating from their expected values. For example,
+    atp4 (expected ~579bp) should not be annotated as 599bp+.
+
+    Args:
+        hit: HMMHit object to validate
+
+    Returns:
+        True if valid, False if should be rejected
+    """
+    if hit.gene_name not in EXPECTED_LENGTHS_WITH_TOLERANCE:
+        return True
+
+    expected = EXPECTED_LENGTHS_WITH_TOLERANCE[hit.gene_name]
+    hit_len = hit.end - hit.start + 1
+
+    # Reject if over-extended (common case)
+    if hit_len > expected["reject_above"]:
+        logger.warning(
+            f"{hit.gene_name}: {hit_len}bp exceeds reject threshold "
+            f"{expected['reject_above']}bp - over-extended"
+        )
+        return False
+
+    # Reject if too short (fragmented)
+    if hit_len < expected["reject_below"]:
+        logger.warning(
+            f"{hit.gene_name}: {hit_len}bp below reject threshold "
+            f"{expected['reject_below']}bp - fragmented"
+        )
+        return False
+
+    return True
 
 
 def annotate_pcg(

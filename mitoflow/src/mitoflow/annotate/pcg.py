@@ -11,6 +11,7 @@ Core annotation strategy:
 from __future__ import annotations
 import logging
 import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -348,9 +349,6 @@ def _blastn_fallback(
     (protein vs nucleotide) since we have protein references.
     This catches sdh4, nad4L and other small/divergent genes.
     """
-    import shutil
-    import subprocess
-
     tblastn = shutil.which("tblastn")
     makeblastdb = shutil.which("makeblastdb")
     if not tblastn or not makeblastdb:
@@ -630,8 +628,6 @@ def _refine_boundaries_reference(
     Returns:
         Refined HMMHit objects with corrected boundaries
     """
-    import subprocess
-
     blastn = shutil.which("blastn")
     makeblastdb = shutil.which("makeblastdb")
     if not blastn or not makeblastdb:
@@ -731,7 +727,6 @@ def _parse_blastn_for_boundary(
 
     best_hit = None
     best_score = -1
-    best_dist = float("inf")
 
     for line in lines:
         parts = line.split("\t")

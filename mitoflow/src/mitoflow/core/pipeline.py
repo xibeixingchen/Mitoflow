@@ -29,6 +29,7 @@ from ..annotate.trna import annotate_trna
 from ..annotate.rrna import annotate_rrna
 from ..annotate.boundary import correct_boundaries
 from ..annotate.cds_check import validate_cds, CDSValidationResult
+from ..annotate.trans_splicing import validate_trans_spliced_genes
 from ..annotate.gff_handler import write_gff3, write_genbank
 from ..extract.sequences import extract_all
 from ..db.manager import DBManager
@@ -124,6 +125,12 @@ class AnnotationPipeline:
         pcg_config = PCGConfig(evalue=self.config.evalue, threads=self.config.threads)
         annotations = annotate_pcg(genome, self.db_manager, pcg_config)
         console.print(f"  Found {len(annotations)} protein-coding genes")
+
+        # Validate trans-spliced gene exon counts
+        ts_warnings = validate_trans_spliced_genes(annotations, self.db_manager)
+        for w in ts_warnings:
+            console.print(f"  [yellow]Warning:[/] {w}")
+        warnings.extend(ts_warnings)
 
         # Step 3: Annotate tRNA
         trna_annotations = []

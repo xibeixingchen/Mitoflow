@@ -698,7 +698,7 @@ def annotate_trans_spliced_genes(
             current = existing_annotations[gene_name]
 
             # Check HMM annotation span - if too large, it may be wrong
-            hmm_span = abs(current.end - current.start)
+            hmm_span = abs(current.genomic_end - current.genomic_start)
             max_span = config["max_span"]
 
             # If HMM span exceeds max_span, discard and use BLASTn only

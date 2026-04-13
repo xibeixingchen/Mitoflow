@@ -23,6 +23,29 @@ from ..db.manager import DBManager
 logger = logging.getLogger(__name__)
 
 
+def _standardize_trna_name(amino_acid: str, anticodon: str) -> str:
+    """Standardize tRNA name to NCBI-compatible format.
+
+    NCBI format: trnI(cau) - lowercase, T notation, parentheses
+    Legacy format: trnI-AAU - uppercase, U notation, hyphen
+
+    Args:
+        amino_acid: Amino acid letter (I, F, M, etc.) or full name (Ile, fMet)
+        anticodon: Anticodon sequence (AAU, GAA, etc.) - may contain U or T
+
+    Returns:
+        Standardized name like "trnI(aat)"
+    """
+    # Normalize amino acid to single uppercase letter
+    aa_upper = amino_acid.upper() if len(amino_acid) <= 1 else amino_acid[0].upper()
+
+    # Convert U to T in anticodon (RNA -> DNA notation)
+    anticodon_t = anticodon.upper().replace("U", "T")
+
+    # Format: trnX(abc) with lowercase anticodon
+    return f"trn{aa_upper}({anticodon_t.lower()})"
+
+
 @dataclass
 class RawTRNA:
     """Raw tRNA hit from a prediction tool."""
@@ -142,7 +165,7 @@ def _parse_trnascan_output(output_file: Path) -> list[RawTRNA]:
             start = int(parts[2])
             end = int(parts[3])
             aa = parts[4].strip()
-            anticodon = parts[5].strip()
+            anticodon_raw = parts[5].strip()
             score = float(parts[8]) if len(parts) > 8 else 0.0
 
             # tRNAscan reports start < end regardless of strand
@@ -159,10 +182,15 @@ def _parse_trnascan_output(output_file: Path) -> list[RawTRNA]:
                 intron_start = int(parts[10])
                 intron_end = int(parts[11])
 
+            # Standardize tRNA name to NCBI format: trnX(abc) with T notation
+            gene_name = _standardize_trna_name(aa, anticodon_raw)
+            # Store anticodon in T notation (DNA) for consistency
+            anticodon_t = anticodon_raw.upper().replace("U", "T")
+
             hits.append(RawTRNA(
-                gene_name=f"trn{aa}-{anticodon}",
+                gene_name=gene_name,
                 start=start, end=end, strand=strand,
-                anticodon=anticodon, amino_acid=aa,
+                anticodon=anticodon_t, amino_acid=aa,
                 score=score, source="tRNAscan-SE",
                 intron_start=intron_start, intron_end=intron_end,
             ))
@@ -227,7 +255,7 @@ def _parse_aragorn_output(output_file: Path) -> list[RawTRNA]:
             start = int(parts[1])
             end = int(parts[2])
             aa_info = parts[3]  # e.g. "Cys" or "fMet"
-            anticodon = parts[4].strip("()")  # e.g. "GCA"
+            anticodon_raw = parts[4].strip("()")  # e.g. "GCA"
 
             if start > end:
                 strand = -1
@@ -235,10 +263,15 @@ def _parse_aragorn_output(output_file: Path) -> list[RawTRNA]:
             else:
                 strand = 1
 
+            # Standardize tRNA name to NCBI format: trnX(abc) with T notation
+            gene_name = _standardize_trna_name(aa_info, anticodon_raw)
+            # Store anticodon in T notation (DNA) for consistency
+            anticodon_t = anticodon_raw.upper().replace("U", "T")
+
             hits.append(RawTRNA(
-                gene_name=f"trn{aa_info}-{anticodon}",
+                gene_name=gene_name,
                 start=start, end=end, strand=strand,
-                anticodon=anticodon, amino_acid=aa_info,
+                anticodon=anticodon_t, amino_acid=aa_info,
                 score=0.0, source="ARAGORN",
             ))
         except (ValueError, IndexError):
@@ -461,7 +494,7 @@ def _trna_blastn_external(
             start, end = send, sstart
 
         # Parse tRNA name from query ID
-        aa, anticodon = _parse_trna_name(qseqid)
+        aa, anticodon_raw = _parse_trna_name(qseqid)
 
         # Deduplicate overlapping hits
         is_dup = False
@@ -474,11 +507,16 @@ def _trna_blastn_external(
         if is_dup:
             continue
 
+        # Standardize tRNA name to NCBI format: trnX(abc) with T notation
+        gene_name = _standardize_trna_name(aa, anticodon_raw)
+        # Store anticodon in T notation (DNA) for consistency
+        anticodon_t = anticodon_raw.upper().replace("U", "T")
+
         seen_regions.append((start, end, strand))
         hits.append(RawTRNA(
-            gene_name=f"trn{aa}-{anticodon}",
+            gene_name=gene_name,
             start=start, end=end, strand=strand,
-            anticodon=anticodon, amino_acid=aa,
+            anticodon=anticodon_t, amino_acid=aa,
             score=score, source="BLASTN",
         ))
 
@@ -513,7 +551,10 @@ def _trna_python_fallback(
             continue
 
         # Parse tRNA info from name
-        aa, anticodon = _parse_trna_name(ref_record.id)
+        aa, anticodon_raw = _parse_trna_name(ref_record.id)
+        # Standardize tRNA name and convert U to T
+        gene_name = _standardize_trna_name(aa, anticodon_raw)
+        anticodon_t = anticodon_raw.upper().replace("U", "T")
 
         # Build k-mer index
         kmer_idx: dict[str, list[int]] = {}
@@ -550,9 +591,9 @@ def _trna_python_fallback(
                     if not is_dup:
                         seen_regions.append((start, end, 1))
                         hits.append(RawTRNA(
-                            gene_name=f"trn{aa}-{anticodon}",
+                            gene_name=gene_name,
                             start=start, end=end, strand=1,
-                            anticodon=anticodon, amino_acid=aa,
+                            anticodon=anticodon_t, amino_acid=aa,
                             score=identity, source="BLASTN-Python",
                         ))
 
@@ -585,9 +626,9 @@ def _trna_python_fallback(
                     if not is_dup:
                         seen_regions.append((start, end, -1))
                         hits.append(RawTRNA(
-                            gene_name=f"trn{aa}-{anticodon}",
+                            gene_name=gene_name,
                             start=start, end=end, strand=-1,
-                            anticodon=anticodon, amino_acid=aa,
+                            anticodon=anticodon_t, amino_acid=aa,
                             score=identity, source="BLASTN-Python",
                         ))
 
@@ -600,12 +641,14 @@ def _parse_trna_name(qseqid: str) -> tuple[str, str]:
     Examples:
         RefVi3086_tRNA_trnA-UGC_0001 -> ("A", "UGC")
         trnF-GAA -> ("F", "GAA")
+        trnI(aat) -> ("I", "AAT")  # NCBI lowercase format
     """
-    # Try standard patterns
-    m = re.search(r'trn([A-Z][a-z]?)\(([A-Z]{3})\)', qseqid)
+    # Try NCBI standard format: trnX(abc) with lowercase anticodon
+    m = re.search(r'trn([A-Z][a-z]?)\(([A-Z]{3})\)', qseqid, re.IGNORECASE)
     if m:
-        return m.group(1), m.group(2)
+        return m.group(1).upper(), m.group(2).upper()
 
+    # Try hyphen format: trnX-ABC or trnX-abc
     m = re.search(r'trn([A-Z][a-z]?)-?([A-Z]{3})', qseqid, re.IGNORECASE)
     if m:
         return m.group(1).upper(), m.group(2).upper()

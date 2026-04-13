@@ -287,6 +287,10 @@ def annotate_pcg(
 
     # Step 2: Refine boundaries using reference-based approach
     refined_hits = _refine_boundaries_reference(raw_hits, genome, db_manager, config)
+    logger.debug(f"Boundary refinement: {len(refined_hits)} hits retained, showing rpl16:")
+    for h in refined_hits:
+        if h.gene_name.lower() == 'rpl16':
+            logger.debug(f"  refined rpl16 hit: {h.start}-{h.end} strand={h.strand}")
     logger.info(f"Boundary refinement: {len(refined_hits)} hits retained")
 
     # Step 2b: Validate lengths against expected (±10% tolerance)
@@ -295,10 +299,18 @@ def annotate_pcg(
         filtered_count = len(refined_hits) - len(valid_hits)
         logger.info(f"Length validation: filtered {filtered_count} hits outside ±10% tolerance")
     refined_hits = valid_hits
+    logger.debug(f"After length validation, rpl16 hits:")
+    for h in refined_hits:
+        if h.gene_name.lower() == 'rpl16':
+            logger.debug(f"  validated rpl16 hit: {h.start}-{h.end} strand={h.strand}")
 
     # Step 3: Resolve overlaps
     final_hits = _resolve_overlaps(refined_hits)
     logger.info(f"After overlap resolution: {len(final_hits)} genes")
+    logger.debug(f"After overlap resolution, rpl16 hits:")
+    for h in final_hits:
+        if h.gene_name.lower() == 'rpl16':
+            logger.debug(f"  final rpl16 hit: {h.start}-{h.end} strand={h.strand}")
 
     # Step 4: Convert to GeneAnnotation objects
     annotations = []
@@ -960,11 +972,11 @@ def _refine_boundaries_reference(
     Returns:
         Refined HMMHit objects with corrected boundaries
     """
-    blastn = shutil.which("blastn")
+    tblastn = shutil.which("tblastn")
     makeblastdb = shutil.which("makeblastdb")
-    if not blastn or not makeblastdb:
+    if not tblastn or not makeblastdb:
         # Fallback to conservative refinement
-        logger.warning("blastn/makeblastdb not found, using conservative refinement")
+        logger.warning("tblastn/makeblastdb not found, using conservative refinement")
         return [_refine_single_conservative(hit, genome, db_manager, config)
                 for hit in hits]
 
@@ -990,42 +1002,215 @@ def _refine_boundaries_reference(
 
         for hit in hits:
             gene_name = hit.gene_name
-            ref_file = ref_dir / f"{gene_name}.CDS.fasta"
+            # Use Protein.fasta for tblastn (we have protein references)
+            ref_file = ref_dir / f"{gene_name}.Protein.fasta"
 
             if not ref_file.exists():
                 # No reference available, use conservative refinement
+                logger.debug(f"No Protein reference for {gene_name}, using conservative refinement")
                 refined.append(_refine_single_conservative(hit, genome, db_manager, config))
                 continue
 
-            # Run blastn: query=reference CDS, subject=genome
-            out_file = Path(tmpdir) / f"blastn_{gene_name}.tsv"
+            # Run tblastn: query=reference Protein, subject=genome (translated)
+            out_file = Path(tmpdir) / f"tblastn_{gene_name}.tsv"
             cmd = [
-                blastn,
-                "-task", "blastn",
+                tblastn,
                 "-query", str(ref_file),
                 "-db", str(db_path),
                 "-out", str(out_file),
-                "-outfmt", "6 qseqid sseqid sstart send evalue bitscore pident length",
+                "-outfmt", "6 qseqid sseqid sstart send evalue bitscore pident length sframe",
                 "-evalue", "1e-10",
                 "-max_target_seqs", "5",
             ]
 
             try:
-                subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                # Run tblastn - output goes to file specified by -out parameter
+                # Do NOT capture output, let it write to the file
+                subprocess.run(cmd, check=True, timeout=120)
             except subprocess.SubprocessError:
                 refined.append(_refine_single_conservative(hit, genome, db_manager, config))
                 continue
 
-            # Parse BLAST results to find best hit near the HMM region
-            best_hit = _parse_blastn_for_boundary(out_file, hit, genome)
+            # Parse tblastn results to find best hit near the HMM region
+            best_hit = _parse_tblastn_for_boundary(out_file, hit, genome)
+
+            # Debug: check if tblastn file was created and has content
+            if not out_file.exists():
+                logger.warning(f"tblastn output file not created for {gene_name}")
+            elif not out_file.read_text().strip():
+                logger.warning(f"tblastn output file empty for {gene_name}")
+            else:
+                logger.debug(f"tblastn found hits for {gene_name} near HMM {hit.start}-{hit.end}")
 
             if best_hit:
+                logger.info(f"tblastn refined {gene_name}: {hit.start}-{hit.end} -> {best_hit.start}-{best_hit.end}")
                 refined.append(best_hit)
             else:
                 # BLAST failed or no good hit, use conservative refinement
+                logger.debug(f"tblastn no hit for {gene_name}, using conservative refinement")
                 refined.append(_refine_single_conservative(hit, genome, db_manager, config))
 
     return refined
+
+
+def _parse_tblastn_for_boundary(
+    blast_file: Path,
+    hmm_hit: HMMHit,
+    genome: GenomeSequence,
+) -> HMMHit | None:
+    """Parse tblastn results to extract refined boundary.
+
+    tblastn returns protein hits on translated genome.
+    Frame indicates strand: +1/+2/+3 = plus, -1/-2/-3 = minus
+
+    After finding tblastn hit, extend upstream to find start codon
+    since reference proteins may be truncated.
+
+    Args:
+        blast_file: Path to tblastn output file
+        hmm_hit: Original HMM hit
+        genome: Genome sequence
+
+    Returns:
+        Refined HMMHit or None if no suitable hit found
+    """
+    if not blast_file.exists():
+        logger.warning(f"tblastn file does not exist: {blast_file}")
+        return None
+
+    content = blast_file.read_text().strip()
+    if not content:
+        logger.warning(f"tblastn file is empty: {blast_file}")
+        return None
+
+    START_CODONS = ["ATG"]
+    STOP_CODONS = ["TAA", "TAG", "TGA"]
+    comp = str.maketrans("ATGC", "TACG")
+
+    best_hits = []
+    line_count = 0
+    filtered_count = 0
+
+    with open(blast_file) as f:
+        for line in f:
+            line_count += 1
+            parts = line.strip().split("\t")
+            if len(parts) < 9:
+                continue
+
+            try:
+                qseqid = parts[0]
+                sstart = int(parts[2])
+                send = int(parts[3])
+                evalue = float(parts[4])
+                bitscore = float(parts[5])
+                pident = float(parts[6])
+                length = int(parts[7])  # Protein alignment length (aa)
+                frame = int(parts[8])
+
+                # Determine strand from frame
+                strand = Strand.PLUS if frame > 0 else Strand.MINUS
+
+                # tblastn returns genome coords (sstart/send)
+                # These are 1-based coordinates on the genome
+                genome_start = min(sstart, send)
+                genome_end = max(sstart, send)
+
+                # Score hit by proximity to HMM hit and identity
+                hmm_start = hmm_hit.start
+                hmm_end = hmm_hit.end
+
+                # Check if hit is near HMM region (within 200bp)
+                if genome_end < hmm_start - 200 or genome_start > hmm_end + 200:
+                    filtered_count += 1
+                    logger.debug(f"Filtered tblastn hit for {hmm_hit.gene_name}: too far from HMM")
+                    continue  # Too far from HMM hit
+
+                # Score = bitscore + proximity bonus + identity bonus
+                proximity = min(abs(genome_start - hmm_start), abs(genome_end - hmm_end))
+                score = bitscore + (500 - proximity) + pident
+                logger.debug(f"Accepted tblastn hit for {hmm_hit.gene_name}: score={score:.1f}")
+
+                best_hits.append((genome_start, genome_end, strand, score, pident, frame))
+            except (ValueError, IndexError) as e:
+                logger.debug(f"Parse error: {e}")
+                continue
+
+    logger.debug(f"tblastn parsed {line_count} lines, found {len(best_hits)} hits for {hmm_hit.gene_name}")
+
+    if not best_hits:
+        return None
+
+    # Sort by score, take best
+    best_hits.sort(key=lambda x: -x[3])
+    best_start, best_end, best_strand, _, pident, frame = best_hits[0]
+
+    # Extend upstream to find start codon
+    # Reference proteins may be truncated, missing first few amino acids
+    # Search up to 300bp upstream for ATG
+    gene_name = hmm_hit.gene_name.lower()
+
+    # For genes with known truncation issues (rpl16, rps1, atp6)
+    genes_need_extension = {"rpl16", "rps1", "atp6", "ccmfc", "ccmfn", "rpl2"}
+    extension_range = 300 if gene_name in genes_need_extension else 150
+
+    new_start = best_start
+    new_end = best_end
+
+    if best_strand == Strand.PLUS:
+        # Slide upstream (left) to find start codon
+        search_pos = best_start - 3
+        searched = 0
+        while searched <= extension_range and search_pos >= 1:
+            # Convert to 0-based for genome indexing
+            codon = genome.sequence[search_pos - 1:search_pos - 1 + 3].upper()
+            if codon in START_CODONS:
+                new_start = search_pos
+                logger.debug(f"tblastn found start codon at position {search_pos} for {hmm_hit.gene_name}")
+                break
+            if codon in STOP_CODONS:
+                # Stop codon upstream means we went too far
+                logger.debug(f"Stop codon blocked search for {hmm_hit.gene_name}")
+                break
+            search_pos -= 3
+            searched += 3
+        logger.debug(f"ATG search for {hmm_hit.gene_name}: searched {searched}bp")
+    else:
+        # For minus strand, start codon is at HIGH coordinate
+        # Slide downstream (right) to find start codon in reverse complement
+        search_pos = best_end + 3
+        searched = 0
+        while searched <= extension_range and search_pos <= genome.length:
+            # Get forward strand codon and reverse complement it
+            codon_fwd = genome.sequence[search_pos - 3:search_pos].upper()
+            codon = codon_fwd.translate(comp)[::-1]
+            if codon in START_CODONS:
+                new_end = search_pos  # For minus strand, end is the start position
+                logger.debug(f"tblastn found start codon {codon} at position {search_pos} (minus strand)")
+                break
+            if codon in STOP_CODONS:
+                break
+            search_pos += 3
+            searched += 3
+
+    # Create refined HMMHit with extended boundaries
+    logger.debug(
+        f"tblastn refined {hmm_hit.gene_name}: "
+        f"{hmm_hit.start}-{hmm_hit.end} → {new_start}-{new_end} "
+        f"(extended from tblastn hit {best_start}-{best_end})"
+    )
+
+    return HMMHit(
+        gene_name=hmm_hit.gene_name,
+        start=new_start,
+        end=new_end,
+        strand=best_strand,
+        score=hmm_hit.score,
+        evalue=hmm_hit.evalue,
+        domain_score=hmm_hit.domain_score,
+        ali_start=hmm_hit.ali_start,
+        ali_end=hmm_hit.ali_end,
+    )
 
 
 def _parse_blastn_for_boundary(
@@ -1033,7 +1218,7 @@ def _parse_blastn_for_boundary(
     hmm_hit: HMMHit,
     genome: GenomeSequence,
 ) -> HMMHit | None:
-    """Parse blastn results to extract refined boundary.
+    """Parse blastn results to extract refined boundary (DEPRECATED - use tblastn version).
 
     Find the BLAST hit that best matches the HMM region and use its
     coordinates as refined boundaries.

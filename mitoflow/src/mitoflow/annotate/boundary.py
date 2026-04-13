@@ -232,10 +232,12 @@ def _correct_start_codon_conservative(
     
     # Don't extend genes that are already reasonable length
     current_len = ann.total_exon_length
+    logger.debug(f"Boundary correction check for {ann.gene_name}: len={current_len}")
     if ann.gene_name in EXPECTED_LENGTHS:
         min_exp, max_exp = EXPECTED_LENGTHS[ann.gene_name]
         if min_exp * 0.8 <= current_len <= max_exp * 1.2:
             # Length is reasonable, skip correction
+            logger.debug(f"{ann.gene_name}: length {current_len} is reasonable, skipping")
             return ann
     
     first_exon = ann.exons[0]
@@ -743,15 +745,29 @@ def _handle_special_genes(
     name = ann.gene_name
 
     # rpl16: truncate if first exon is very long (>110 aa)
+    # BUT only if no start codon was found by boundary refinement
+    # If position starts with ATG/GTG, don't truncate
     if name == "rpl16" and len(ann.exons) >= 1:
         first_len = ann.exons[0].end - ann.exons[0].start + 1
         if first_len > 330:  # >110 aa
+            # Check if the exon starts with a valid start codon
+            start_codon = genome.get_sequence_for_range(
+                ann.exons[0].start, ann.exons[0].start + 2
+            ).upper()
+            allowed_starts = {"ATG", "GTG"}
+            if start_codon in allowed_starts:
+                # Start codon already found by tblastn, don't truncate
+                logger.debug(f"rpl16: starts with {start_codon}, skipping truncation")
+                return ann
+
+            # Otherwise, truncate first 108bp (common rpl16 issue)
             new_start = ann.exons[0].start + 108
             new_exons = [ExonRecord(
                 start=new_start, end=ann.exons[0].end,
                 strand=ann.strand, number=1,
             )]
             new_exons.extend(ann.exons[1:])
+            logger.info(f"rpl16: truncating first 108bp (no start codon at position)")
             return ann.model_copy(update={
                 "exons": new_exons,
                 "notes": ann.notes + ["rpl16: truncated first 108 bp"],

@@ -152,9 +152,11 @@ def detect_short_exons(
 def _find_exon_reference(gene_name: str, ref_dir: Path) -> Path | None:
     """Find exon reference file for a gene.
 
-    Looks for:
+    Looks for nucleotide reference files:
     1. {gene_name}_exons.fasta (individual exon sequences)
     2. {gene_name}.CDS.fasta (full CDS sequence)
+
+    Note: Protein.fasta files are NOT suitable for blastn (requires nucleotide).
     """
     # Check for exon-specific reference
     exon_ref = ref_dir / f"{gene_name}_exons.fasta"
@@ -165,6 +167,15 @@ def _find_exon_reference(gene_name: str, ref_dir: Path) -> Path | None:
     cds_ref = ref_dir / f"{gene_name}.CDS.fasta"
     if cds_ref.exists():
         return cds_ref
+
+    # Check if only Protein.fasta exists (not usable for blastn)
+    protein_ref = ref_dir / f"{gene_name}.Protein.fasta"
+    if protein_ref.exists():
+        logger.warning(
+            f"Only Protein.fasta found for {gene_name}, but blastn requires "
+            f"nucleotide reference (*_exons.fasta or *.CDS.fasta). "
+            f"Skipping short exon detection."
+        )
 
     return None
 

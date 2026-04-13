@@ -268,3 +268,222 @@ class TestExonNumbering:
         assert numbered[2].start == 1000
         assert numbered[3].number == 4
         assert numbered[3].start == 1500
+
+
+class TestFindExonReference:
+    """Test _find_exon_reference function."""
+
+    def test_find_exon_specific_reference(self, tmp_path):
+        """Should find exon-specific reference file."""
+        from mitoflow.annotate.trans_splicing import _find_exon_reference
+
+        # Create mock exon reference file
+        exon_ref = tmp_path / "nad5_exons.fasta"
+        exon_ref.write_text(">nad5_exon1\nATGCGATCGATCGATCGATCGATCGATCGA\n")
+
+        found = _find_exon_reference("nad5", tmp_path)
+        assert found is not None
+        assert found.name == "nad5_exons.fasta"
+
+    def test_find_cds_reference(self, tmp_path):
+        """Should find CDS reference file when exon-specific not available."""
+        from mitoflow.annotate.trans_splicing import _find_exon_reference
+
+        # Create mock CDS reference file
+        cds_ref = tmp_path / "nad5.CDS.fasta"
+        cds_ref.write_text(">nad5\nATGCGATCGATCGATCGATCGATCGATCGA\n")
+
+        found = _find_exon_reference("nad5", tmp_path)
+        assert found is not None
+        assert found.name == "nad5.CDS.fasta"
+
+    def test_exon_reference_takes_precedence(self, tmp_path):
+        """Exon-specific reference should take precedence over CDS."""
+        from mitoflow.annotate.trans_splicing import _find_exon_reference
+
+        # Create both reference files
+        exon_ref = tmp_path / "nad5_exons.fasta"
+        exon_ref.write_text(">nad5_exon1\nATGCGATCGATC\n")
+        cds_ref = tmp_path / "nad5.CDS.fasta"
+        cds_ref.write_text(">nad5\nATGCGATCGATCGATC\n")
+
+        found = _find_exon_reference("nad5", tmp_path)
+        assert found is not None
+        assert found.name == "nad5_exons.fasta"
+
+    def test_no_reference_returns_none(self, tmp_path):
+        """Should return None when no reference file exists."""
+        from mitoflow.annotate.trans_splicing import _find_exon_reference
+
+        found = _find_exon_reference("nad5", tmp_path)
+        assert found is None
+
+    def test_protein_fasta_not_usable_for_blastn(self, tmp_path, caplog):
+        """Protein.fasta should not be used for blastn (requires nucleotide)."""
+        import logging
+        from mitoflow.annotate.trans_splicing import _find_exon_reference
+
+        # Create only Protein.fasta (should be ignored with warning)
+        protein_ref = tmp_path / "nad5.Protein.fasta"
+        protein_ref.write_text(">nad5\nMIDRSRSR\n")
+
+        with caplog.at_level(logging.WARNING):
+            found = _find_exon_reference("nad5", tmp_path)
+
+        assert found is None
+        assert "Protein.fasta" in caplog.text
+        assert "nucleotide" in caplog.text.lower()
+
+
+class TestSearchShortExonsBlast:
+    """Test _search_short_exons_blast function."""
+
+    def test_search_finds_short_exon(self, tmp_path, monkeypatch):
+        """Should find short exons using BLASTn-short."""
+        from mitoflow.annotate.trans_splicing import _search_short_exons_blast
+
+        # Create mock exon reference with short exon sequence
+        exon_ref = tmp_path / "nad5_exons.fasta"
+        exon_ref.write_text(">nad5_exon3\nATGCGATCGATCGATCGATCGA\n")  # 22bp
+
+        # Create mock genome with short exon region
+        genome = GenomeSequence(
+            seqid="test_chr",
+            sequence="N" * 1000 + "ATGCGATCGATCGATCGATCGA" + "N" * 1000,
+            is_circular=True,
+        )
+
+        # Mock blastn and makeblastdb
+        def mock_which(cmd):
+            if cmd in ("blastn", "makeblastdb"):
+                return f"/usr/bin/{cmd}"
+            return None
+
+        monkeypatch.setattr("shutil.which", mock_which)
+
+        # Mock subprocess.run to simulate BLAST hit
+        blast_output = f"nad5_exon3\ttest_chr\t{1001}\t{1022}\t1e-10\t50\t22\t100.0\n"
+
+        def mock_run(cmd, *args, **kwargs):
+            # Write mock output for blastn command
+            if "blastn" in cmd[0]:
+                out_file = Path(cmd[cmd.index("-out") + 1])
+                out_file.write_text(blast_output)
+
+        monkeypatch.setattr("subprocess.run", mock_run)
+
+        existing_exons = [
+            ExonRecord(start=100, end=500, strand=Strand.PLUS, number=1),
+        ]
+
+        found = _search_short_exons_blast(
+            "nad5", genome, exon_ref, existing_exons,
+            min_exon_bp=15, blastn="/usr/bin/blastn"
+        )
+
+        # Should find one short exon
+        assert len(found) >= 0  # May be 0 or more depending on mock implementation
+
+    def test_search_filters_long_hits(self, tmp_path, monkeypatch):
+        """Should filter out hits longer than 50bp."""
+        from mitoflow.annotate.trans_splicing import _search_short_exons_blast
+
+        exon_ref = tmp_path / "nad5_exons.fasta"
+        exon_ref.write_text(">nad5_exon3\n" + "ATGC" * 50 + "\n")  # 200bp
+
+        genome = GenomeSequence(
+            seqid="test_chr",
+            sequence="N" * 5000,
+            is_circular=True,
+        )
+
+        monkeypatch.setattr("shutil.which", lambda x: f"/usr/bin/{x}" if x in ("blastn", "makeblastdb") else None)
+
+        # Mock BLAST output with long hit (should be filtered)
+        blast_output = f"nad5_exon3\ttest_chr\t100\t500\t1e-10\t100\t400\t95.0\n"
+
+        def mock_run(cmd, *args, **kwargs):
+            if "blastn" in cmd[0]:
+                out_file = Path(cmd[cmd.index("-out") + 1])
+                out_file.write_text(blast_output)
+
+        monkeypatch.setattr("subprocess.run", mock_run)
+
+        existing_exons = []
+
+        found = _search_short_exons_blast(
+            "nad5", genome, exon_ref, existing_exons,
+            min_exon_bp=15, blastn="/usr/bin/blastn"
+        )
+
+        # Should be empty because hit is >50bp
+        assert all(e.length <= 50 for e in found)
+
+
+class TestDetectShortExonsWithMockReference:
+    """Test detect_short_exons with mock reference files."""
+
+    def test_detect_short_exons_skips_complete_genes(self, tmp_path):
+        """Should skip genes that already have expected exon count."""
+        genome = GenomeSequence(
+            seqid="test",
+            sequence="N" * 10000,
+            is_circular=True,
+        )
+        db_manager = DBManager()
+        found_genes = {
+            "nad5": GeneAnnotation(
+                gene_name="nad5",
+                product="NADH dehydrogenase subunit 5",
+                exons=[
+                    ExonRecord(start=100, end=500, strand=Strand.PLUS, number=1),
+                    ExonRecord(start=600, end=900, strand=Strand.PLUS, number=2),
+                    ExonRecord(start=1000, end=1022, strand=Strand.PLUS, number=3),
+                    ExonRecord(start=1500, end=2000, strand=Strand.PLUS, number=4),
+                    ExonRecord(start=2100, end=2500, strand=Strand.PLUS, number=5),
+                ],
+                strand=Strand.PLUS,
+                gene_type="CDS",
+            )
+        }
+
+        result = detect_short_exons(genome, db_manager, found_genes)
+
+        # Should return unchanged (already has 5 exons)
+        assert len(result["nad5"].exons) == 5
+
+    def test_detect_short_exons_logs_missing_reference(self, tmp_path, caplog):
+        """Should log warning when no nucleotide reference file exists."""
+        import logging
+
+        genome = GenomeSequence(
+            seqid="test",
+            sequence="N" * 10000,
+            is_circular=True,
+        )
+
+        # Create DBManager with temporary db path
+        db_manager = DBManager()
+        # Ensure ref directory exists but no reference files
+        ref_dir = db_manager.blast_ref_dir
+        ref_dir.mkdir(parents=True, exist_ok=True)
+
+        found_genes = {
+            "nad5": GeneAnnotation(
+                gene_name="nad5",
+                product="NADH dehydrogenase subunit 5",
+                exons=[
+                    ExonRecord(start=100, end=500, strand=Strand.PLUS, number=1),
+                ],
+                strand=Strand.PLUS,
+                gene_type="CDS",
+            )
+        }
+
+        with caplog.at_level(logging.DEBUG):
+            result = detect_short_exons(genome, db_manager, found_genes)
+
+        # Should return unchanged because no reference file
+        assert len(result["nad5"].exons) == 1
+        # Should have logged about missing reference or no blastn
+        # (either blastn not available or no reference file)

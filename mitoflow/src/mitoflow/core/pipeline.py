@@ -29,7 +29,7 @@ from ..annotate.trna import annotate_trna
 from ..annotate.rrna import annotate_rrna
 from ..annotate.boundary import correct_boundaries
 from ..annotate.cds_check import validate_cds, CDSValidationResult
-from ..annotate.trans_splicing import validate_trans_spliced_genes
+from ..annotate.trans_splicing import validate_trans_spliced_genes, detect_short_exons
 from ..annotate.gff_handler import write_gff3, write_genbank
 from ..extract.sequences import extract_all
 from ..db.manager import DBManager
@@ -125,6 +125,11 @@ class AnnotationPipeline:
         pcg_config = PCGConfig(evalue=self.config.evalue, threads=self.config.threads)
         annotations = annotate_pcg(genome, self.db_manager, pcg_config)
         console.print(f"  Found {len(annotations)} protein-coding genes")
+
+        # Detect missing short exons for trans-spliced genes
+        annotations_by_name = {a.gene_name: a for a in annotations}
+        annotations_by_name = detect_short_exons(genome, self.db_manager, annotations_by_name)
+        annotations = list(annotations_by_name.values())
 
         # Validate trans-spliced gene exon counts
         ts_warnings = validate_trans_spliced_genes(annotations, self.db_manager)

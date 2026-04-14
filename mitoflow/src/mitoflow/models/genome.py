@@ -38,6 +38,37 @@ class GenomeSequence(BaseModel):
         comp = str.maketrans("ATGCatgcNn", "TACGtacgNn")
         return self.sequence.translate(comp)[::-1]
 
+    def circular_distance(self, a: int, b: int) -> int:
+        """Shortest distance between two positions on circular genome (1-based)."""
+        diff = abs(a - b)
+        return min(diff, self.length - diff)
+
+    def circular_span(self, start: int, end: int) -> int:
+        """Forward span from start to end on circular genome (1-based, inclusive).
+
+        Handles wrap-around: if end < start, span crosses the origin.
+        """
+        if end >= start:
+            return end - start + 1
+        return self.length - start + end + 1
+
+    def wrap_position(self, pos: int) -> int:
+        """Normalize position to [1, length] range (1-based)."""
+        return ((pos - 1) % self.length) + 1
+
+    def circular_positions_between(self, start: int, end: int) -> list[int]:
+        """All positions from start to end going forward (handles wrap-around)."""
+        positions = []
+        pos = start
+        while True:
+            positions.append(pos)
+            if pos == end:
+                break
+            pos = (pos % self.length) + 1
+            if pos == start:
+                break  # safety: prevent infinite loop
+        return positions
+
     def subsequence(self, start: int, end: int) -> str:
         """Extract subsequence (1-based, inclusive)."""
         return self.sequence[start - 1 : end]

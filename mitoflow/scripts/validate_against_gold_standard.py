@@ -122,13 +122,20 @@ def load_corrections(corrections_file: Path) -> Dict[str, Dict]:
     return dict(corrections)
 
 
+def circular_offset(a: int, b: int, genome_length: int) -> int:
+    """计算环形基因组上两点的最短距离"""
+    diff = abs(a - b)
+    return min(diff, genome_length - diff)
+
+
 def compare_gene_positions(
     ncbi_features: List[Dict],
     mitoflow_features: List[Dict],
     pmga_corrections: Dict[str, List],
-    species: str
+    species: str,
+    genome_length: int = 0,
 ) -> Dict:
-    """比较基因位置差异"""
+    """比较基因位置差异（使用环形距离）"""
 
     # 构建基因位置字典
     ncbi_pos = defaultdict(list)
@@ -151,8 +158,8 @@ def compare_gene_positions(
         ncbi_f = ncbi_pos[gene][0]
         mito_f = mito_pos[gene][0]
 
-        start_diff = abs(mito_f['start'] - ncbi_f['start'])
-        end_diff = abs(mito_f['end'] - ncbi_f['end'])
+        start_diff = circular_offset(mito_f['start'], ncbi_f['start'], genome_length) if genome_length else abs(mito_f['start'] - ncbi_f['start'])
+        end_diff = circular_offset(mito_f['end'], ncbi_f['end'], genome_length) if genome_length else abs(mito_f['end'] - ncbi_f['end'])
         max_diff = max(start_diff, end_diff)
 
         # 分类偏差级别

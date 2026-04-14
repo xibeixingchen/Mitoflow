@@ -1,0 +1,6 @@
+species,tool,accuracy,sensitivity,precision,f1,tp,fp,fn,gene_count,core_count,precise_match,large_diff
+Liriodendron tulipifera,NCBI,0.9761904761904762,1.0,0.9761904761904762,0.9879518072289156,41,1,0,42,40,39,1
+Liriodendron tulipifera,MitoFlow,0.9761904761904762,1.0,0.9761904761904762,0.9879518072289156,41,1,0,42,40,24,4
+Liriodendron tulipifera,GeSeq,0.7735849056603774,1.0,0.7735849056603774,0.8723404255319149,41,12,0,53,40,36,4
+Liriodendron tulipifera,MFannot,0.0,0.0,0.0,0.0,0,0,41,0,0,0,0
+Liriodendron tulipifera,PMGA,1.0,1.0,1.0,1.0,41,0,0,41,40,41,0

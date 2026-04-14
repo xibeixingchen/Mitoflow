@@ -272,13 +272,16 @@ def validate_single_species(
     # 解析NCBI原始注释
     ncbi_features, ncbi_length = parse_genbank_features(ncbi_file, "NCBI")
 
+    # 标准化物种名用于文件查找
+    species_name = species.replace(' ', '_').replace('.', '')
+
     # 解析MitoFlow输出
-    mitoflow_file = mitoflow_dir / "genbank" / f"{species}.gb"
+    mitoflow_file = mitoflow_dir / "genbank" / f"{species_name}.gb"
     if not mitoflow_file.exists():
-        mitoflow_file = mitoflow_dir / "genbank" / f"{species}.gbk"
+        mitoflow_file = mitoflow_dir / "genbank" / f"{species_name}.gbk"
 
     if not mitoflow_file.exists():
-        logger.warning(f"MitoFlow file not found for {species}")
+        logger.warning(f"MitoFlow file not found for {species_name}")
         return None
 
     mitoflow_features, mito_length = parse_genbank_features(mitoflow_file, "MitoFlow")

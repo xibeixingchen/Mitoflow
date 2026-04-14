@@ -35,6 +35,17 @@ CORE_GENES_FORCE_BLAST = [
     "nad1", "nad2", "nad3", "nad4", "nad4L", "nad5", "nad6", "nad7", "nad9",
 ]
 
+# 41 core PCG genes for duplicate filtering validation
+CORE_PCG_41 = [
+    "nad1", "nad2", "nad3", "nad4", "nad4l", "nad5", "nad6", "nad7", "nad9",
+    "cob", "cox1", "cox2", "cox3",
+    "atp1", "atp4", "atp6", "atp8", "atp9",
+    "ccmb", "ccmc", "ccmfc", "ccmfn",
+    "rpl2", "rpl5", "rpl10", "rpl16",
+    "rps1", "rps2", "rps3", "rps4", "rps7", "rps10", "rps12", "rps13", "rps14", "rps19",
+    "matr", "mttb", "sdh3", "sdh4",
+]
+
 
 @dataclass
 class HMMHit:
@@ -61,6 +72,8 @@ class PCGConfig:
     stop_codon_search_range: int = 250   # search downstream for stop codon
     transl_table: int = 1              # Standard genetic code (NOT Table 2)
     threads: int = 4
+    filter_duplicate_pcg: bool = True  # 过滤PCG重复基因（仅保留最长拷贝）
+    allow_duplicate_trna: bool = True  # 允许tRNA多拷贝（trnN.2, trnR.2等）
 
 
 # Standard genetic code (Table 1) codon table
@@ -383,12 +396,34 @@ def annotate_pcg(
     # Convert list to dict for trans-spliced gene processing
     ann_dict: dict[str, GeneAnnotation] = {}
     for ann in filtered:
-        # Handle multiple copies of same gene (e.g., trnN.2, trnN.3)
+        # Handle multiple copies of same gene
         key = ann.gene_name
+
+        # Check if this is a PCG (protein-coding gene) or tRNA/rRNA
+        is_pcg = ann.gene_name.lower() in CORE_PCG_41 or ann.gene_name.lower().startswith(('nad', 'cox', 'atp', 'cob', 'ccm', 'rpl', 'rps', 'mat', 'mtt', 'sdh'))
+
         if key in ann_dict:
-            # If gene already exists, use the one with longer total exon length
-            if ann.total_exon_length > ann_dict[key].total_exon_length:
-                ann_dict[key] = ann
+            # If gene already exists
+            if config.filter_duplicate_pcg and is_pcg:
+                # For PCG genes, keep the one with longer total exon length
+                # (mitochondrial genomes typically have single copy PCGs)
+                if ann.total_exon_length > ann_dict[key].total_exon_length:
+                    ann_dict[key] = ann
+                    logger.debug(f"PCG duplicate filtered: {key} (kept longer copy)")
+            elif not config.allow_duplicate_trna:
+                # If duplicate tRNA filtering is enabled
+                if ann.total_exon_length > ann_dict[key].total_exon_length:
+                    ann_dict[key] = ann
+            else:
+                # For tRNA/rRNA, keep both copies with different keys
+                # (e.g., trnN, trnN.2, trnN.3)
+                copy_num = 2
+                new_key = f"{key}.{copy_num}"
+                while new_key in ann_dict:
+                    copy_num += 1
+                    new_key = f"{key}.{copy_num}"
+                ann_dict[new_key] = ann
+                logger.debug(f"Multi-copy gene detected: {key} -> {new_key}")
         else:
             ann_dict[key] = ann
 

@@ -333,21 +333,67 @@ def is_trans_spliced_gene(gene_name: str) -> bool:
 # Exon Merging Logic for Trans-spliced Genes (PMGA-style)
 # =============================================================================
 
-# Configuration for trans-spliced genes: expected exons, max genomic span, min exon length
-# max_span values increased to accommodate large genomes (e.g., Cucumis ~1.5Mb)
-# Trans-spliced genes can legitimately span nearly the entire genome
+# Configuration for trans-spliced genes: expected exons, base max_span, min exon length
+# Note: max_span is dynamically adjusted based on genome length
 # max_exon_gap: maximum gap between consecutive exons (None = no limit for truly trans-spliced)
+TRANS_SPLICED_CONFIG_BASE = {
+    "nad1": {"exons": 5, "max_span_factor": 0.5, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad2": {"exons": 5, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad5": {"exons": 5, "max_span_factor": 0.6, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad4": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
+    "nad7": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
+    "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
+    "rpl2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
+    "rps3": {"exons": 2, "max_span_factor": 0.15, "max_span_cap": 750000, "min_exon_bp": 50, "max_exon_gap": 50000},
+    "cox1": {"exons": 2, "max_span_factor": 0.05, "max_span_cap": 200000, "min_exon_bp": 700, "max_exon_gap": 10000},
+}
+
+# Default config (for backwards compatibility)
 TRANS_SPLICED_CONFIG = {
-    "nad1": {"exons": 5, "max_span": 1500000, "min_exon_bp": 15, "max_exon_gap": None},  # Truly trans-spliced
+    "nad1": {"exons": 5, "max_span": 1500000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad2": {"exons": 5, "max_span": 500000, "min_exon_bp": 15, "max_exon_gap": None},
-    "nad5": {"exons": 5, "max_span": 2000000, "min_exon_bp": 20, "max_exon_gap": None},  # Truly trans-spliced
+    "nad5": {"exons": 5, "max_span": 2000000, "min_exon_bp": 20, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
     "nad7": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
-    "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},  # Prefer tight exons
+    "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
-    "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},  # Limit to 50kb, avoid 308kb false positives
-    "cox1": {"exons": 2, "max_span": 100000, "min_exon_bp": 700, "max_exon_gap": 10000},  # Some species have 2 exons (trans-spliced), use BLASTn for precise boundaries
+    "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
+    "cox1": {"exons": 2, "max_span": 100000, "min_exon_bp": 700, "max_exon_gap": 10000},
 }
+
+
+def get_dynamic_trans_spliced_config(genome_length: int) -> dict:
+    """Calculate dynamic max_span based on genome length.
+
+    For large genomes (>1Mbp), trans-spliced gene spans need to be scaled up
+    to properly detect exons that may span across the entire genome.
+
+    Args:
+        genome_length: Total genome length in bp
+
+    Returns:
+        Updated TRANS_SPLICED_CONFIG with dynamic max_span values
+    """
+    dynamic_config = {}
+
+    for gene, config in TRANS_SPLICED_CONFIG_BASE.items():
+        # Calculate dynamic max_span
+        max_span = min(
+            genome_length * config["max_span_factor"],
+            config["max_span_cap"]
+        )
+        # Ensure minimum span for small genomes
+        max_span = max(max_span, 100000)  # Minimum 100kb
+
+        dynamic_config[gene] = {
+            "exons": config["exons"],
+            "max_span": int(max_span),
+            "min_exon_bp": config["min_exon_bp"],
+            "max_exon_gap": config["max_exon_gap"],
+        }
+
+    logger.debug(f"Dynamic trans-spliced config for {genome_length}bp genome: nad1.max_span={dynamic_config['nad1']['max_span']}")
+    return dynamic_config
 
 
 def parse_exon_id(exon_id: str) -> tuple[str, int, int] | None:
@@ -802,9 +848,14 @@ def annotate_trans_spliced_genes(
         logger.warning("blastn not available, skipping trans-spliced annotation")
         return existing_annotations
 
+    # Get dynamic configuration based on genome length
+    genome_length = len(genome.sequence)
+    trans_spliced_config = get_dynamic_trans_spliced_config(genome_length)
+    logger.info(f"Using dynamic trans-spliced config for {genome_length}bp genome")
+
     hmm_discarded = set()  # Track genes where HMM was discarded due to large span
 
-    for gene_name, config in TRANS_SPLICED_CONFIG.items():
+    for gene_name, config in trans_spliced_config.items():
         # Check if gene is already annotated
         already_found = gene_name in existing_annotations
 

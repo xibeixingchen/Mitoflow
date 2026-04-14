@@ -23,7 +23,7 @@ from Bio.Seq import Seq
 from ..models.genome import GenomeSequence
 from ..models.gene import GeneAnnotation, ExonRecord, Strand
 from ..db.manager import DBManager
-from .trans_splicing import annotate_trans_spliced_genes
+from .trans_splicing import annotate_trans_spliced_genes, TRANS_SPLICED_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -1039,6 +1039,19 @@ def _refine_boundaries_reference(
 
         for hit in hits:
             gene_name = hit.gene_name.lower()  # Normalize to lowercase for file matching
+
+            # Skip tblastn-based refinement for multi-exon genes.
+            # tblastn aligns the full reference protein; for trans-spliced genes
+            # each exon only gets a partial hit. Extending partial hits to find
+            # start/stop codons produces systematic errors (e.g., nad4 +36bp).
+            if gene_name in TRANS_SPLICED_CONFIG:
+                logger.debug(
+                    f"{gene_name} is a multi-exon gene; using conservative "
+                    f"refinement instead of tblastn extension"
+                )
+                refined.append(_refine_single_conservative(hit, genome, db_manager, config))
+                continue
+
             # Use Protein.fasta for tblastn (we have protein references)
             ref_file = ref_dir / f"{gene_name}.Protein.fasta"
 
@@ -1233,7 +1246,10 @@ def _parse_tblastn_for_boundary(
         # ATG (start) is at transcription start = HIGH coordinate
         # Search toward HIGHER coordinates first - reference may be truncated at N-terminal
         # Then search toward LOWER coordinates - reference may be extended at N-terminal
-        search_pos = best_end + 3  # Start beyond current HIGH end
+        # Start AT the current HIGH end (not beyond it) so the codon at
+        # best_end is checked first.  Previously best_end + 3 skipped the
+        # boundary codon and caused systematic extensions (e.g. nad4 +36bp).
+        search_pos = best_end
         searched = 0
         while searched <= extension_range and search_pos <= genome.length:
             # Get codon and reverse complement

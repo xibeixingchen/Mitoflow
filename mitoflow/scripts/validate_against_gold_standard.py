@@ -300,8 +300,9 @@ def validate_single_species(
     # 获取该物种的修正数据
     species_corrections = corrections.get(species, {})
 
-    # 比较位置
-    position_diffs = compare_gene_positions(ncbi_features, mitoflow_features, species_corrections, species)
+    # 比较位置（使用环形距离）
+    genome_length = ncbi_length if ncbi_length > 0 else mito_length
+    position_diffs = compare_gene_positions(ncbi_features, mitoflow_features, species_corrections, species, genome_length)
 
     # 计算指标
     metrics = calculate_metrics(ncbi_genes, mito_genes)
@@ -362,6 +363,7 @@ def generate_report(
     report_lines = []
     report_lines.append("# MitoFlow金标准验证报告\n\n")
     report_lines.append(f"验证物种数: {len(results)}\n\n")
+    report_lines.append("**注: 本报告使用环形距离比较基因位置**\n\n")
     report_lines.append("---\n\n")
 
     # 汇总统计

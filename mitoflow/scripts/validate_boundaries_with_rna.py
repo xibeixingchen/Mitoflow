@@ -328,7 +328,7 @@ def evaluate_boundary(
     return result
 
 
-def validate_species(species_name: str, bam_files: List[Path], junc_files: List[Path]) -> Dict:
+def validate_species(species_name: str, bam_files: List[Path], junc_files: List[Path], mitoflow_dir: Path) -> Dict:
     """Validate one species across all available BAMs."""
     species_safe = species_name.replace(" ", "_").replace(".", "").replace("'", "")
 
@@ -341,11 +341,11 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
             if candidates:
                 ncbi_gb = candidates[0]
 
-    mitoflow_gff_dir = MITOFLOW_GFF_DIR / species_safe / "gff"
+    mitoflow_gff_dir = mitoflow_dir / species_safe / "gff"
     mitoflow_gff = mitoflow_gff_dir / f"{species_safe}.gff"
     if not mitoflow_gff.exists():
         # Fallback: search for directory matching species name
-        for candidate_dir in MITOFLOW_GFF_DIR.iterdir():
+        for candidate_dir in mitoflow_dir.iterdir():
             if candidate_dir.is_dir() and species_name.replace(" ", "_").lower() in candidate_dir.name.lower():
                 gff_dir = candidate_dir / "gff"
                 for gff in gff_dir.glob("*.gff"):
@@ -405,6 +405,12 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
 def main():
     parser = argparse.ArgumentParser(description="Validate gene boundaries with RNA-seq")
     parser.add_argument("--species", help="Validate a single species")
+    parser.add_argument(
+        "--mitoflow-dir",
+        type=Path,
+        default=Path("results/phase3_quick_batch"),
+        help="Directory containing MitoFlow annotation outputs (default: results/phase3_quick_batch)",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -450,7 +456,7 @@ def main():
             continue
 
         logger.info(f"Validating {species} with {len(bam_files)} BAM(s) ...")
-        report = validate_species(species, bam_files, junc_files)
+        report = validate_species(species, bam_files, junc_files, args.mitoflow_dir)
         all_reports.append(report)
 
     # Write JSON report

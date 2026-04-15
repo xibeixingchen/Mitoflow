@@ -332,6 +332,11 @@ def _apply_fixed_offset_correction(ann: GeneAnnotation, genome: GenomeSequence) 
     if gene_name_lower not in FIXED_OFFSET_GENES:
         return ann
 
+    # Guard: skip BLAST-based annotations from trans-spliced exon refinement
+    # (already aligned to reference exons, fixed offsets would destroy accuracy)
+    if ann.source_method == "BLAST":
+        return ann
+
     # Guard: skip multi-exon annotations for cox2 (trans-splicing already resolved)
     if gene_name_lower == "cox2" and len(ann.exons) >= 2:
         return ann

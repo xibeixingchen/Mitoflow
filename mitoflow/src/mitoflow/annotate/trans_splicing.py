@@ -33,7 +33,7 @@ TRANS_SPLICING_INFO = {
     "nad2": {"exons": 5, "min_exon_bp": 15, "note": "5 trans-spliced exons"},
     "nad5": {"exons": 5, "min_exon_bp": 20, "note": "5 trans-spliced exons, exon3 is often 22bp"},
     "nad4": {"exons": 4, "min_exon_bp": 30, "note": "4 cis-spliced exons"},
-    "nad7": {"exons": 4, "min_exon_bp": 30, "note": "4 cis-spliced exons"},
+    "nad7": {"exons": 5, "min_exon_bp": 30, "note": "5 cis-spliced exons"},
     # Multi-exon genes with cis-splicing (exons close together)
     "cox2": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons"},
     "rpl2": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons"},
@@ -374,7 +374,7 @@ TRANS_SPLICED_CONFIG_BASE = {
     "nad2": {"exons": 5, "max_span_factor": 0.6, "max_span_cap": 1500000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad5": {"exons": 5, "max_span_factor": 0.7, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
-    "nad7": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
+    "nad7": {"exons": 5, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
     "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span_factor": 0.15, "max_span_cap": 750000, "min_exon_bp": 50, "max_exon_gap": 50000},
@@ -387,7 +387,7 @@ TRANS_SPLICED_CONFIG = {
     "nad2": {"exons": 5, "max_span": 500000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad5": {"exons": 5, "max_span": 2000000, "min_exon_bp": 20, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
-    "nad7": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
+    "nad7": {"exons": 5, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
     "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
@@ -716,6 +716,42 @@ def merge_exons_to_gene(
         hits_sorted = sorted(hits_with_score, key=lambda x: x[1], reverse=True)
         best_hit, best_score = hits_sorted[0]
         start, end, strand, identity, hit_length, expected_length = best_hit
+        best_coverage = hit_length / expected_length if expected_length > 0 else 0
+
+        # Check if the best hit is a fragmented/split exon
+        # (some species have an intron within what the reference calls one exon)
+        if best_coverage < 0.85 and len(hits_sorted) > 1:
+            # Try to assemble non-overlapping hits that together cover >= 85%
+            pos_sorted = sorted(hits_with_score, key=lambda x: min(x[0][0], x[0][1]))
+            selected_hits = []
+            total_len = 0
+            for h, score in pos_sorted:
+                h_start, h_end = sorted([h[0], h[1]])
+                # Must not overlap with already selected (allow 10bp tolerance)
+                overlaps = False
+                for sel in selected_hits:
+                    s_start, s_end = sorted([sel[0], sel[1]])
+                    if min(h_end, s_end) - max(h_start, s_start) + 1 > 10:
+                        overlaps = True
+                        break
+                if not overlaps and h[4] >= config.get("min_exon_bp", 15):
+                    selected_hits.append(h)
+                    total_len += h[4]
+                    # Stop once we have sufficient coverage to avoid pulling in
+                    # distant false-positive hits that blow up the gene span.
+                    if total_len / expected_length >= 0.85:
+                        break
+
+            combined_coverage = total_len / expected_length if expected_length > 0 else 0
+            if combined_coverage >= 0.85:
+                logger.info(
+                    f"{gene_name}: reference exon {exon_num} splits into "
+                    f"{len(selected_hits)} genome exons (coverage={combined_coverage:.2f})"
+                )
+                for h in selected_hits:
+                    best_exons.append((h[0], h[1], h[2], exon_num))
+                continue
+
         best_exons.append((start, end, strand, exon_num))
 
         logger.debug(
@@ -1021,8 +1057,17 @@ def annotate_trans_spliced_genes(
                 already_found = False
                 hmm_discarded.add(gene_name)
             elif len(current.exons) >= config["exons"]:
-                logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
-                continue
+                # Only force BLASTn refinement for genes with known systematic
+                # boundary drift (e.g. nad7). For others, trust existing annotation.
+                if gene_name not in {"nad7", "cox2"}:
+                    logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
+                    continue
+                logger.info(
+                    f"{gene_name}: already has {len(current.exons)} exons, "
+                    f"attempting BLASTn refinement for boundary accuracy"
+                )
+                # Fall through to BLASTn search so reference-exon based boundaries
+                # can replace or confirm the HMM-derived ones.
             else:
                 logger.info(
                     f"{gene_name}: has {len(current.exons)} exons, expected {config['exons']}. "

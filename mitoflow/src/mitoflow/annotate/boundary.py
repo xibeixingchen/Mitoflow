@@ -79,6 +79,9 @@ def correct_boundaries(
         gene_search_range = _get_gene_search_range(ann.gene_name, search_range)
 
         ann = _remove_short_introns(ann, genome)
+        # Phase 3: apply fixed offset correction for genes with systematic errors
+        # This is a temporary measure until adaptive tblastn refinement replaces it
+        ann = _apply_fixed_offset_correction(ann, genome)
         # Only do minimal boundary correction - trust HMM hit more
         ann = _correct_start_codon_conservative(ann, genome, db_manager, gene_search_range)
         ann = _correct_stop_codon_conservative(ann, genome, db_manager, gene_search_range)
@@ -105,6 +108,10 @@ def _apply_fixed_offset_correction(ann: GeneAnnotation, genome: GenomeSequence) 
     gene_name_lower = ann.gene_name.lower()
 
     if gene_name_lower not in FIXED_OFFSET_GENES:
+        return ann
+
+    # Guard: skip multi-exon annotations for cox2 (trans-splicing already resolved)
+    if gene_name_lower == "cox2" and len(ann.exons) >= 2:
         return ann
 
     offset_config = FIXED_OFFSET_GENES[gene_name_lower]

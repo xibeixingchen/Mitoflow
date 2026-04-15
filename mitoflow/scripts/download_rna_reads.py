@@ -205,6 +205,15 @@ def main():
     if STATE_FILE.exists():
         state = json.loads(STATE_FILE.read_text())
 
+    # Auto-recover: any SRR directory with existing FASTQ files is treated as completed
+    for srr_dir in OUTPUT_DIR.iterdir():
+        if srr_dir.is_dir():
+            fastqs = list(srr_dir.glob("*.fastq.gz")) + list(srr_dir.glob("*.fastq"))
+            if fastqs:
+                state.setdefault("completed", []).append(srr_dir.name)
+    # Deduplicate
+    state["completed"] = list(dict.fromkeys(state.get("completed", [])))
+
     total = sum(len(v) for v in species_srrs.values())
     completed = 0
     failed = 0

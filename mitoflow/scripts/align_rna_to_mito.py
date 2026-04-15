@@ -245,9 +245,17 @@ def _extract_junctions_from_bam(bam_path: str, samtools: str, species_name: str)
 def load_download_state() -> dict:
     """Load download state to know which SRRs are ready."""
     download_state = Path("data/rna_seq/download_state.json")
+    state: dict = {}
     if download_state.exists():
-        return json.loads(download_state.read_text())
-    return {}
+        state = json.loads(download_state.read_text())
+    # Also auto-detect any SRR directory with existing FASTQ files
+    for srr_dir in FASTQ_DIR.iterdir():
+        if srr_dir.is_dir():
+            fastqs = list(srr_dir.glob("*.fastq.gz")) + list(srr_dir.glob("*.fastq"))
+            if fastqs:
+                state.setdefault("completed", []).append(srr_dir.name)
+    state["completed"] = list(dict.fromkeys(state.get("completed", [])))
+    return state
 
 
 def main():

@@ -568,6 +568,10 @@ def cms(
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_orf: int = typer.Option(300, "--min-orf", help="Minimum ORF length (bp)"),
     gene_db: Optional[Path] = typer.Option(None, "--gene-db", help="Mitochondrial gene protein FASTA for chimera detection"),
+    ml_scorer: bool = typer.Option(False, "--ml-scorer", help="Use ML-based CMS scoring if available"),
+    model_path: Optional[Path] = typer.Option(None, "--model-path", help="Path to trained CMS scorer model"),
+    use_plm: bool = typer.Option(False, "--use-plm", help="Include ESM-2 pLM features when using ML scorer"),
+    plm_model_path: Optional[Path] = typer.Option(None, "--plm-model-path", help="Local path to ESM-2 model directory"),
     plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
     dpi: int = typer.Option(300, "--dpi", help="Plot resolution (DPI)"),
 ):
@@ -612,8 +616,14 @@ def cms(
         gene_protein_db=gene_db,
         threads=threads,
         min_orf_length=min_orf,
+        use_ml_scorer=ml_scorer,
+        ml_scorer_path=model_path,
+        use_plm=use_plm,
+        plm_model_path=plm_model_path,
     )
     console.print(result.summary())
+    if ml_scorer and result.candidates and result.candidates[0].ml_confidence > 0:
+        console.print(f"[dim]ML scorer active (top confidence: {result.candidates[0].ml_confidence:.1f})[/]")
 
     files = write_cms_report(result, out.report_dir, name)
     for ftype, fpath in files.items():
@@ -625,6 +635,44 @@ def cms(
         plot_files = plot_all_cms(result, genome_length=genome.length, output_dir=plot_dir, prefix=name, dpi=dpi)
         for ptype, ppath in plot_files.items():
             console.print(f"  {ptype}: {ppath}")
+
+
+@app.command(name="validate-rna")
+def validate_rna(
+    input: Path = typer.Option(..., "-i", "--input", help="Genome FASTA file"),
+    gb: Path = typer.Option(..., "--gb", help="GenBank file (.gb) with annotations"),
+    bam: Path = typer.Option(..., "--bam", help="RNA-seq BAM file (indexed)"),
+    output: Path = typer.Option(..., "-o", "--output", help="Output directory"),
+    name: str = typer.Option("MitoFlow", "-n", "--name", help="Project name"),
+    window: int = typer.Option(10, "--window", help="Window size around sites to scan (bp)"),
+    min_junction_depth: int = typer.Option(2, "--min-junction-depth", help="Minimum junction supporting reads"),
+    depth_ratio: float = typer.Option(0.2, "--depth-ratio", help="Coverage drop threshold relative to mean"),
+):
+    """Generate RNA-seq support tracks and scan suspicious sites for manual validation."""
+    from .core.input import load_fasta
+    from .core.output import OutputManager
+    from .validate.rna_support import validate_rna_support
+
+    console.print(f"[bold green]MitoFlow RNA Validation[/]")
+    out = OutputManager(output, name)
+    out.setup()
+
+    genome = load_fasta(input)
+    console.print(f"Genome: {genome.length:,} bp")
+
+    files = validate_rna_support(
+        bam_path=bam,
+        gb_path=gb,
+        genome=genome,
+        output_dir=out.result_dir,
+        prefix=name,
+        window=window,
+        min_junction_depth=min_junction_depth,
+        depth_ratio_threshold=depth_ratio,
+    )
+
+    for ftype, fpath in files.items():
+        console.print(f"  {ftype}: {fpath}")
 
 
 @app.command()

@@ -174,6 +174,8 @@ class CMSCandidate:
     length_score: float = 0.0
     total_score: float = 0.0
     confidence: str = "Low"  # "High" | "Medium" | "Low"
+    ml_confidence: float = 0.0
+    feature_vector: dict = field(default_factory=dict)
 
     @property
     def n_tm_domains(self) -> int:
@@ -220,6 +222,10 @@ def predict_cms(
     threads: int = 4,
     min_orf_length: int = 300,
     max_candidates: int = 50,
+    use_ml_scorer: bool = False,
+    ml_scorer_path: Optional[Path] = None,
+    use_plm: bool = False,
+    plm_model_path: Optional[Path] = None,
 ) -> CMSResult:
     """Predict CMS candidate genes from mitochondrial genome.
 
@@ -231,11 +237,41 @@ def predict_cms(
         threads: Number of threads for BLAST.
         min_orf_length: Minimum ORF length in bp.
         max_candidates: Maximum candidates to report.
+        use_ml_scorer: If True, use ML-based scoring when model is available.
+        ml_scorer_path: Optional path to trained model directory.
+        use_plm: If True, include ESM-2 pLM features when ML scorer is active.
+        plm_model_path: Optional local path to ESM-2 model weights.
 
     Returns:
         CMSResult with ranked candidates.
     """
     result = CMSResult()
+
+    # Optional ML scorer
+    ml_scorer = None
+    if use_ml_scorer:
+        try:
+            from .ml.scorer import MLCMSScorer
+            from ..features.extractor import CMSFeatureExtractor
+
+            if ml_scorer_path:
+                ml_scorer = MLCMSScorer(ml_scorer_path)
+            else:
+                default_path = Path(__file__).parent / "data" / "cms" / "models"
+                if (default_path / "cms_logreg.joblib").exists() or (default_path / "cms_lgbm.joblib").exists():
+                    ml_scorer = MLCMSScorer(default_path)
+                else:
+                    logger.warning("Default ML scorer not found at %s", default_path)
+
+            if ml_scorer is not None:
+                ml_scorer.extractor = CMSFeatureExtractor(
+                    use_plm=use_plm,
+                    plm_model_path=str(plm_model_path) if plm_model_path else None,
+                )
+        except ImportError as e:
+            logger.warning("ML scorer unavailable: %s", e)
+        except Exception as e:
+            logger.warning("Failed to load ML scorer: %s", e)
 
     # Step 1: Scan all ORFs
     orfs = _scan_orfs(genome_seq, min_orf_length)
@@ -305,9 +341,11 @@ def predict_cms(
 
     # Step 7: Score and rank
     for c in candidates:
-        _score_candidate(c)
+        _score_candidate(c, annotated_genes, len(genome_seq), ml_scorer)
 
-    candidates.sort(key=lambda c: c.total_score, reverse=True)
+    # Sort by total_score (heuristic) or ml_confidence when ML scorer active
+    sort_key = lambda c: c.ml_confidence if (use_ml_scorer and c.ml_confidence > 0) else c.total_score
+    candidates.sort(key=sort_key, reverse=True)
     result.candidates = candidates[:max_candidates]
     result.n_candidates = len(result.candidates)
     result.high_confidence = sum(1 for c in result.candidates if c.confidence == "High")
@@ -647,7 +685,12 @@ def _analyze_context(candidates: list, annotated_genes: list, genome_seq: str) -
 
 # ── Scoring ──────────────────────────────────────────────────────
 
-def _score_candidate(c: CMSCandidate) -> None:
+def _score_candidate(
+    c: CMSCandidate,
+    annotated_genes: list | None = None,
+    genome_length: int = 0,
+    ml_scorer = None,
+) -> None:
     """Calculate multi-dimensional CMS score (0-100).
 
     Weights:
@@ -719,6 +762,15 @@ def _score_candidate(c: CMSCandidate) -> None:
         c.confidence = "Medium"
     else:
         c.confidence = "Low"
+
+    # Optional ML confidence
+    if ml_scorer is not None and genome_length > 0:
+        try:
+            c.ml_confidence = ml_scorer.score_candidate(c, annotated_genes, genome_length)
+            c.feature_vector = ml_scorer.extractor.extract(c, annotated_genes, genome_length)
+        except Exception as e:
+            logger.debug("ML scoring failed for %s: %s", c.orf_id, e)
+            c.ml_confidence = 0.0
 
 
 def write_cms_report(

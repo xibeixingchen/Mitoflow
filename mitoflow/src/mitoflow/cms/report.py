@@ -83,6 +83,41 @@ def _make_confidence_pie(result: "CMSResult") -> str:
     return _fig_to_base64(fig)
 
 
+def _make_ml_score_chart(result: "CMSResult") -> str:
+    """Build a histogram of ML confidence scores and return as base64 PNG."""
+    values = [c.ml_confidence for c in result.candidates if c.ml_confidence > 0]
+    if not values:
+        return ""
+
+    fig, ax = plt.subplots(figsize=(5, 3))
+    ax.hist(values, bins=20, color="#3498db", edgecolor="white")
+    ax.set_xlabel("ML Confidence")
+    ax.set_ylabel("Count")
+    ax.set_title("ML Confidence Distribution")
+    plt.tight_layout()
+    return _fig_to_base64(fig)
+
+
+def _make_feature_importance_chart(feature_vector: dict) -> str:
+    """Build a horizontal bar chart of feature importances and return base64 PNG."""
+    if not feature_vector:
+        return ""
+
+    # Sort by absolute value and take top 15
+    items = sorted(feature_vector.items(), key=lambda x: abs(x[1]), reverse=True)[:15]
+    names = [k for k, _ in items]
+    vals = [v for _, v in items]
+
+    fig, ax = plt.subplots(figsize=(6, max(3, len(names) * 0.35 + 1)))
+    colors = ["#e74c3c" if v > 0 else "#3498db" for v in vals]
+    ax.barh(names, vals, color=colors, edgecolor="white", linewidth=0.5)
+    ax.set_xlabel("Importance (coefficient or gain)")
+    ax.set_title("Top 15 Feature Importances")
+    ax.invert_yaxis()
+    plt.tight_layout()
+    return _fig_to_base64(fig)
+
+
 # ── HTML Template ────────────────────────────────────────────────────
 
 _HTML_TEMPLATE = """\
@@ -113,8 +148,8 @@ h2 {{ color: #34495e; margin-top: 30px; }}
 .stat-card .value {{ font-size: 2em; font-weight: bold; color: #3498db; }}
 .stat-card .label {{ font-size: 0.85em; color: #7f8c8d; }}
 .charts {{
-    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-    margin: 20px 0;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; margin: 20px 0;
 }}
 .charts img {{ width: 100%; border-radius: 8px; }}
 table {{
@@ -125,8 +160,8 @@ table {{
 th, td {{ padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }}
 th {{ background: #34495e; color: white; cursor: pointer; user-select: none; }}
 th:hover {{ background: #2c3e50; }}
-th.sort-asc::after {{ content: " \\25B2"; }}
-th.sort-desc::after {{ content: " \\25BC"; }}
+th.sort-asc::after {{ content: " \25B2"; }}
+th.sort-desc::after {{ content: " \25BC"; }}
 tr:hover {{ background: #f1f8ff; }}
 .badge {{
     display: inline-block; padding: 2px 8px; border-radius: 10px;
@@ -138,6 +173,15 @@ tr:hover {{ background: #f1f8ff; }}
 .footer {{
     margin-top: 40px; text-align: center; color: #95a5a6;
     font-size: 0.85em; border-top: 1px solid #ecf0f1; padding-top: 16px;
+}}
+.ml-badge {{
+    display: inline-block;
+    background: #2ecc71;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    margin-left: 4px;
 }}
 </style>
 </head>
@@ -174,6 +218,8 @@ tr:hover {{ background: #f1f8ff; }}
   <img src="data:image/png;base64,{pie_chart}" alt="Confidence distribution">
 </div>
 
+{ml_section}
+
 <h2>Candidate Table</h2>
 <table id="candidate-table">
 <thead>
@@ -185,16 +231,17 @@ tr:hover {{ background: #f1f8ff; }}
   <th data-sort="str" data-col="4">Strand</th>
   <th data-sort="int" data-col="5">Length (aa)</th>
   <th data-sort="float" data-col="6">Total Score</th>
-  <th data-sort="str" data-col="7">Confidence</th>
-  <th data-sort="float" data-col="8">Chimera</th>
-  <th data-sort="float" data-col="9">TM</th>
-  <th data-sort="float" data-col="10">Homolog</th>
-  <th data-sort="float" data-col="11">Context</th>
-  <th data-sort="float" data-col="12">Length</th>
-  <th data-sort="int" data-col="13">TM#</th>
-  <th data-sort="str" data-col="14">CMS Homolog</th>
-  <th data-sort="str" data-col="15">Chimera Sources</th>
-  <th data-sort="str" data-col="16">Nearby Genes</th>
+  {ml_header}
+  <th data-sort="str" data-col="{conf_col}">Confidence</th>
+  <th data-sort="float" data-col="{chim_col}">Chimera</th>
+  <th data-sort="float" data-col="{tm_col}">TM</th>
+  <th data-sort="float" data-col="{hom_col}">Homolog</th>
+  <th data-sort="float" data-col="{ctx_col}">Context</th>
+  <th data-sort="float" data-col="{len_col}">Length</th>
+  <th data-sort="int" data-col="{ntm_col}">TM#</th>
+  <th data-sort="str" data-col="{cms_col}">CMS Homolog</th>
+  <th data-sort="str" data-col="{src_col}">Chimera Sources</th>
+  <th data-sort="str" data-col="{near_col}">Nearby Genes</th>
 </tr>
 </thead>
 <tbody>
@@ -259,6 +306,7 @@ def generate_cms_html_report(
     - Candidate table (sortable by clicking column headers)
     - Score breakdown chart (inline matplotlib base64)
     - Confidence distribution pie chart
+    - Optional ML confidence and feature importance charts
 
     Args:
         result: CMSResult from prediction.
@@ -277,6 +325,28 @@ def generate_cms_html_report(
     # Build inline chart images
     score_chart_b64 = _make_score_chart(result)
     pie_chart_b64 = _make_confidence_pie(result)
+    ml_chart_b64 = _make_ml_score_chart(result)
+
+    # Determine if any candidate has ML confidence
+    has_ml = any(c.ml_confidence > 0 for c in result.candidates)
+    ml_header = '<th data-sort="float" data-col="7">ML Confidence</th>' if has_ml else ""
+    conf_col = 8 if has_ml else 7
+
+    # Build ML section
+    ml_section = ""
+    if has_ml:
+        fi_chart = ""
+        for c in result.candidates:
+            if c.feature_vector:
+                fi_chart = _make_feature_importance_chart(c.feature_vector)
+                break
+        ml_parts = ['<h2>ML Analysis</h2><div class="charts">']
+        if ml_chart_b64:
+            ml_parts.append(f'<img src="data:image/png;base64,{ml_chart_b64}" alt="ML confidence distribution">')
+        if fi_chart:
+            ml_parts.append(f'<img src="data:image/png;base64,{fi_chart}" alt="Feature importance">')
+        ml_parts.append("</div>")
+        ml_section = "\n".join(ml_parts)
 
     # Build table rows
     rows_html = []
@@ -285,6 +355,7 @@ def generate_cms_html_report(
         sources = ", ".join(c.chimera.source_genes) if c.chimera else "-"
         nearby = ", ".join(c.nearby_genes) if c.nearby_genes else "-"
         homolog = c.cms_homolog or "-"
+        ml_cell = f'<td>{c.ml_confidence:.1f}</td>' if has_ml else ""
 
         rows_html.append(
             f"<tr>"
@@ -295,6 +366,7 @@ def generate_cms_html_report(
             f"<td>{'+' if c.strand == 1 else '-'}</td>"
             f"<td>{c.length_aa}</td>"
             f"<td>{c.total_score:.1f}</td>"
+            f"{ml_cell}"
             f'<td><span class="badge badge-{conf_class}">{c.confidence}</span></td>'
             f"<td>{c.chimera_score:.1f}</td>"
             f"<td>{c.tm_score:.1f}</td>"
@@ -317,6 +389,18 @@ def generate_cms_html_report(
         n_medium=result.medium_confidence,
         score_chart=score_chart_b64,
         pie_chart=pie_chart_b64,
+        ml_section=ml_section,
+        ml_header=ml_header,
+        conf_col=conf_col,
+        chim_col=conf_col + 1,
+        tm_col=conf_col + 2,
+        hom_col=conf_col + 3,
+        ctx_col=conf_col + 4,
+        len_col=conf_col + 5,
+        ntm_col=conf_col + 6,
+        cms_col=conf_col + 7,
+        src_col=conf_col + 8,
+        near_col=conf_col + 9,
         table_rows="\n".join(rows_html),
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )

@@ -188,12 +188,12 @@ class TestGeneLengthValidation:
         is_valid = _validate_hit_length(hit)
         assert is_valid is True
 
-    def test_nad5_exceeds_reject_threshold(self):
-        """nad5 with >2255bp should be rejected."""
+    def test_nad5_skipped_as_trans_spliced(self):
+        """nad5 is trans-spliced - length validation is skipped at HMM hit stage."""
         hit = HMMHit(
             gene_name="nad5",
             start=1,
-            end=2256,  # Just above reject threshold
+            end=2256,  # Would be rejected for non-trans-spliced genes
             strand=1,
             score=500,
             evalue=1e-10,
@@ -203,7 +203,7 @@ class TestGeneLengthValidation:
         )
 
         is_valid = _validate_hit_length(hit)
-        assert is_valid is False
+        assert is_valid is True  # Skipped because nad5 is trans-spliced
 
     def test_small_gene_atp9_validation(self):
         """atp9 is a small gene (~240bp expected midpoint)."""

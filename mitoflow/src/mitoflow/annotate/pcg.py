@@ -28,6 +28,85 @@ from .trans_splicing import annotate_trans_spliced_genes, TRANS_SPLICED_CONFIG
 logger = logging.getLogger(__name__)
 
 
+# Per-gene-family HMM score thresholds (Phase 2: A-Error Reduction)
+PER_GENE_MIN_SCORES: dict[str, float] = {
+    # rps/rpl family: higher threshold due to frequent loss and false positives
+    "rps1": 60.0, "rps2": 60.0, "rps3": 60.0, "rps4": 60.0, "rps7": 60.0,
+    "rps10": 60.0, "rps11": 60.0, "rps12": 60.0, "rps13": 60.0, "rps14": 60.0, "rps19": 60.0,
+    "rpl2": 60.0, "rpl5": 60.0, "rpl6": 60.0, "rpl10": 60.0, "rpl16": 60.0,
+    # Core PCG: moderately strict
+    "atp1": 40.0, "atp4": 40.0, "atp6": 40.0, "atp8": 40.0, "atp9": 40.0,
+    "cob": 40.0,
+    "cox1": 40.0, "cox2": 40.0, "cox3": 40.0,
+    "nad1": 40.0, "nad2": 40.0, "nad3": 40.0, "nad4": 40.0, "nad4l": 40.0,
+    "nad5": 40.0, "nad6": 40.0, "nad7": 40.0, "nad9": 40.0,
+    # Others (ccm/mat/sdh/mtt): intermediate
+    "ccmb": 50.0, "ccmc": 50.0, "ccmfc": 50.0, "ccmfn": 50.0,
+    "matr": 50.0,
+    "mttb": 50.0,
+    "sdh3": 50.0, "sdh4": 50.0,
+}
+
+
+def _get_min_score(gene_name: str, config: PCGConfig) -> float:
+    """Return gene-specific HMM min score, falling back to config default."""
+    return PER_GENE_MIN_SCORES.get(gene_name.lower(), config.min_score)
+
+
+def _should_filter_by_presence_rules(
+    gene_name: str, score: float, length_aa: int, protein_seq: str
+) -> tuple[bool, str]:
+    """Return (should_filter, reason) for known false-positive prone genes."""
+    gn = gene_name.lower()
+    if gn == "rps19":
+        if score < 80 or length_aa < 50 or length_aa > 150:
+            return True, (
+                f"rps19 requires score>=80 and 50<=len<=150 "
+                f"(got score={score:.1f}, len={length_aa}aa)"
+            )
+    elif gn == "mttb":
+        if score < 60:
+            return True, f"mttb requires score>=60 (got score={score:.1f})"
+    elif gn == "sdh4":
+        if score < 60 or (protein_seq and "*" in protein_seq[:-1]):
+            return True, (
+                f"sdh4 requires score>=60 and no internal stop "
+                f"(got score={score:.1f})"
+            )
+    return False, ""
+
+
+def _length_validation(gene_name: str, length_aa: int) -> tuple[float, list[str]]:
+    """Return (confidence_penalty, notes) based on observed vs expected length.
+
+    Penalty:
+      - extreme (<0.3x or >2.0x expected midpoint): 0.5
+      - outlier (<0.5x or >1.5x): 0.3
+      - normal: 0.0
+    """
+    from ..annotate.cds_check import GENE_LENGTH_RANGES
+
+    expected = GENE_LENGTH_RANGES.get(gene_name.lower())
+    if not expected:
+        return 0.0, []
+    min_exp, max_exp = expected
+    midpoint = (min_exp + max_exp) / 2.0
+    ratio = length_aa / midpoint if midpoint > 0 else 1.0
+    notes: list[str] = []
+    penalty = 0.0
+    if ratio < 0.3 or ratio > 2.0:
+        penalty = 0.5
+        notes.append(
+            f"Length extreme: {length_aa}aa vs expected {min_exp}-{max_exp}aa (ratio={ratio:.2f})"
+        )
+    elif ratio < 0.5 or ratio > 1.5:
+        penalty = 0.3
+        notes.append(
+            f"Length outlier: {length_aa}aa vs expected {min_exp}-{max_exp}aa (ratio={ratio:.2f})"
+        )
+    return penalty, notes
+
+
 # Core genes that must be detected - force BLASTn search if HMM fails
 CORE_GENES_FORCE_BLAST = [
     "atp1", "atp4", "atp6", "atp8", "atp9",
@@ -339,6 +418,11 @@ def annotate_pcg(
 
         strand = Strand.PLUS if hit.strand == 1 else Strand.MINUS
 
+        # Phase 2: length validation and confidence adjustment
+        hit_length_aa = max(1, (hit.end - hit.start + 1) // 3)
+        length_penalty, length_notes = _length_validation(gene_name, hit_length_aa)
+        confidence = max(0.0, (hit.score / 500.0) - length_penalty) if hit.score > 0 else 0.0
+
         gene = GeneAnnotation(
             gene_name=gene_name,
             product=product,
@@ -346,9 +430,10 @@ def annotate_pcg(
             strand=strand,
             transl_table=config.transl_table,
             source_method="HMM",
-            confidence=hit.score / 500.0 if hit.score > 0 else 0.0,
+            confidence=confidence,
             score=hit.score,
             evalue=hit.evalue,
+            notes=length_notes,
         )
         annotations.append(gene)
 
@@ -371,6 +456,12 @@ def annotate_pcg(
                 continue
 
             strand = Strand.PLUS if hit.strand == 1 else Strand.MINUS
+
+            # Phase 2: length validation and confidence adjustment for BLASTn hits too
+            hit_length_aa = max(1, (hit.end - hit.start + 1) // 3)
+            length_penalty, length_notes = _length_validation(gene_name, hit_length_aa)
+            confidence = max(0.0, (hit.score / 500.0) - length_penalty) if hit.score > 0 else 0.0
+
             gene = GeneAnnotation(
                 gene_name=gene_name,
                 product=product,
@@ -378,9 +469,10 @@ def annotate_pcg(
                 strand=strand,
                 transl_table=config.transl_table,
                 source_method="BLASTn",
-                confidence=hit.score / 500.0 if hit.score > 0 else 0.0,
+                confidence=confidence,
                 score=hit.score,
                 evalue=hit.evalue,
+                notes=length_notes,
             )
             annotations.append(gene)
         logger.info(f"After BLASTn search for missing genes: {len(annotations)} genes")
@@ -393,39 +485,85 @@ def annotate_pcg(
         logger.info(f"Removed {removed} genes with total exon length < {min_bp}bp")
 
     # Step 7: Process trans-spliced genes - merge exons and refine boundaries
-    # Convert list to dict for trans-spliced gene processing
-    ann_dict: dict[str, GeneAnnotation] = {}
-    for ann in filtered:
-        # Handle multiple copies of same gene
+    # Phase 2: improved duplicate filtering with score-aware core/variable distinction
+    ann_dict = _filter_duplicates(filtered, config)
+
+    # Process trans-spliced genes
+    ann_dict = annotate_trans_spliced_genes(genome, db_manager, ann_dict)
+
+    # Convert back to list
+    filtered = list(ann_dict.values())
+    logger.info(f"After trans-spliced gene processing: {len(filtered)} genes")
+
+    return filtered
+
+
+def _is_variable_pcg(gene_name: str) -> bool:
+    """Return True for variable PCG families that may have 0-2 copies."""
+    return gene_name.lower().startswith(("rps", "rpl", "sdh", "mtt"))
+
+
+def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> dict[str, GeneAnnotation]:
+    """Filter duplicate genes: core PCG keeps best copy; variable genes allow up to 2 copies.
+
+    Second copy is kept only if its score >= 0.7 * best_copy_score.
+    """
+    # Group by base gene name
+    groups: dict[str, list[GeneAnnotation]] = {}
+    for ann in annotations:
         key = ann.gene_name
+        groups.setdefault(key, []).append(ann)
 
-        # Check if this is a PCG (protein-coding gene) or tRNA/rRNA
-        is_pcg = ann.gene_name.lower() in CORE_PCG_41 or ann.gene_name.lower().startswith(('nad', 'cox', 'atp', 'cob', 'ccm', 'rpl', 'rps', 'mat', 'mtt', 'sdh'))
+    ann_dict: dict[str, GeneAnnotation] = {}
+    for key, anns in groups.items():
+        is_pcg = key.lower() in CORE_PCG_41 or key.lower().startswith(("nad", "cox", "atp", "cob", "ccm", "rpl", "rps", "mat", "mtt", "sdh"))
 
-        if key in ann_dict:
-            # If gene already exists
-            if config.filter_duplicate_pcg and is_pcg:
-                # For PCG genes, keep the one with longer total exon length
-                # (mitochondrial genomes typically have single copy PCGs)
-                if ann.total_exon_length > ann_dict[key].total_exon_length:
-                    ann_dict[key] = ann
-                    logger.debug(f"PCG duplicate filtered: {key} (kept longer copy)")
-            elif not config.allow_duplicate_trna:
-                # If duplicate tRNA filtering is enabled
-                if ann.total_exon_length > ann_dict[key].total_exon_length:
-                    ann_dict[key] = ann
+        if len(anns) == 1 or not is_pcg or not config.filter_duplicate_pcg:
+            # Non-PCG or single copy: keep as-is (tRNA multi-copy logic preserved below)
+            if not is_pcg and len(anns) > 1 and config.allow_duplicate_trna:
+                for i, ann in enumerate(anns, start=1):
+                    store_key = key if i == 1 else f"{key}.{i}"
+                    while store_key in ann_dict:
+                        i += 1
+                        store_key = f"{key}.{i}"
+                    ann_dict[store_key] = ann
+                    logger.debug(f"Multi-copy gene detected: {key} -> {store_key}")
             else:
-                # For tRNA/rRNA, keep both copies with different keys
-                # (e.g., trnN, trnN.2, trnN.3)
-                copy_num = 2
-                new_key = f"{key}.{copy_num}"
-                while new_key in ann_dict:
-                    copy_num += 1
-                    new_key = f"{key}.{copy_num}"
-                ann_dict[new_key] = ann
-                logger.debug(f"Multi-copy gene detected: {key} -> {new_key}")
+                # For non-PCG duplicates when filtering is on, keep longest
+                if len(anns) > 1 and not is_pcg:
+                    best = max(anns, key=lambda a: a.total_exon_length)
+                    ann_dict[key] = best
+                else:
+                    ann_dict[key] = anns[0]
+            continue
+
+        # PCG duplicate filtering
+        if _is_variable_pcg(key):
+            max_copies = 2
         else:
-            ann_dict[key] = ann
+            max_copies = 1
+
+        # Sort by score descending
+        sorted_anns = sorted(anns, key=lambda a: a.score, reverse=True)
+        best = sorted_anns[0]
+        kept = [best]
+
+        for ann in sorted_anns[1:]:
+            if len(kept) < max_copies and ann.score >= 0.7 * best.score:
+                kept.append(ann)
+                logger.debug(f"PCG duplicate kept: {key} (score={ann.score:.1f}, best={best.score:.1f})")
+            else:
+                logger.debug(f"PCG duplicate filtered: {key} (score={ann.score:.1f} < 0.7*{best.score:.1f})")
+
+        ann_dict[key] = kept[0]
+        for i, ann in enumerate(kept[1:], start=2):
+            new_key = f"{key}.{i}"
+            while new_key in ann_dict:
+                i += 1
+                new_key = f"{key}.{i}"
+            ann_dict[new_key] = ann
+
+    return ann_dict
 
     # Process trans-spliced genes
     ann_dict = annotate_trans_spliced_genes(genome, db_manager, ann_dict)
@@ -530,6 +668,9 @@ def _search_hmm(
                                 hit_length_nt = genome_end - genome_start + 1
                                 hit_length_aa = hit_length_nt // 3
 
+                                # Phase 2: gene-specific min score
+                                gene_min_score = _get_min_score(gene_name, config)
+
                                 # Use HMM model length as expected gene length
                                 hmm_len_aa = hmm.M  # model length in amino acids
                                 expected_bp = hmm_len_aa * 3
@@ -537,14 +678,41 @@ def _search_hmm(
                                 if hit_length_nt > expected_bp * 1.5 and expected_bp > 90:
                                     logger.info(f"  [Filtered] {gene_name}: {hit_length_nt}bp > 1.5x{expected_bp}bp (score={hit.score:.1f})")
                                     continue
-                                if hit.score < config.min_score:
-                                    logger.info(f"  [Filtered] {gene_name}: score {hit.score:.1f} < {config.min_score} (len={hit_length_nt}bp)")
+                                if hit.score < gene_min_score:
+                                    logger.info(f"  [Filtered] {gene_name}: score {hit.score:.1f} < {gene_min_score} (len={hit_length_nt}bp)")
                                     continue
                                 if hit_length_aa < config.min_gene_length_aa:
                                     logger.info(f"  [Filtered] {gene_name}: {hit_length_aa}aa < {config.min_gene_length_aa}aa min (score={hit.score:.1f})")
                                     continue
                                 if hit_length_aa > config.max_gene_length_aa:
                                     logger.info(f"  [Filtered] {gene_name}: {hit_length_aa}aa > {config.max_gene_length_aa}aa max (score={hit.score:.1f})")
+                                    continue
+
+                                # Phase 2: presence-based filters for known false-positive prone genes
+                                # Extract protein sequence for sdh4 internal-stop check
+                                protein_seq_for_filter = ""
+                                if gene_name.lower() == "sdh4":
+                                    seq = genome.sequence
+                                    if strand == 1:
+                                        nt_seq = seq[genome_start - 1:genome_end]
+                                    else:
+                                        nt_seq = str(Seq(seq[genome_start - 1:genome_end]).reverse_complement())
+                                    protein_seq_for_filter = translate_sequence(nt_seq, table=config.transl_table, stop_at_stop=False)
+
+                                should_filter, filter_reason = _should_filter_by_presence_rules(
+                                    gene_name, hit.score, hit_length_aa, protein_seq_for_filter
+                                )
+                                if should_filter:
+                                    logger.info(f"  [Filtered] {gene_name}: {filter_reason}")
+                                    continue
+
+                                # Phase 2: length validation (extreme outliers require stricter score)
+                                length_penalty, length_notes = _length_validation(gene_name, hit_length_aa)
+                                if length_penalty >= 0.5 and hit.score < gene_min_score + 20:
+                                    logger.info(
+                                        f"  [Filtered] {gene_name}: extreme length outlier "
+                                        f"(penalty={length_penalty}, score={hit.score:.1f} < {gene_min_score + 20})"
+                                    )
                                     continue
 
                                 # Log accepted hits
@@ -586,8 +754,9 @@ def _blastn_fallback(
         return []
 
     # Genes that benefit from BLAST fallback
+    # Phase 2: removed rps19 (high false-positive rate, should rely on HMM)
     BLAST_FALLBACK_GENES = {
-        "sdh4", "sdh3", "nad4L", "rps19", "rps12", "rps14",
+        "sdh4", "sdh3", "nad4L", "rps12", "rps14",
         "ccmC", "nad9", "rpl16", "rps4", "rps7", "atp4",
     }
 
@@ -664,6 +833,20 @@ def _blastn_fallback(
                 else:
                     strand = -1
                     start, end = send, sstart
+
+                hit_length_aa = max(1, (end - start + 1) // 3)
+
+                # Phase 2: apply presence rules to BLASTn fallback hits
+                nt_seq = genome.sequence[start - 1:end]
+                if strand == -1:
+                    nt_seq = GenomeSequence(seqid="tmp", sequence=nt_seq, is_circular=False).reverse_complement
+                prot_seq = translate_sequence(nt_seq, stop_at_stop=False)
+                should_filter, filter_reason = _should_filter_by_presence_rules(
+                    gene_name, score, hit_length_aa, prot_seq
+                )
+                if should_filter:
+                    logger.info(f"  [BLAST filtered] {gene_name}: {filter_reason}")
+                    continue
 
                 hits.append(HMMHit(
                     gene_name=gene_name,
@@ -812,6 +995,20 @@ def _search_missing_core_genes_blast(
                 else:
                     strand = -1
                     start, end = send, sstart
+
+                hit_length_aa = max(1, (end - start + 1) // 3)
+
+                # Phase 2: apply presence rules to forced BLASTn hits
+                nt_seq = genome.sequence[start - 1:end]
+                if strand == -1:
+                    nt_seq = GenomeSequence(seqid="tmp", sequence=nt_seq, is_circular=False).reverse_complement
+                prot_seq = translate_sequence(nt_seq, stop_at_stop=False)
+                should_filter, filter_reason = _should_filter_by_presence_rules(
+                    gene_name, score, hit_length_aa, prot_seq
+                )
+                if should_filter:
+                    logger.info(f"  [BLAST filtered] {gene_name}: {filter_reason}")
+                    continue
 
                 logger.info(f"  [BLAST found] {gene_name}: {start}-{end} ({strand}), score={score:.1f}, pident={pident:.1f}%")
 

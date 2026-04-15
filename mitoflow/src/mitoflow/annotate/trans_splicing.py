@@ -152,6 +152,33 @@ def detect_short_exons(
     return found_genes
 
 
+def _circular_gene_span(exons: list[ExonRecord], genome_length: int) -> int:
+    """Compute the minimal arc length on a circular genome that contains all exons.
+
+    Strategy: the largest gap between consecutive exons (including wrap-around)
+    is the portion of the genome that does NOT need to be covered. The span is
+    genome_length minus that largest gap.
+    """
+    if not exons:
+        return 0
+    if len(exons) == 1:
+        return exons[0].end - exons[0].start + 1
+
+    sorted_exons = sorted(exons, key=lambda e: e.start)
+    max_gap = 0
+    for i in range(len(sorted_exons) - 1):
+        gap = sorted_exons[i + 1].start - sorted_exons[i].end - 1
+        if gap > max_gap:
+            max_gap = gap
+    # Wrap-around gap
+    wrap_gap = sorted_exons[0].start + (genome_length - sorted_exons[-1].end) - 1
+    if wrap_gap > max_gap:
+        max_gap = wrap_gap
+
+    span = genome_length - max_gap
+    return span
+
+
 def _find_exon_reference(gene_name: str, ref_dir: Path) -> Path | None:
     """Find exon reference file for a gene.
 
@@ -635,9 +662,21 @@ def merge_exons_to_gene(
         )
 
     # Calculate gene boundaries
+    # Phase 2: use circular span to correctly handle origin-crossing exons
+    genome_length = len(genome.sequence)
+    sorted_exons_for_span = sorted(best_exons, key=lambda e: e[0])
+    max_gap = 0
+    for i in range(len(sorted_exons_for_span) - 1):
+        gap = sorted_exons_for_span[i + 1][0] - sorted_exons_for_span[i][1] - 1
+        if gap > max_gap:
+            max_gap = gap
+    wrap_gap = sorted_exons_for_span[0][0] + (genome_length - sorted_exons_for_span[-1][1]) - 1
+    if wrap_gap > max_gap:
+        max_gap = wrap_gap
+    gene_span = genome_length - max_gap
+
     gene_start = min(e[0] for e in best_exons)
     gene_end = max(e[1] for e in best_exons)
-    gene_span = gene_end - gene_start + 1
 
     # For genes with max_exon_gap constraint, try alternative hits if span is too large
     max_exon_gap = config.get("max_exon_gap")
@@ -669,10 +708,11 @@ def merge_exons_to_gene(
 
                 for exon_num in range(2, expected_exons + 1):
                     hits_n = exon_hits.get(exon_num, [])
-                    # Find hits within max_exon_gap of exon 1
+                    # Phase 2: use circular_span for origin-crossing distance checks
                     compatible = [
                         h for h in hits_n
-                        if abs(h[0] - e1_end) < max_exon_gap or abs(e1_start - h[1]) < max_exon_gap
+                        if genome.circular_span(e1_end, h[0]) < max_exon_gap
+                        or genome.circular_span(h[1], e1_start) < max_exon_gap
                     ]
                     if compatible:
                         # Take best compatible hit (by score)
@@ -687,7 +727,17 @@ def merge_exons_to_gene(
                         alt_exons.append((best_compat[0], best_compat[1], best_compat[2], exon_num))
 
                 if len(alt_exons) == expected_exons:
-                    alt_span = max(e[1] for e in alt_exons) - min(e[0] for e in alt_exons)
+                    # Phase 2: circular span for alt_exons too
+                    alt_sorted = sorted(alt_exons, key=lambda e: e[0])
+                    alt_max_gap = 0
+                    for i in range(len(alt_sorted) - 1):
+                        g = alt_sorted[i + 1][0] - alt_sorted[i][1] - 1
+                        if g > alt_max_gap:
+                            alt_max_gap = g
+                    alt_wrap = alt_sorted[0][0] + (genome_length - alt_sorted[-1][1]) - 1
+                    if alt_wrap > alt_max_gap:
+                        alt_max_gap = alt_wrap
+                    alt_span = genome_length - alt_max_gap
                     if alt_span < gene_span:
                         logger.info(
                             f"{gene_name}: using alternative hits with smaller span "
@@ -863,7 +913,8 @@ def annotate_trans_spliced_genes(
             current = existing_annotations[gene_name]
 
             # Check HMM annotation span - if too large, it may be wrong
-            hmm_span = abs(current.genomic_end - current.genomic_start)
+            # Phase 2: use circular span to correctly handle origin-crossing exons
+            hmm_span = _circular_gene_span(current.exons, genome_length)
             max_span = config["max_span"]
 
             # If HMM span exceeds max_span, discard and use BLASTn only

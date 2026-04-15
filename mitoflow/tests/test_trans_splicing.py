@@ -487,3 +487,51 @@ class TestDetectShortExonsWithMockReference:
         assert len(result["nad5"].exons) == 1
         # Should have logged about missing reference or no blastn
         # (either blastn not available or no reference file)
+
+
+class TestCircularGeneSpan:
+    """Regression tests for _circular_gene_span origin-crossing logic."""
+
+    def test_empty_exons_returns_zero(self):
+        from mitoflow.annotate.trans_splicing import _circular_gene_span
+
+        assert _circular_gene_span([], 10000) == 0
+
+    def test_single_exon_returns_its_length(self):
+        from mitoflow.annotate.trans_splicing import _circular_gene_span
+
+        exon = ExonRecord(start=100, end=500, strand=Strand.PLUS, number=1)
+        assert _circular_gene_span([exon], 10000) == 401
+
+    def test_linear_exons_span(self):
+        from mitoflow.annotate.trans_splicing import _circular_gene_span
+
+        exons = [
+            ExonRecord(start=100, end=300, strand=Strand.PLUS, number=1),
+            ExonRecord(start=400, end=600, strand=Strand.PLUS, number=2),
+            ExonRecord(start=800, end=900, strand=Strand.PLUS, number=3),
+        ]
+        # Wrap-around gap dominates; span covers 100..900 = 801 bp
+        assert _circular_gene_span(exons, 10000) == 801
+
+    def test_exons_across_origin(self):
+        from mitoflow.annotate.trans_splicing import _circular_gene_span
+
+        exons = [
+            ExonRecord(start=9800, end=9950, strand=Strand.PLUS, number=1),
+            ExonRecord(start=50, end=150, strand=Strand.PLUS, number=2),
+            ExonRecord(start=300, end=500, strand=Strand.PLUS, number=3),
+        ]
+        # Linear distance would be ~9900, but circular span is the short arc
+        # covering 9800..9950 + 0..150 + 300..500 = 701 bp
+        assert _circular_gene_span(exons, 10000) == 701
+
+    def test_nearly_full_circle(self):
+        from mitoflow.annotate.trans_splicing import _circular_gene_span
+
+        exons = [
+            ExonRecord(start=1, end=100, strand=Strand.PLUS, number=1),
+            ExonRecord(start=200, end=9900, strand=Strand.PLUS, number=2),
+        ]
+        # Largest gap is wrap-around (100 bp), so span = 10000 - 100 = 9900
+        assert _circular_gene_span(exons, 10000) == 9900

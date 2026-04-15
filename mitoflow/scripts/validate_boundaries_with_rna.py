@@ -236,22 +236,28 @@ def evaluate_boundary(
         if ncbi_donor is None or mito_donor is None:
             continue
 
-        if ncbi_donor == mito_donor and ncbi_acceptor == mito_acceptor:
-            result["details"].append(f"Intron {i+1}: identical boundaries")
-            continue
+        # Fuzzy junction lookup allowing +/- 2 bp wobble
+        def _lookup_junc(donor: int, acceptor: int) -> int:
+            total = 0
+            for d_off in range(-2, 3):
+                for a_off in range(-2, 3):
+                    total += junctions.get((chrom, donor + d_off, acceptor + a_off, strand), 0)
+            return total
 
-        # Check junction reads supporting each boundary
-        ncbi_junc_count = 0
-        mito_junc_count = 0
-        if ncbi_donor and ncbi_acceptor:
-            ncbi_junc_count = junctions.get((chrom, ncbi_donor, ncbi_acceptor, strand), 0)
-        if mito_donor and mito_acceptor:
-            mito_junc_count = junctions.get((chrom, mito_donor, mito_acceptor, strand), 0)
+        ncbi_junc_count = _lookup_junc(ncbi_donor, ncbi_acceptor) if ncbi_donor and ncbi_acceptor else 0
+        mito_junc_count = _lookup_junc(mito_donor, mito_acceptor) if mito_donor and mito_acceptor else 0
 
         result["ncbi_support"] += ncbi_junc_count
         result["mitoflow_support"] += mito_junc_count
 
-        if mito_junc_count >= 5 and ncbi_junc_count < 2:
+        if ncbi_donor == mito_donor and ncbi_acceptor == mito_acceptor:
+            if ncbi_junc_count >= 5:
+                result["details"].append(
+                    f"Intron {i+1}: identical boundaries with strong junction support (n={ncbi_junc_count})"
+                )
+            else:
+                result["details"].append(f"Intron {i+1}: identical boundaries (n={ncbi_junc_count})")
+        elif mito_junc_count >= 5 and ncbi_junc_count < 2:
             result["details"].append(
                 f"Intron {i+1}: strong junction support for MitoFlow "
                 f"({mito_donor}-{mito_acceptor}, n={mito_junc_count}) vs NCBI ({ncbi_donor}-{ncbi_acceptor}, n={ncbi_junc_count})"
@@ -360,6 +366,7 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
 
     # Use first BAM for depth queries (or merge depth across all BAMs)
     primary_bam = bam_files[0] if bam_files else None
+    actual_chrom = get_bam_ref_name(primary_bam) if primary_bam else species_safe
 
     for gene in sorted(common_genes):
         ncbi_start, ncbi_end, ncbi_strand, ncbi_exons = ncbi_coords[gene]
@@ -378,10 +385,10 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
         region_end = max(ncbi_end, mito_end) + 50
         depth = {}
         if primary_bam:
-            depth = get_region_depth(primary_bam, species_safe, region_start, region_end)
+            depth = get_region_depth(primary_bam, actual_chrom, region_start, region_end)
 
         eval_result = evaluate_boundary(
-            gene, ncbi_exons, mito_exons, depth, dict(all_junctions), species_safe, ncbi_strand
+            gene, ncbi_exons, mito_exons, depth, dict(all_junctions), actual_chrom, ncbi_strand
         )
         results.append(eval_result)
 

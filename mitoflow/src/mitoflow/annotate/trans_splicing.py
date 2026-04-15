@@ -370,9 +370,9 @@ def is_trans_spliced_gene(gene_name: str) -> bool:
 # Note: max_span is dynamically adjusted based on genome length
 # max_exon_gap: maximum gap between consecutive exons (None = no limit for truly trans-spliced)
 TRANS_SPLICED_CONFIG_BASE = {
-    "nad1": {"exons": 5, "max_span_factor": 0.5, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
-    "nad2": {"exons": 5, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 15, "max_exon_gap": None},
-    "nad5": {"exons": 5, "max_span_factor": 0.6, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad1": {"exons": 5, "max_span_factor": 0.7, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad2": {"exons": 5, "max_span_factor": 0.6, "max_span_cap": 1500000, "min_exon_bp": 15, "max_exon_gap": None},
+    "nad5": {"exons": 5, "max_span_factor": 0.7, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
     "nad7": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
     "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
@@ -818,11 +818,11 @@ def merge_exons_to_gene(
         )
         return None
 
-    # Determine dominant strand (all exons should be on same strand)
+    # Determine dominant strand for gene-level annotation
+    # (exons retain their individual strands to support mixed-strand trans-splicing)
     strands = [e[2] for e in best_exons]
     if len(set(strands)) > 1:
-        logger.warning(f"{gene_name}: exons on mixed strands, using most common")
-        # Use most common strand
+        logger.warning(f"{gene_name}: exons on mixed strands, using most common for gene feature")
         strand = max(set(strands), key=strands.count)
     else:
         strand = strands[0]
@@ -830,7 +830,11 @@ def merge_exons_to_gene(
     # Sort exons by genomic position in transcription order
     # Plus strand: 5'->3' is ascending start coordinate
     # Minus strand: 5'->3' is descending end coordinate
-    if strand == Strand.PLUS:
+    # Mixed strand (e.g. plant mitochondrial nad2): preserve exon number order,
+    # which reflects the known biological transcription order for trans-spliced genes
+    if len(set(strands)) > 1:
+        best_exons.sort(key=lambda e: e[3])  # sort by exon_num
+    elif strand == Strand.PLUS:
         best_exons.sort(key=lambda e: e[0])
     else:
         best_exons.sort(key=lambda e: e[1], reverse=True)

@@ -151,17 +151,18 @@ def _annotation_to_gff3_records(ann: GeneAnnotation, seqid: str, gene_id: str | 
         cumulative_len = 0
         for i, exon in enumerate(ann.exons, 1):
             exon_len = exon.end - exon.start + 1
+            exon_strand = exon.strand.symbol
             records.append(GFF3Record(
                 seqid=seqid, type="exon",
                 start=exon.start, end=exon.end,
-                strand=strand_str,
+                strand=exon_strand,
                 attributes={"ID": f"{mrna_id}:exon:{i}", "Parent": mrna_id, "number": str(i)},
             ))
             phase = cumulative_len % 3
             records.append(GFF3Record(
                 seqid=seqid, type="CDS",
                 start=exon.start, end=exon.end,
-                strand=strand_str, phase=phase,
+                strand=exon_strand, phase=phase,
                 attributes={"ID": f"{mrna_id}:cds:{i}", "Parent": mrna_id},
             ))
             cumulative_len += exon_len
@@ -216,13 +217,19 @@ def _annotation_to_seq_features(ann: GeneAnnotation) -> list[SeqFeature]:
             from Bio.SeqFeature import CompoundLocation
             locations = []
             for exon in ann.exons:
-                locations.append(FeatureLocation(exon.start - 1, exon.end, strand=strand_biopython))
-            if strand_biopython == -1:
+                exon_strand = 1 if exon.strand == Strand.PLUS else -1
+                locations.append(FeatureLocation(exon.start - 1, exon.end, strand=exon_strand))
+            # Sort by strand group to match GenBank convention:
+            # minus-strand parts in reverse order, plus-strand parts in forward order
+            # For mixed-strand trans-splicing, keep the exon order as annotated
+            has_mixed = len({e.strand for e in ann.exons}) > 1
+            if not has_mixed and strand_biopython == -1:
                 locations = sorted(locations, key=lambda l: l.start, reverse=True)
             cds_loc = CompoundLocation(locations)
         else:
             exon = ann.exons[0]
-            cds_loc = FeatureLocation(exon.start - 1, exon.end, strand=strand_biopython)
+            exon_strand = 1 if exon.strand == Strand.PLUS else -1
+            cds_loc = FeatureLocation(exon.start - 1, exon.end, strand=exon_strand)
 
         cds_feature = SeqFeature(
             cds_loc, type="CDS",

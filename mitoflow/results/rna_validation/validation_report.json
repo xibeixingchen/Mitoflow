@@ -7,7 +7,8 @@
         "gene": "atp6",
         "verdict": "no_rna_evidence",
         "details": [
-          "Stop boundary: continuous coverage in disputed region (189633-189726, avg_depth=41.4)"
+          "Stop boundary: continuous coverage in disputed region (189636-189726, avg_depth=35.2)",
+          "Start boundary: continuous coverage in disputed region (188830-188845, avg_depth=1935.6)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -28,7 +29,7 @@
         "verdict": "no_rna_evidence",
         "details": [
           "Stop boundary: continuous coverage in disputed region (154072-154075, avg_depth=9947.0)",
-          "Start boundary: continuous coverage in disputed region (153212-153278, avg_depth=6159.8)"
+          "Start boundary: continuous coverage in disputed region (153275-153278, avg_depth=7228.8)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -47,10 +48,15 @@
       },
       {
         "gene": "nad2",
-        "verdict": "strand_mismatch",
+        "verdict": "no_rna_evidence",
         "details": [
-          "NCBI strand=-, MitoFlow strand=+"
-        ]
+          "Intron 1: identical boundaries",
+          "Intron 2: identical boundaries",
+          "Intron 3: identical boundaries",
+          "Intron 4: identical boundaries"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
       },
       {
         "gene": "nad4",
@@ -68,10 +74,10 @@
         "gene": "nad5",
         "verdict": "no_rna_evidence",
         "details": [
-          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 1: identical boundaries",
           "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+          "Intron 4: identical boundaries"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -84,7 +90,8 @@
           "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Stop boundary: continuous coverage in disputed region (257758-257761, avg_depth=5503.5)"
+          "Stop boundary: continuous coverage in disputed region (257758-257761, avg_depth=5503.5)",
+          "Start boundary: continuous coverage in disputed region (252186-252261, avg_depth=3983.4)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0

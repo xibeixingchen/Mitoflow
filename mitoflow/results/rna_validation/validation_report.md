@@ -6,9 +6,5 @@ Genes evaluated: 11
 
 | Verdict | Count |
 |---------|-------|
-| no_rna_evidence | 10 |
-| strand_mismatch | 1 |
-
-**nad2**: strand_mismatch
-- NCBI strand=-, MitoFlow strand=+
+| no_rna_evidence | 11 |
 

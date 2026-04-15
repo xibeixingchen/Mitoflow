@@ -3,27 +3,38 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-15T14:00:00Z"
+last_updated: "2026-04-15T03:19:51.818Z"
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 3
+  percent: 60
 ---
 
 # State: MitoFlow Round 3
 
 **Initialized:** 2026-04-14
-**Status:** Executing Phase 03
+**Status:** Executing Phase 04
 
 ## Current Phase
 
-**Phase 3: B/C Deep Fixes**
+**Phase 4: RNA-seq Validation**
 
-- Status: Code delivery complete; validation complete
-- Plan: `.planning/phases/03-bc-deep-fixes/03-PLAN.md`
-- Next step: Review Phase 3 results and decide whether to iterate further on B/C errors or move to release
+- Status: Wave 1 complete; data download in progress
+- Plan: `.planning/phases/04-rna-validation/04-PLAN.md`
+- Next step: Wait for SRA downloads to finish, then run Wave 2 (alignment) and Wave 3 (boundary validation)
+
+## Phase 4 Progress
+
+- **Wave 1 (Data Acquisition):** ✅ Complete
+  - Download script committed: `scripts/download_rna_reads.py`
+  - Alignment script committed: `scripts/align_rna_to_mito.py`
+  - Validation script committed: `scripts/validate_boundaries_with_rna.py`
+  - Full download of 11 SRR runs across 8 species started in background (`nohup pid 2622746`)
+- **Wave 2 (Alignment):** ⏳ Pending — will execute as FASTQ files become available
+- **Wave 3 (Validation):** ⏳ Pending — depends on Wave 2 BAMs
+- **Wave 4 (Reporting):** ⏳ Pending
 
 ## Phase History
 
@@ -138,3 +149,4 @@ progress:
 | 2026-04-15 | Entered Phase 2: A-Error Reduction |
 | 2026-04-15 | Completed Wave 1 & 2 implementation; discovered and fixed validation multi-accession bug; full 27-species batch run complete |
 | 2026-04-15 | Entered Phase 3: B/C Deep Fixes; completed circular boundary, splice-site scoring, phase tracking, and adaptive tblastn refinement |
+| 2026-04-15 | Entered Phase 4: RNA-seq Validation; committed download/alignment/validation scripts; started background SRA download for 8 high B/C error species (11 SRR runs) |

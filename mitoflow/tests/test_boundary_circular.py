@@ -4,6 +4,7 @@ import pytest
 from mitoflow.annotate.boundary import (
     _correct_start_codon_conservative,
     _correct_stop_codon_conservative,
+    _restore_phase_continuity,
 )
 from mitoflow.models.genome import GenomeSequence
 from mitoflow.models.gene import GeneAnnotation, ExonRecord, Strand
@@ -98,6 +99,96 @@ class TestCircularBoundaryCorrection:
         # Should extend to include the TAA at positions 1-3
         assert corrected.exons[0].end == 3
         assert corrected.exons[0].start == 25
+
+
+class TestPhaseContinuityRestoration:
+    """Test _restore_phase_continuity micro-adjustments."""
+
+    def test_plus_strand_restores_phase_by_extending_exon(self):
+        """Exon 1 extended by 1 bp so exon 2 phase matches."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        ann = GeneAnnotation(
+            gene_name="nad5",
+            gene_type="CDS",
+            exons=[
+                ExonRecord(start=10, end=20, strand=Strand.PLUS, number=1, phase=0),
+                ExonRecord(start=30, end=40, strand=Strand.PLUS, number=2, phase=2),
+            ],
+            strand=Strand.PLUS,
+        )
+        # Cumulative len before exon 2 = 11 (20-10+1). 11 % 3 = 2, matches phase.
+        # No adjustment needed.
+        restored = _restore_phase_continuity(ann, genome)
+        assert restored.exons[0].end == 20
+
+    def test_plus_strand_adjusts_when_phase_broken(self):
+        """Boundary shift broke phase; extend exon 1 by 1 bp to fix."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        ann = GeneAnnotation(
+            gene_name="nad5",
+            gene_type="CDS",
+            exons=[
+                ExonRecord(start=10, end=19, strand=Strand.PLUS, number=1, phase=0),
+                ExonRecord(start=30, end=40, strand=Strand.PLUS, number=2, phase=2),
+            ],
+            strand=Strand.PLUS,
+        )
+        # Cumulative len before exon 2 = 10 (19-10+1). 10 % 3 = 1, but phase=2.
+        # Need cumulative_len = 2 mod 3, so need length 11. Extend end by +1.
+        restored = _restore_phase_continuity(ann, genome)
+        assert restored.exons[0].end == 20
+        assert "phase continuity restored" in restored.notes[-1]
+
+    def test_minus_strand_adjusts_when_phase_broken(self):
+        """Boundary shift broke phase on minus strand; move start down by 1 bp."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        ann = GeneAnnotation(
+            gene_name="nad5",
+            gene_type="CDS",
+            exons=[
+                # Minus strand: transcription high->low. Exon 1 has higher coords.
+                ExonRecord(start=80, end=90, strand=Strand.MINUS, number=1, phase=0),
+                ExonRecord(start=60, end=70, strand=Strand.MINUS, number=2, phase=2),
+            ],
+            strand=Strand.MINUS,
+        )
+        # Cumulative len exon 1 = 11 (90-80+1). 11 % 3 = 2, but phase=2 actually matches.
+        # No adjustment.
+        restored = _restore_phase_continuity(ann, genome)
+        assert restored.exons[0].start == 80
+
+    def test_minus_strand_shortens_exon_when_needed(self):
+        """Need to shorten exon 1 by 1 bp (move start up) to fix phase."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        ann = GeneAnnotation(
+            gene_name="nad5",
+            gene_type="CDS",
+            exons=[
+                ExonRecord(start=80, end=91, strand=Strand.MINUS, number=1, phase=0),
+                ExonRecord(start=60, end=70, strand=Strand.MINUS, number=2, phase=1),
+            ],
+            strand=Strand.MINUS,
+        )
+        # Cumulative len exon 1 = 12. 12 % 3 = 0, but phase=1.
+        # Need cumulative_len = 1 mod 3, so need length 13 (already 12) or 10.
+        # delta = (1 - 0) % 3 = 1. shifts = [+1, -2].
+        # +1: new_start = 80 - 1 = 79 (length 13). 13 % 3 = 1. OK.
+        restored = _restore_phase_continuity(ann, genome)
+        assert restored.exons[0].start == 79
+        assert "phase continuity restored" in restored.notes[-1]
+
+    def test_single_exon_skipped(self):
+        """Phase continuity only applies to multi-exon genes."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        ann = GeneAnnotation(
+            gene_name="cox1",
+            gene_type="CDS",
+            exons=[ExonRecord(start=10, end=30, strand=Strand.PLUS, number=1, phase=0)],
+            strand=Strand.PLUS,
+        )
+        restored = _restore_phase_continuity(ann, genome)
+        assert restored.exons[0].end == 30
+        assert not any("phase" in n for n in restored.notes)
 
 
 if __name__ == "__main__":

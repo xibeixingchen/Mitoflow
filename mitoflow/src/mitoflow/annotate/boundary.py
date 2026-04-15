@@ -87,8 +87,89 @@ def correct_boundaries(
         ann = _correct_stop_codon_conservative(ann, genome, db_manager, gene_search_range)
         ann = _handle_special_genes(ann, genome, db_manager)
         ann = _validate_gene_length(ann, db_manager)
+        # Phase 3: restore codon phase continuity across exons after boundary shifts
+        ann = _restore_phase_continuity(ann, genome)
         corrected.append(ann)
     return corrected
+
+
+def _restore_phase_continuity(
+    ann: GeneAnnotation, genome: GenomeSequence
+) -> GeneAnnotation:
+    """Micro-adjust exon boundaries to maintain codon phase across exons.
+
+    After start/stop codon correction, an exon's length may change and break
+    the reading frame for subsequent exons. This function attempts ±1 bp or
+    ±2 bp shifts of the preceding exon's boundary to restore phase continuity.
+    Adjustments are only accepted if they keep the exon ≥3 bp and do not
+    overlap the next exon.
+    """
+    if len(ann.exons) <= 1:
+        return ann
+
+    exons = list(ann.exons)
+    modified = False
+
+    for i in range(1, len(exons)):
+        cumulative_len = sum(e.end - e.start + 1 for e in exons[:i])
+        expected_phase = cumulative_len % 3
+        actual_phase = exons[i].phase
+
+        if expected_phase == actual_phase:
+            continue
+
+        # Determine required length change for previous exon
+        delta = (actual_phase - expected_phase) % 3
+        if delta == 1:
+            shifts = [+1, -2]
+        elif delta == 2:
+            shifts = [+2, -1]
+        else:
+            continue
+
+        prev = exons[i - 1]
+        nxt = exons[i]
+
+        for shift in shifts:
+            if ann.strand == Strand.PLUS:
+                new_end = prev.end + shift
+                if new_end < prev.start + 2:
+                    continue
+                if new_end >= nxt.start:
+                    continue
+                exons[i - 1] = ExonRecord(
+                    start=prev.start,
+                    end=new_end,
+                    strand=prev.strand,
+                    number=prev.number,
+                    phase=prev.phase,
+                )
+                modified = True
+                break
+            else:
+                # Minus strand: transcription is high->low coords.
+                # To change prev exon length by +shift, move start down.
+                new_start = prev.start - shift
+                if new_start > prev.end - 2:
+                    continue
+                if new_start <= nxt.end:
+                    continue
+                exons[i - 1] = ExonRecord(
+                    start=new_start,
+                    end=prev.end,
+                    strand=prev.strand,
+                    number=prev.number,
+                    phase=prev.phase,
+                )
+                modified = True
+                break
+
+    if modified:
+        notes = list(ann.notes)
+        notes.append("phase continuity restored by micro-adjustment")
+        return ann.model_copy(update={"exons": exons, "notes": notes})
+
+    return ann.model_copy(update={"exons": exons})
 
 
 def _apply_fixed_offset_correction(ann: GeneAnnotation, genome: GenomeSequence) -> GeneAnnotation:

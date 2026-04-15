@@ -233,7 +233,7 @@ def evaluate_boundary(
         mito_donor = mito_exons[i][1] if i < len(mito_exons) else None
         mito_acceptor = mito_exons[i + 1][0] if (i + 1) < len(mito_exons) else None
 
-        if ncbi_donor is None or mito_donor is None:
+        if ncbi_donor is None and mito_donor is None:
             continue
 
         # Fuzzy junction lookup allowing +/- 2 bp wobble
@@ -250,6 +250,9 @@ def evaluate_boundary(
         result["ncbi_support"] += ncbi_junc_count
         result["mitoflow_support"] += mito_junc_count
 
+        mito_bound = f"({mito_donor}-{mito_acceptor})" if mito_donor and mito_acceptor else "(missing)"
+        ncbi_bound = f"({ncbi_donor}-{ncbi_acceptor})" if ncbi_donor and ncbi_acceptor else "(missing)"
+
         if ncbi_donor == mito_donor and ncbi_acceptor == mito_acceptor:
             if ncbi_junc_count >= 5:
                 result["details"].append(
@@ -260,12 +263,12 @@ def evaluate_boundary(
         elif mito_junc_count >= 5 and ncbi_junc_count < 2:
             result["details"].append(
                 f"Intron {i+1}: strong junction support for MitoFlow "
-                f"({mito_donor}-{mito_acceptor}, n={mito_junc_count}) vs NCBI ({ncbi_donor}-{ncbi_acceptor}, n={ncbi_junc_count})"
+                f"{mito_bound}, n={mito_junc_count} vs NCBI {ncbi_bound}, n={ncbi_junc_count}"
             )
         elif ncbi_junc_count >= 5 and mito_junc_count < 2:
             result["details"].append(
                 f"Intron {i+1}: strong junction support for NCBI "
-                f"({ncbi_donor}-{ncbi_acceptor}, n={ncbi_junc_count}) vs MitoFlow ({mito_donor}-{mito_acceptor}, n={mito_junc_count})"
+                f"{ncbi_bound}, n={ncbi_junc_count} vs MitoFlow {mito_bound}, n={mito_junc_count}"
             )
         else:
             result["details"].append(

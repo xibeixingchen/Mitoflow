@@ -1,0 +1,120 @@
+[
+  {
+    "species": "Nymphaea hybrid cultivar 'Joey Tomocik'",
+    "genes_evaluated": 11,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (189633-189726, avg_depth=41.4)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox2",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Exon count mismatch: NCBI=3, MitoFlow=2",
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (154072-154075, avg_depth=9947.0)",
+          "Start boundary: continuous coverage in disputed region (153212-153278, avg_depth=6159.8)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad1",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "strand_mismatch",
+        "details": [
+          "NCBI strand=-, MitoFlow strand=+"
+        ]
+      },
+      {
+        "gene": "nad4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Stop boundary: continuous coverage in disputed region (232401-232426, avg_depth=2131.8)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Stop boundary: continuous coverage in disputed region (257758-257761, avg_depth=5503.5)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (181079-181082, avg_depth=498.5)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries",
+          "Stop boundary: continuous coverage in disputed region (180670-180676, avg_depth=627.3)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  }
+]

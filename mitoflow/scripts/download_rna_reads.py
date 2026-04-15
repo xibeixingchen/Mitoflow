@@ -90,7 +90,7 @@ def download_srr(srr: str, prefetch: str, fasterq_dump: str, pigz: str | None) -
             [prefetch, "-O", str(out_dir), srr],
             capture_output=True,
             text=True,
-            timeout=1800,
+            timeout=3600,
             check=True,
         )
     except subprocess.CalledProcessError as e:

@@ -28,6 +28,25 @@ TARGET_GENES = {
 }
 
 
+def find_ncbi_genbank(species_name: str) -> Path | None:
+    """Find NCBI GenBank file by looking up accession in species_list.csv."""
+    import pandas as pd
+    species_list = Path("data/gold_standard/species_list.csv")
+    if not species_list.exists():
+        return None
+    df = pd.read_csv(species_list)
+    row = df[df["species"].str.strip().str.lower() == species_name.lower().strip()]
+    if row.empty:
+        return None
+    genbank_acc = str(row.iloc[0]["genbank"]).strip()
+    for acc in genbank_acc.replace(";", ",").split(","):
+        acc = acc.strip()
+        gb_file = NCBI_GB_DIR / f"{acc}.gb"
+        if gb_file.exists():
+            return gb_file
+    return None
+
+
 def load_ncbi_cds_coords(genbank_file: Path) -> Dict[str, Tuple[int, int, str, List[Tuple[int, int]]]]:
     """Load CDS coordinates from NCBI GenBank.
 
@@ -118,12 +137,34 @@ def load_mitoflow_cds_coords(gff_file: Path) -> Dict[str, Tuple[int, int, str, L
     return coords
 
 
+def get_bam_ref_name(bam_path: Path) -> str:
+    """Extract the first reference sequence name from BAM header."""
+    try:
+        proc = subprocess.run(
+            ["samtools", "view", "-H", str(bam_path)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+        for line in proc.stdout.split("\n"):
+            if line.startswith("@SQ"):
+                for field in line.split("\t"):
+                    if field.startswith("SN:"):
+                        return field[3:]
+    except subprocess.CalledProcessError as e:
+        logger.warning(f"Failed to read BAM header for {bam_path}: {e}")
+    return ""
+
+
 def get_region_depth(bam_path: Path, chrom: str, start: int, end: int) -> Dict[int, int]:
     """Return per-base depth in region using samtools depth."""
     depth: Dict[int, int] = {}
+    # Use actual BAM ref name if it differs from provided chrom
+    actual_chrom = get_bam_ref_name(bam_path) or chrom
     try:
         proc = subprocess.run(
-            ["samtools", "depth", "-r", f"{chrom}:{start}-{end}", str(bam_path)],
+            ["samtools", "depth", "-r", f"{actual_chrom}:{start}-{end}", str(bam_path)],
             capture_output=True,
             text=True,
             timeout=300,
@@ -282,15 +323,27 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
     """Validate one species across all available BAMs."""
     species_safe = species_name.replace(" ", "_").replace(".", "").replace("'", "")
 
-    ncbi_gb = NCBI_GB_DIR / f"{species_safe}.gb"
-    if not ncbi_gb.exists():
-        # Try to find any matching GenBank
-        candidates = list(NCBI_GB_DIR.glob(f"*{species_safe}*.gb"))
-        if candidates:
-            ncbi_gb = candidates[0]
+    ncbi_gb = find_ncbi_genbank(species_name)
+    if not ncbi_gb:
+        # Fallback to filename-based search
+        ncbi_gb = NCBI_GB_DIR / f"{species_safe}.gb"
+        if not ncbi_gb.exists():
+            candidates = list(NCBI_GB_DIR.glob(f"*{species_safe}*.gb"))
+            if candidates:
+                ncbi_gb = candidates[0]
 
     mitoflow_gff_dir = MITOFLOW_GFF_DIR / species_safe / "gff"
     mitoflow_gff = mitoflow_gff_dir / f"{species_safe}.gff"
+    if not mitoflow_gff.exists():
+        # Fallback: search for directory matching species name
+        for candidate_dir in MITOFLOW_GFF_DIR.iterdir():
+            if candidate_dir.is_dir() and species_name.replace(" ", "_").lower() in candidate_dir.name.lower():
+                gff_dir = candidate_dir / "gff"
+                for gff in gff_dir.glob("*.gff"):
+                    mitoflow_gff = gff
+                    break
+                if mitoflow_gff.exists():
+                    break
 
     ncbi_coords = load_ncbi_cds_coords(ncbi_gb)
     mito_coords = load_mitoflow_cds_coords(mitoflow_gff)
@@ -351,9 +404,30 @@ def main():
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    from scripts.download_rna_reads import load_species_srrs
-
-    species_srrs = load_species_srrs([args.species] if args.species else None)
+    import pandas as pd
+    SPECIES_LIST = Path("data/gold_standard/species_list.csv")
+    DEFAULT_TARGET_SPECIES = [
+        "Camellia sinensis var. assamica",
+        "Nymphaea hybrid cultivar 'Joey Tomocik'",
+        "Liriodendron tulipifera",
+        "Eucommia ulmoides",
+        "Pontederia crassipes",
+        "Selenicereus monacanthus",
+        "Glycine max",
+        "Capsicum annuum cultivar Jeju",
+    ]
+    df = pd.read_csv(SPECIES_LIST)
+    targets = {s.lower().strip() for s in ([args.species] if args.species else DEFAULT_TARGET_SPECIES)}
+    species_srrs: dict[str, list[str]] = {}
+    for _, row in df.iterrows():
+        species = str(row["species"]).strip()
+        if species.lower() not in targets:
+            continue
+        srr_field = str(row.get("sra", "")).strip()
+        if not srr_field or srr_field.lower() in ("nan", "none", ""):
+            continue
+        srrs = [s.strip() for s in srr_field.replace(";", ",").split(",") if s.strip()]
+        species_srrs[species] = srrs
 
     all_reports = []
     for species in species_srrs:

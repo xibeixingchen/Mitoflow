@@ -60,8 +60,22 @@ def align_and_process(
 
     genome_fa = GENOME_DIR / f"{species_name}.fasta"
     if not genome_fa.exists():
+        # Fallback: search for any fasta matching the species base name
+        base = species_name.replace("_", "*").replace("'", "*")
+        candidates = sorted(GENOME_DIR.glob(f"*{base}*.fasta"))
+        if not candidates:
+            # Try looser match
+            candidates = sorted(GENOME_DIR.glob("*.fasta"))
+            for c in candidates:
+                if species_name.replace("_", " ").lower() in c.stem.lower():
+                    genome_fa = c
+                    break
+        else:
+            genome_fa = candidates[0]
+
+    if not genome_fa.exists():
         result["status"] = "failed"
-        result["error"] = f"Genome not found: {genome_fa}"
+        result["error"] = f"Genome not found for {species_name}"
         logger.error(result["error"])
         return result
 
@@ -253,9 +267,30 @@ def main():
     completed_srrs = set(dl_state.get("completed", []))
 
     # Species -> SRR mapping (same as download script)
-    from scripts.download_rna_reads import load_species_srrs
-
-    species_srrs = load_species_srrs([args.species] if args.species else None)
+    import pandas as pd
+    SPECIES_LIST = Path("data/gold_standard/species_list.csv")
+    DEFAULT_TARGET_SPECIES = [
+        "Camellia sinensis var. assamica",
+        "Nymphaea hybrid cultivar 'Joey Tomocik'",
+        "Liriodendron tulipifera",
+        "Eucommia ulmoides",
+        "Pontederia crassipes",
+        "Selenicereus monacanthus",
+        "Glycine max",
+        "Capsicum annuum cultivar Jeju",
+    ]
+    df = pd.read_csv(SPECIES_LIST)
+    targets = {s.lower().strip() for s in ([args.species] if args.species else DEFAULT_TARGET_SPECIES)}
+    species_srrs: dict[str, list[str]] = {}
+    for _, row in df.iterrows():
+        species = str(row["species"]).strip()
+        if species.lower() not in targets:
+            continue
+        srr_field = str(row.get("sra", "")).strip()
+        if not srr_field or srr_field.lower() in ("nan", "none", ""):
+            continue
+        srrs = [s.strip() for s in srr_field.replace(";", ",").split(",") if s.strip()]
+        species_srrs[species] = srrs
 
     total = 0
     success = 0

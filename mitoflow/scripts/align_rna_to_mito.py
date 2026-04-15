@@ -102,12 +102,12 @@ def align_and_process(
 
     logger.info(f"Aligning {srr} ({species_name}) ...")
 
-    # minimap2 -ax sr for short RNA-seq reads
+    # minimap2 -ax splice:sr for spliced short RNA-seq reads
     # Pipe to samtools sort
     try:
         minimap_cmd = [
             minimap2,
-            "-ax", "sr",
+            "-ax", "splice:sr",
             "-t", str(threads),
             str(genome_fa),
         ] + [str(fq) for fq in fastqs]

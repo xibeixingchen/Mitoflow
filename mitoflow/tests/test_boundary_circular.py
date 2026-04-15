@@ -5,6 +5,7 @@ from mitoflow.annotate.boundary import (
     _correct_start_codon_conservative,
     _correct_stop_codon_conservative,
     _restore_phase_continuity,
+    _refine_boundary_by_tblastn,
 )
 from mitoflow.models.genome import GenomeSequence
 from mitoflow.models.gene import GeneAnnotation, ExonRecord, Strand
@@ -189,6 +190,41 @@ class TestPhaseContinuityRestoration:
         restored = _restore_phase_continuity(ann, genome)
         assert restored.exons[0].end == 30
         assert not any("phase" in n for n in restored.notes)
+
+
+class TestTblastnBoundaryRefinement:
+    """Test _refine_boundary_by_tblastn skip conditions."""
+
+    def test_skips_trans_spliced_genes(self):
+        """Trans-spliced genes should not be refined by tblastn."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        db = DBManager()
+        ann = GeneAnnotation(
+            gene_name="nad5",
+            gene_type="CDS",
+            exons=[ExonRecord(start=10, end=30, strand=Strand.PLUS, number=1)],
+            strand=Strand.PLUS,
+        )
+        refined = _refine_boundary_by_tblastn(ann, genome, db)
+        assert refined.exons[0].start == 10
+        assert refined.source_method != "tblastn"
+
+    def test_skips_multi_exon_genes(self):
+        """Genes with >1 exon should be skipped even if not in TRANS_SPLICED_CONFIG."""
+        genome = GenomeSequence(seqid="test", sequence="A" * 100, is_circular=False)
+        db = DBManager()
+        ann = GeneAnnotation(
+            gene_name="atp1",
+            gene_type="CDS",
+            exons=[
+                ExonRecord(start=10, end=20, strand=Strand.PLUS, number=1),
+                ExonRecord(start=30, end=40, strand=Strand.PLUS, number=2),
+            ],
+            strand=Strand.PLUS,
+        )
+        refined = _refine_boundary_by_tblastn(ann, genome, db)
+        assert refined.exons[0].start == 10
+        assert refined.source_method != "tblastn"
 
 
 if __name__ == "__main__":

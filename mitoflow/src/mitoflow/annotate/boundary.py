@@ -12,10 +12,16 @@ Translates PMGA v1 logic from 02.editBoundary.py:
 
 from __future__ import annotations
 import logging
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
 from ..models.genome import GenomeSequence
 from ..models.gene import GeneAnnotation, ExonRecord, Strand
 from ..db.manager import DBManager
 from .pcg import CODON_TABLE, START_CODONS, STOP_CODONS
+from .trans_splicing import TRANS_SPLICED_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +85,13 @@ def correct_boundaries(
         gene_search_range = _get_gene_search_range(ann.gene_name, search_range)
 
         ann = _remove_short_introns(ann, genome)
-        # Phase 3: apply fixed offset correction for genes with systematic errors
-        # This is a temporary measure until adaptive tblastn refinement replaces it
-        ann = _apply_fixed_offset_correction(ann, genome)
+        # Phase 3: adaptive tblastn boundary refinement (replaces fixed offsets where possible)
+        ann = _refine_boundary_by_tblastn(ann, genome, db_manager)
+        # Phase 3: apply fixed offset correction only if tblastn did not refine the boundary
+        if ann.source_method != "tblastn":
+            ann = _apply_fixed_offset_correction(ann, genome)
+        else:
+            logger.info(f"Skipping fixed offset for {ann.gene_name} (tblastn refined)")
         # Only do minimal boundary correction - trust HMM hit more
         ann = _correct_start_codon_conservative(ann, genome, db_manager, gene_search_range)
         ann = _correct_stop_codon_conservative(ann, genome, db_manager, gene_search_range)
@@ -170,6 +180,137 @@ def _restore_phase_continuity(
         return ann.model_copy(update={"exons": exons, "notes": notes})
 
     return ann.model_copy(update={"exons": exons})
+
+
+def _refine_boundary_by_tblastn(
+    ann: GeneAnnotation, genome: GenomeSequence, db_manager: DBManager
+) -> GeneAnnotation:
+    """Adaptive boundary refinement using tblastn against reference protein.
+
+    Runs a local tblastn search using the gene's Protein.fasta reference
+    against the genome. If a high-quality hit overlaps the current
+    annotation substantially, the tblastn boundaries are adopted.
+
+    Skips trans-spliced/multi-exon genes where tblastn aligns the full
+    protein and contiguous hits are not meaningful.
+    """
+    gene_name_lower = ann.gene_name.lower()
+
+    # Skip trans-spliced genes and any gene with more than one exon
+    if gene_name_lower in TRANS_SPLICED_CONFIG or len(ann.exons) > 1:
+        return ann
+
+    tblastn = shutil.which("tblastn")
+    makeblastdb = shutil.which("makeblastdb")
+    if not tblastn or not makeblastdb:
+        return ann
+
+    ref_dir = db_manager.blast_ref_dir
+    ref_file = ref_dir / f"{ann.gene_name}.Protein.fasta"
+    if not ref_file.exists():
+        return ann
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        genome_fa = Path(tmpdir) / "genome.fasta"
+        genome_fa.write_text(f">{genome.seqid}\n{genome.sequence}\n")
+
+        db_path = Path(tmpdir) / "genome_db"
+        try:
+            subprocess.run(
+                [makeblastdb, "-in", str(genome_fa), "-dbtype", "nucl", "-out", str(db_path)],
+                capture_output=True,
+                timeout=60,
+                check=True,
+            )
+        except subprocess.SubprocessError:
+            return ann
+
+        out_file = Path(tmpdir) / f"tblastn_{ann.gene_name}.tsv"
+        cmd = [
+            tblastn,
+            "-query", str(ref_file),
+            "-db", str(db_path),
+            "-out", str(out_file),
+            "-outfmt", "6 qseqid sseqid sstart send evalue bitscore pident qcovs",
+            "-evalue", "1e-10",
+            "-max_target_seqs", "5",
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=120, check=True)
+        except subprocess.SubprocessError:
+            return ann
+
+        if not out_file.exists() or not out_file.read_text().strip():
+            return ann
+
+        hmm_start = ann.genomic_start
+        hmm_end = ann.genomic_end
+        hmm_len = hmm_end - hmm_start + 1
+
+        best_hit = None
+        best_score = -1.0
+
+        for line in out_file.read_text().strip().split("\n"):
+            if not line.strip():
+                continue
+            parts = line.split("\t")
+            if len(parts) < 8:
+                continue
+            try:
+                sstart = int(parts[2])
+                send = int(parts[3])
+                bitscore = float(parts[5])
+                pident = float(parts[6])
+                qcovs = float(parts[7]) if len(parts) > 7 else 0.0
+            except (ValueError, IndexError):
+                continue
+
+            if pident < 80 or qcovs < 70:
+                continue
+
+            hit_start = min(sstart, send)
+            hit_end = max(sstart, send)
+            hit_len = hit_end - hit_start + 1
+
+            overlap_start = max(hmm_start, hit_start)
+            overlap_end = min(hmm_end, hit_end)
+            overlap_len = max(0, overlap_end - overlap_start + 1)
+
+            if hmm_len > 0 and overlap_len / hmm_len < 0.8:
+                continue
+
+            # Prefer hits closest to the HMM region
+            proximity = min(abs(hit_start - hmm_start), abs(hit_end - hmm_end))
+            score = bitscore + (100 - proximity) + pident
+
+            if score > best_score:
+                best_score = score
+                best_hit = (hit_start, hit_end)
+
+    if best_hit:
+        new_start, new_end = best_hit
+        logger.info(
+            f"tblastn refined {ann.gene_name}: {hmm_start}-{hmm_end} -> {new_start}-{new_end}"
+        )
+        new_exons = [
+            ExonRecord(
+                start=new_start,
+                end=new_end,
+                strand=ann.strand,
+                number=1,
+                phase=0,
+            )
+        ]
+        notes = list(ann.notes)
+        notes.append(f"tblastn boundary refinement: {hmm_start}-{hmm_end} -> {new_start}-{new_end}")
+        return ann.model_copy(update={
+            "exons": new_exons,
+            "notes": notes,
+            "source_method": "tblastn",
+        })
+
+    return ann
 
 
 def _apply_fixed_offset_correction(ann: GeneAnnotation, genome: GenomeSequence) -> GeneAnnotation:

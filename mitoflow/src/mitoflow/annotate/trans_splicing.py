@@ -100,7 +100,7 @@ def detect_short_exons(
         return found_genes
 
     updated = {}
-    ref_dir = db_manager.blast_ref_dir
+    ref_dir = db_manager.exon_ref_dir
 
     for gene_name, info in TRANS_SPLICING_INFO.items():
         if gene_name not in found_genes:
@@ -185,6 +185,7 @@ def _find_exon_reference(gene_name: str, ref_dir: Path) -> Path | None:
     Looks for nucleotide reference files:
     1. {gene_name}_exons.fasta (individual exon sequences)
     2. {gene_name}.CDS.fasta (full CDS sequence)
+    3. {gene_name}.CDS.Exons.Extent.fasta (multi-species exon fragments)
 
     Note: Protein.fasta files are NOT suitable for blastn (requires nucleotide).
     """
@@ -197,6 +198,11 @@ def _find_exon_reference(gene_name: str, ref_dir: Path) -> Path | None:
     cds_ref = ref_dir / f"{gene_name}.CDS.fasta"
     if cds_ref.exists():
         return cds_ref
+
+    # Phase 3: support multi-species exon fragment files
+    extent_ref = ref_dir / f"{gene_name}.CDS.Exons.Extent.fasta"
+    if extent_ref.exists():
+        return extent_ref
 
     # Check if only Protein.fasta exists (not usable for blastn)
     protein_ref = ref_dir / f"{gene_name}.Protein.fasta"
@@ -467,11 +473,17 @@ def find_exon_reference_file(gene_name: str, db_manager: DBManager) -> Path | No
         Path to exon reference file or None if not found
     """
     # Primary: look for exon-specific reference in blast_refs/exons/
-    exon_ref = db_manager.data_dir / "blast_refs" / "exons" / f"{gene_name}.CDS.Exons.Extent.fasta"
+    exon_ref = db_manager.exon_ref_dir / f"{gene_name}.CDS.Exons.Extent.fasta"
     if exon_ref.exists():
         return exon_ref
 
-    # Fallback: check for .CDS.fasta in blast_refs/pcg/ (full CDS, less ideal but usable)
+    # Phase 3: also check for full CDS reference in blast_refs/exons/
+    # (useful for genes like rps10/rpl2/ccmFC where only CDS is available)
+    cds_ref = db_manager.exon_ref_dir / f"{gene_name}.CDS.fasta"
+    if cds_ref.exists():
+        return cds_ref
+
+    # Legacy fallback: check for .CDS.fasta in blast_refs/pcg/
     cds_ref = db_manager.blast_ref_dir / f"{gene_name}.CDS.fasta"
     if cds_ref.exists():
         return cds_ref
@@ -824,49 +836,69 @@ def refine_exon_boundaries_with_codons(
     stop_codons = ["TAA", "TAG", "TGA"]
     refined = []
 
+    # Only the terminal exon should contain the stop codon.
+    # For plus strand: terminal exon has the largest end coordinate.
+    # For minus strand: terminal exon has the smallest start coordinate.
+    if strand == Strand.PLUS:
+        terminal_exon = max(exons, key=lambda e: e.end)
+    else:
+        terminal_exon = min(exons, key=lambda e: e.start)
+
     for exon in exons:
-        # Check exon end for stop codon
+        # Only refine the terminal exon; internal exons keep BLAST-derived boundaries
+        if exon is not terminal_exon:
+            refined.append(exon)
+            continue
+
         if strand == Strand.PLUS:
-            # For plus strand, check last 3 bases
+            # If the last 3 bases already contain a stop codon, keep boundary
+            last_codon = genome.sequence[exon.end - 3 : exon.end].upper()
+            if last_codon in stop_codons:
+                refined.append(exon)
+                continue
+
             region_end = min(exon.end + 50, len(genome.sequence))
             region = genome.sequence[exon.end:region_end]
-        else:
-            # For minus strand, check first 3 bases (reverse complement)
-            region_start = max(0, exon.start - 50)
-            region = str(Seq(genome.sequence[region_start:exon.start]).reverse_complement())
-
-        # Search for stop codon in downstream region
-        for offset in range(0, min(50, len(region))):
-            codon = region[offset:offset+3].upper() if offset+3 <= len(region) else ""
-            if codon in stop_codons:
-                # Found stop codon, adjust boundary
-                # Stop codon spans 3 bases, must include all 3
-                if strand == Strand.PLUS:
-                    # Codon at offset spans [exon.end + offset : exon.end + offset + 3]
-                    # New end should be AFTER the stop codon (exclusive coordinate)
+            for offset in range(0, min(50, len(region))):
+                codon = region[offset:offset+3].upper() if offset+3 <= len(region) else ""
+                if codon in stop_codons:
                     new_end = exon.end + offset + 3
                     new_start = exon.start
-                else:
-                    # For minus strand, codon in reverse complement at offset
-                    # means codon spans [exon.start - offset - 3 : exon.start - offset]
-                    # New start should be AT the start of the stop codon
+                    break
+            else:
+                refined.append(exon)
+                continue
+        else:
+            # For minus strand, check first 3 bases (reverse complement)
+            first_codon = str(Seq(genome.sequence[exon.start:exon.start+3]).reverse_complement()).upper()
+            if first_codon in stop_codons:
+                refined.append(exon)
+                continue
+
+            region_start = max(0, exon.start - 50)
+            region = str(Seq(genome.sequence[region_start:exon.start]).reverse_complement())
+            for offset in range(0, min(50, len(region))):
+                codon = region[offset:offset+3].upper() if offset+3 <= len(region) else ""
+                if codon in stop_codons:
                     new_start = exon.start - offset - 3
                     new_end = exon.end
-
-                if new_end != exon.end or new_start != exon.start:
-                    logger.debug(
-                        f"{gene_name} exon {exon.number}: refined boundary "
-                        f"by {offset}bp to stop codon"
-                    )
-                    refined.append(ExonRecord(
-                        start=new_start,
-                        end=new_end,
-                        strand=exon.strand,
-                        number=exon.number,
-                    ))
                     break
+            else:
+                refined.append(exon)
+                continue
+
+        if new_end != exon.end or new_start != exon.start:
+            logger.debug(
+                f"{gene_name} exon {exon.number}: refined boundary "
+                f"by {abs(new_end - exon.end) + abs(new_start - exon.start)}bp to stop codon"
+            )
+            refined.append(ExonRecord(
+                start=new_start,
+                end=new_end,
+                strand=exon.strand,
+                number=exon.number,
+            ))
         else:
-            # No stop codon found, keep original
             refined.append(exon)
 
     return refined

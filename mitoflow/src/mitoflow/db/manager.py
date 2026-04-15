@@ -29,6 +29,10 @@ class DBManager:
         return self.data_dir / "blast_refs" / "pcg"
 
     @property
+    def exon_ref_dir(self) -> Path:
+        return self.data_dir / "blast_refs" / "exons"
+
+    @property
     def rrna_ref_dir(self) -> Path:
         """rRNA reference directory - prefers mitochondrial, falls back to general."""
         mito_dir = self.data_dir / "blast_refs" / "rrna_mito"

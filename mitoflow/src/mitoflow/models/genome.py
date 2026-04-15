@@ -70,8 +70,14 @@ class GenomeSequence(BaseModel):
         return positions
 
     def subsequence(self, start: int, end: int) -> str:
-        """Extract subsequence (1-based, inclusive)."""
-        return self.sequence[start - 1 : end]
+        """Extract subsequence (1-based, inclusive).
+
+        Handles circular wrap-around when end < start.
+        """
+        if end >= start:
+            return self.sequence[start - 1 : end]
+        # Wrap-around: from start to end of genome, then beginning to end
+        return self.sequence[start - 1 :] + self.sequence[:end]
 
     def get_sequence_for_range(
         self, start: int, end: int, strand: int = 1

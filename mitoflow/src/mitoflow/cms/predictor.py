@@ -252,7 +252,7 @@ def predict_cms(
     if use_ml_scorer:
         try:
             from .ml.scorer import MLCMSScorer
-            from ..features.extractor import CMSFeatureExtractor
+            from .features.extractor import CMSFeatureExtractor
 
             if ml_scorer_path:
                 ml_scorer = MLCMSScorer(ml_scorer_path)

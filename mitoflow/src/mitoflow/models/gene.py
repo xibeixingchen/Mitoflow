@@ -25,6 +25,7 @@ class ExonRecord(BaseModel):
     end: int            # inclusive
     strand: Strand
     number: int = 1     # 1-based exon number (auto-assigned if single)
+    phase: int = 0      # Reading-frame phase at 5' end (0, 1, or 2)
 
     @computed_field
     @property

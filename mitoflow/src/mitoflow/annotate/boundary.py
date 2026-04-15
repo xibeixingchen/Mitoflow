@@ -443,22 +443,29 @@ def _correct_stop_codon_conservative(
     
     if ann.strand == Strand.PLUS:
         end = last_exon.end
-        search_to = min(genome.length, end + search_range)
-        seq = genome.get_sequence_for_range(last_exon.start, search_to)
-        
+        # Circular-aware: fetch last exon plus downstream search_range
+        downstream_end = ((end + search_range - 1) % genome.length) + 1
+        downstream = genome.subsequence(end + 1, downstream_end)
+        seq = genome.get_sequence_for_range(last_exon.start, last_exon.end) + downstream
+
         if len(seq) < 3:
             return ann
-        
+
         # Calculate frame offset
         prior_len = sum((e.end - e.start + 1) for e in ann.exons[:-1])
         frame_offset = prior_len % 3
-        
+
         # Look for stop codon
         for i in range(frame_offset, len(seq) - 2, 3):
             codon = seq[i:i+3].upper()
             if codon in STOP_CODONS:
-                new_end = last_exon.start + i + 2
-                if abs(new_end - end) <= search_range and new_end >= end - 3:
+                new_end_raw = last_exon.start + i + 2
+                new_end = ((new_end_raw - 1) % genome.length) + 1
+                # Accept if downstream within search_range or slightly upstream
+                end_diff = genome.circular_span(end, new_end)
+                is_downstream = end_diff <= search_range + 3
+                is_upstream = (new_end <= end) and (end - new_end <= 3)
+                if is_downstream or is_upstream:
                     new_exons = list(ann.exons[:-1])
                     new_exons.append(ExonRecord(
                         start=last_exon.start, end=new_end,
@@ -467,8 +474,12 @@ def _correct_stop_codon_conservative(
                     return ann.model_copy(update={"exons": new_exons})
                 break
             if is_stop_gain and codon in STOP_GAIN_CODONS:
-                new_end = last_exon.start + i + 2
-                if abs(new_end - end) <= search_range:
+                new_end_raw = last_exon.start + i + 2
+                new_end = ((new_end_raw - 1) % genome.length) + 1
+                end_diff = genome.circular_span(end, new_end)
+                is_downstream = end_diff <= search_range + 3
+                is_upstream = (new_end <= end) and (end - new_end <= 3)
+                if is_downstream or is_upstream:
                     notes = ann.notes + [f"RNA editing: {codon}->stop (C-to-U)"]
                     exceptions = list(set(ann.exceptions + ["RNA editing"]))
                     new_exons = list(ann.exons[:-1])

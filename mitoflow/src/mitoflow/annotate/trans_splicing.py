@@ -604,6 +604,58 @@ def search_exons_blastn(
     return result
 
 
+def _score_splice_sites(
+    genome: GenomeSequence,
+    start: int,
+    end: int,
+    strand: Strand,
+) -> float:
+    """Score splice-site consensus for a candidate exon hit.
+
+    Checks the 2 bp immediately upstream of the exon start (donor)
+    and downstream of the exon end (acceptor). For minus-strand genes,
+    the reverse complement of the genome sequence is evaluated.
+
+    Returns:
+        Score adjustment: GT/AG +10, GC/AG +5, non-consensus -20.
+    """
+    score = 0.0
+
+    if strand == Strand.PLUS:
+        upstream = genome.get_sequence_for_range(
+            genome.wrap_position(start - 2), genome.wrap_position(start - 1)
+        ).upper()
+        downstream = genome.get_sequence_for_range(
+            genome.wrap_position(end + 1), genome.wrap_position(end + 2)
+        ).upper()
+        donor = upstream
+        acceptor = downstream
+    else:
+        upstream_fwd = genome.get_sequence_for_range(
+            genome.wrap_position(start), genome.wrap_position(start + 1)
+        ).upper()
+        donor = upstream_fwd.translate(str.maketrans("ATGC", "TACG"))[::-1]
+
+        downstream_fwd = genome.get_sequence_for_range(
+            genome.wrap_position(end - 1), genome.wrap_position(end)
+        ).upper()
+        acceptor = downstream_fwd.translate(str.maketrans("ATGC", "TACG"))[::-1]
+
+    if donor == "GT":
+        score += 10
+    elif donor == "GC":
+        score += 5
+    elif donor:
+        score -= 20
+
+    if acceptor == "AG":
+        score += 10
+    elif acceptor:
+        score -= 20
+
+    return score
+
+
 def merge_exons_to_gene(
     gene_name: str,
     exon_hits: dict[int, list[tuple[int, int, Strand, float, int, int]]],
@@ -649,17 +701,15 @@ def merge_exons_to_gene(
             logger.debug(f"{gene_name}: no hits for expected exon {exon_num}")
             return None
 
-        # Sort by: 1) hit_length (prefer full-length), 2) identity (higher is better)
-        # A full-length match (hit_length >= 90% expected) should be preferred over partial matches
+        # Sort by: 1) hit_length (prefer full-length), 2) identity, 3) splice-site consensus
         hits_with_score = []
         for h in hits:
             start, end, strand, identity, hit_length, expected_length = h
-            # Calculate coverage ratio (hit_length / expected_length)
             coverage_ratio = hit_length / expected_length if expected_length > 0 else 0
-            # Prioritize full-length matches: coverage_ratio >= 0.9 gets bonus
             full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
-            # Score = full_length_bonus + identity * coverage_ratio
-            score = full_length_bonus + identity * coverage_ratio
+            base_score = full_length_bonus + identity * coverage_ratio
+            splice_score = _score_splice_sites(genome, start, end, strand)
+            score = base_score + splice_score
             hits_with_score.append((h, score))
 
         # Sort by score descending
@@ -777,13 +827,20 @@ def merge_exons_to_gene(
     else:
         strand = strands[0]
 
-    # Sort exons by genomic position and re-number
-    best_exons.sort(key=lambda e: e[0])  # Sort by start
+    # Sort exons by genomic position in transcription order
+    # Plus strand: 5'->3' is ascending start coordinate
+    # Minus strand: 5'->3' is descending end coordinate
+    if strand == Strand.PLUS:
+        best_exons.sort(key=lambda e: e[0])
+    else:
+        best_exons.sort(key=lambda e: e[1], reverse=True)
 
-    exons = [
-        ExonRecord(start=e[0], end=e[1], strand=e[2], number=i)
-        for i, e in enumerate(best_exons, 1)
-    ]
+    exons = []
+    cumulative_len = 0
+    for i, e in enumerate(best_exons, 1):
+        phase = cumulative_len % 3
+        exons.append(ExonRecord(start=e[0], end=e[1], strand=e[2], number=i, phase=phase))
+        cumulative_len += e[1] - e[0] + 1
 
     # Refine boundaries for problematic genes
     exons = refine_exon_boundaries_with_codons(exons, genome, strand, gene_name)

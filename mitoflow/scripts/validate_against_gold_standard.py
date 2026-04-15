@@ -63,40 +63,49 @@ def normalize_gene_name(name: str) -> str:
     return aliases.get(name, name)
 
 
-def parse_genbank_features(gb_file: Path, source_name: str = "") -> Tuple[List[Dict], int]:
-    """解析GenBank文件，提取所有基因特征"""
-    try:
-        record = SeqIO.read(gb_file, "genbank")
-    except Exception as e:
-        logger.warning(f"Error reading {gb_file}: {e}")
-        return [], 0
+def parse_genbank_features(gb_files, source_name: str = "") -> Tuple[List[Dict], int]:
+    """解析GenBank文件，提取所有基因特征。
 
-    features = []
-    genome_length = len(record.seq)
+    支持多文件合并（用于分染色体/ contig 的物种）。
+    """
+    if isinstance(gb_files, Path):
+        gb_files = [gb_files]
 
-    for feat in record.features:
-        if feat.type in ['source', 'repeat_region', 'misc_feature', 'ncRNA', "5'UTR", "3'UTR", 'D-loop']:
+    all_features = []
+    genome_length = 0
+
+    for gb_file in gb_files:
+        try:
+            record = SeqIO.read(gb_file, "genbank")
+        except Exception as e:
+            logger.warning(f"Error reading {gb_file}: {e}")
             continue
 
-        gene_name = ""
-        if 'gene' in feat.qualifiers:
-            gene_name = feat.qualifiers['gene'][0]
-        elif 'name' in feat.qualifiers:
-            gene_name = feat.qualifiers['name'][0]
+        genome_length = max(genome_length, len(record.seq))
 
-        gene_name = normalize_gene_name(gene_name)
+        for feat in record.features:
+            if feat.type in ['source', 'repeat_region', 'misc_feature', 'ncRNA', "5'UTR", "3'UTR", 'D-loop']:
+                continue
 
-        if feat.type in ['gene', 'CDS', 'tRNA', 'rRNA', 'exon']:
-            features.append({
-                'type': feat.type,
-                'gene': gene_name,
-                'start': int(feat.location.start),
-                'end': int(feat.location.end),
-                'strand': feat.location.strand,
-                'product': feat.qualifiers.get('product', [''])[0],
-            })
+            gene_name = ""
+            if 'gene' in feat.qualifiers:
+                gene_name = feat.qualifiers['gene'][0]
+            elif 'name' in feat.qualifiers:
+                gene_name = feat.qualifiers['name'][0]
 
-    return features, genome_length
+            gene_name = normalize_gene_name(gene_name)
+
+            if feat.type in ['gene', 'CDS', 'tRNA', 'rRNA', 'exon']:
+                all_features.append({
+                    'type': feat.type,
+                    'gene': gene_name,
+                    'start': int(feat.location.start),
+                    'end': int(feat.location.end),
+                    'strand': feat.location.strand,
+                    'product': feat.qualifiers.get('product', [''])[0],
+                })
+
+    return all_features, genome_length
 
 
 def load_corrections(corrections_file: Path) -> Dict[str, Dict]:
@@ -270,14 +279,17 @@ def count_error_types(
 
 def validate_single_species(
     species: str,
-    ncbi_file: Path,
+    ncbi_files,
     mitoflow_dir: Path,
     corrections: Dict
 ) -> Dict:
     """验证单个物种"""
 
-    # 解析NCBI原始注释
-    ncbi_features, ncbi_length = parse_genbank_features(ncbi_file, "NCBI")
+    if isinstance(ncbi_files, Path):
+        ncbi_files = [ncbi_files]
+
+    # 解析NCBI原始注释（支持多文件合并）
+    ncbi_features, ncbi_length = parse_genbank_features(ncbi_files, "NCBI")
 
     # 标准化物种名用于文件查找
     species_name = species.replace(' ', '_').replace('.', '')
@@ -481,7 +493,7 @@ def main():
             continue
 
         logger.info(f"验证: {species}")
-        result = validate_single_species(species, gb_files[0], mitoflow_dir, corrections)
+        result = validate_single_species(species, gb_files, mitoflow_dir, corrections)
 
         if result:
             results.append(result)

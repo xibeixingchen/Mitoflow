@@ -708,8 +708,15 @@ def merge_exons_to_gene(
             coverage_ratio = hit_length / expected_length if expected_length > 0 else 0
             full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
             base_score = full_length_bonus + identity * coverage_ratio
-            splice_score = _score_splice_sites(genome, start, end, strand)
-            score = base_score + splice_score
+            # For hits that are clearly fragmented (coverage < 0.85), splice-site
+            # scoring is unreliable because the BLASTn boundary may not align with
+            # the true exon edge. Do not let splice penalties dominate hit selection
+            # in these cases; they are valuable only for near-full-length hits.
+            if coverage_ratio >= 0.85:
+                splice_score = _score_splice_sites(genome, start, end, strand)
+                score = base_score + splice_score
+            else:
+                score = base_score
             hits_with_score.append((h, score))
 
         # Sort by score descending
@@ -722,11 +729,36 @@ def merge_exons_to_gene(
         # (some species have an intron within what the reference calls one exon)
         if best_coverage < 0.85 and len(hits_sorted) > 1:
             # Try to assemble non-overlapping hits that together cover >= 85%
-            pos_sorted = sorted(hits_with_score, key=lambda x: min(x[0][0], x[0][1]))
-            selected_hits = []
-            total_len = 0
+            # Phase 4 fix: restrict to hits on the same strand as the best hit
+            # to avoid pulling in reverse-complement false positives.
+            best_strand = best_hit[2]
+            pos_sorted = sorted(
+                [(h, s) for h, s in hits_with_score if h[2] == best_strand],
+                key=lambda x: min(x[0][0], x[0][1]),
+            )
+            max_exon_gap = config.get("max_exon_gap", 10000)
+            # Phase 4 fix: anchor on best_hit and only accept nearby hits to
+            # prevent distant false positives (e.g. NUMTs) from blowing up span.
+            selected_hits = [best_hit]
+            total_len = best_hit[4]
+            best_start, best_end = sorted([best_hit[0], best_hit[1]])
             for h, score in pos_sorted:
+                if h is best_hit:
+                    continue
                 h_start, h_end = sorted([h[0], h[1]])
+                # Must be within max_exon_gap of at least one selected hit
+                near_any = False
+                for sel in selected_hits:
+                    s_start, s_end = sorted([sel[0], sel[1]])
+                    gap = min(
+                        abs(h_start - s_end),
+                        abs(h_end - s_start),
+                    )
+                    if gap <= max_exon_gap:
+                        near_any = True
+                        break
+                if not near_any:
+                    continue
                 # Must not overlap with already selected (allow 10bp tolerance)
                 overlaps = False
                 for sel in selected_hits:
@@ -737,8 +769,7 @@ def merge_exons_to_gene(
                 if not overlaps and h[4] >= config.get("min_exon_bp", 15):
                     selected_hits.append(h)
                     total_len += h[4]
-                    # Stop once we have sufficient coverage to avoid pulling in
-                    # distant false-positive hits that blow up the gene span.
+                    # Stop once we have sufficient coverage
                     if total_len / expected_length >= 0.85:
                         break
 
@@ -750,6 +781,15 @@ def merge_exons_to_gene(
                 )
                 for h in selected_hits:
                     best_exons.append((h[0], h[1], h[2], exon_num))
+                # For genes like cox2, where the reference bundles the first
+                # two exons into one reference sequence, a split means the
+                # species has one more exon than the reference count.
+                if gene_name == "cox2" and len(selected_hits) >= 2:
+                    expected_exons += len(selected_hits) - 1
+                    expected_nums = set(range(1, expected_exons + 1))
+                    logger.info(
+                        f"{gene_name}: adaptive expected exons = {expected_exons}"
+                    )
                 continue
 
         best_exons.append((start, end, strand, exon_num))
@@ -1059,7 +1099,7 @@ def annotate_trans_spliced_genes(
             elif len(current.exons) >= config["exons"]:
                 # Only force BLASTn refinement for genes with known systematic
                 # boundary drift (e.g. nad7). For others, trust existing annotation.
-                if gene_name not in {"nad7", "cox2"}:
+                if gene_name not in {"nad1", "nad7", "cox2"}:
                     logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
                     continue
                 logger.info(

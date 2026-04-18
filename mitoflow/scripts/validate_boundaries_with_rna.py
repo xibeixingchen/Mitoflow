@@ -71,7 +71,24 @@ def load_ncbi_cds_coords(genbank_file: Path) -> Dict[str, Tuple[int, int, str, L
             if not gene_name or gene_name not in TARGET_GENES:
                 continue
 
-            strand = "+" if feat.location.strand == 1 else "-"
+            # Determine strand: GenBank may report None for trans-spliced genes
+            # with mixed strands. If parts have mixed strands, mark as "?" to
+            # skip strand mismatch checks — gene-level strand is meaningless for
+            # trans-spliced genes whose exons reside on different strands.
+            if feat.location.strand is not None:
+                strand = "+" if feat.location.strand == 1 else "-"
+            else:
+                strands = [part.strand for part in feat.location.parts if part.strand is not None]
+                plus_count = sum(1 for s in strands if s == 1)
+                minus_count = sum(1 for s in strands if s == -1)
+                if plus_count > 0 and minus_count > 0:
+                    strand = "?"  # mixed-strand trans-spliced
+                elif plus_count > minus_count:
+                    strand = "+"
+                elif minus_count > plus_count:
+                    strand = "-"
+                else:
+                    strand = "?"
             exons = []
             for part in feat.location.parts:
                 exons.append((int(part.start) + 1, int(part.end)))
@@ -375,8 +392,8 @@ def validate_species(species_name: str, bam_files: List[Path], junc_files: List[
         ncbi_start, ncbi_end, ncbi_strand, ncbi_exons = ncbi_coords[gene]
         mito_start, mito_end, mito_strand, mito_exons = mito_coords[gene]
 
-        # Skip if strand differs (annotation mismatch)
-        if ncbi_strand != mito_strand:
+        # Skip if strand differs (annotation mismatch), unless NCBI is ambiguous
+        if ncbi_strand != mito_strand and ncbi_strand != "?":
             results.append({
                 "gene": gene,
                 "verdict": "strand_mismatch",

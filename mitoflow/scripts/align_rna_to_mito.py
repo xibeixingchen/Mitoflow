@@ -36,7 +36,11 @@ def check_tools() -> tuple[str, str, str]:
 def find_fastq_files(srr: str) -> list[Path]:
     """Find FASTQ files for an SRR run."""
     out_dir = FASTQ_DIR / srr
-    fqs = sorted(out_dir.glob("*.fastq.gz")) + sorted(out_dir.glob("*.fastq"))
+    fqs = [
+        p
+        for p in sorted(out_dir.glob("*.fastq.gz")) + sorted(out_dir.glob("*.fastq"))
+        if p.stat().st_size > 0
+    ]
     return fqs
 
 

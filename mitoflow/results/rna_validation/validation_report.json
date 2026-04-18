@@ -1,41 +1,25 @@
 [
   {
-    "species": "Nymphaea hybrid cultivar 'Joey Tomocik'",
-    "genes_evaluated": 11,
+    "species": "Camellia sinensis var. assamica",
+    "genes_evaluated": 0,
+    "results": []
+  },
+  {
+    "species": "Glycine max",
+    "genes_evaluated": 8,
     "results": [
-      {
-        "gene": "atp6",
-        "verdict": "no_rna_evidence",
-        "details": [
-          "Stop boundary: continuous coverage in disputed region (189636-189726, avg_depth=35.2)",
-          "Start boundary: continuous coverage in disputed region (188830-188845, avg_depth=1935.6)"
-        ],
-        "mitoflow_support": 0,
-        "ncbi_support": 0
-      },
-      {
-        "gene": "cox2",
-        "verdict": "no_rna_evidence",
-        "details": [
-          "Exon count mismatch: NCBI=3, MitoFlow=2",
-          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0"
-        ],
-        "mitoflow_support": 0,
-        "ncbi_support": 0
-      },
       {
         "gene": "cox3",
         "verdict": "no_rna_evidence",
         "details": [
-          "Stop boundary: continuous coverage in disputed region (154072-154075, avg_depth=9947.0)",
-          "Start boundary: continuous coverage in disputed region (153275-153278, avg_depth=7228.8)"
+          "Stop boundary: continuous coverage in disputed region (11701-11704, avg_depth=11387.2)",
+          "Start boundary: continuous coverage in disputed region (10880-10907, avg_depth=4346.4)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
       },
       {
-        "gene": "nad1",
+        "gene": "nad2",
         "verdict": "no_rna_evidence",
         "details": [
           "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
@@ -47,13 +31,104 @@
         "ncbi_support": 0
       },
       {
+        "gene": "nad4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Stop boundary: continuous coverage in disputed region (94127-94137, avg_depth=1917.4)",
+          "Start boundary: continuous coverage in disputed region (102332-102333, avg_depth=4742.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad5",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=1",
+          "Intron 2: ambiguous junction support MitoFlow n=1, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: identical boundaries with strong junction support (n=6692)"
+        ],
+        "mitoflow_support": 6693,
+        "ncbi_support": 6693
+      },
+      {
+        "gene": "nad7",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=1933)",
+          "Intron 2: identical boundaries with strong junction support (n=1435)",
+          "Intron 3: identical boundaries with strong junction support (n=4204)",
+          "Intron 4: identical boundaries with strong junction support (n=3631)"
+        ],
+        "mitoflow_support": 11203,
+        "ncbi_support": 11203
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (308625-308667, avg_depth=2168.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Start boundary: continuous coverage in disputed region (311506-311507, avg_depth=1128.5)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (250485-250488, avg_depth=3221.0)",
+          "Start boundary: continuous coverage in disputed region (249448-249532, avg_depth=3765.4)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Liriodendron tulipifera",
+    "genes_evaluated": 9,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Start boundary: continuous coverage in disputed region (235103-235157, avg_depth=50.1)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (5803-5806, avg_depth=28.5)",
+          "Start boundary: low coverage in disputed region (4967-5009, avg_depth=0.3)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
         "gene": "nad2",
         "verdict": "no_rna_evidence",
         "details": [
-          "Intron 1: identical boundaries",
-          "Intron 2: identical boundaries",
-          "Intron 3: identical boundaries",
-          "Intron 4: identical boundaries"
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -62,10 +137,9 @@
         "gene": "nad4",
         "verdict": "no_rna_evidence",
         "details": [
-          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Stop boundary: continuous coverage in disputed region (232401-232426, avg_depth=2131.8)"
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -74,10 +148,301 @@
         "gene": "nad5",
         "verdict": "no_rna_evidence",
         "details": [
-          "Intron 1: identical boundaries",
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=72)",
+          "Intron 2: identical boundaries with strong junction support (n=51)",
+          "Intron 3: strong junction support for NCBI (268312-269326), n=29 vs MitoFlow (268312-269328), n=0",
+          "Intron 4: identical boundaries with strong junction support (n=49)"
+        ],
+        "mitoflow_support": 172,
+        "ncbi_support": 201
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (512284-512299, avg_depth=7.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Start boundary: low coverage in disputed region (515677-515678, avg_depth=3.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: low coverage in disputed region (537698-537701, avg_depth=1.0)",
+          "Start boundary: low coverage in disputed region (536631-536634, avg_depth=0.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Capsicum annuum cultivar Jeju",
+    "genes_evaluated": 9,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (218171-218174, avg_depth=596.8)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
           "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 4: identical boundaries"
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "ambiguous",
+        "details": [
+          "Exon count mismatch: NCBI=4, MitoFlow=5",
+          "Intron 1: identical boundaries with strong junction support (n=1092)",
+          "Intron 2: identical boundaries with strong junction support (n=743)",
+          "Intron 3: strong junction support for NCBI (5146-6891), n=2255 vs MitoFlow (4901-4905), n=0",
+          "Intron 4: strong junction support for MitoFlow (5146-6891), n=2255 vs NCBI (missing), n=0"
+        ],
+        "mitoflow_support": 4090,
+        "ncbi_support": 4090
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (498225-498228, avg_depth=2191.0)",
+          "Start boundary: continuous coverage in disputed region (497671-497752, avg_depth=4263.7)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=798, NCBI n=794"
+        ],
+        "mitoflow_support": 798,
+        "ncbi_support": 794
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Pontederia crassipes",
+    "genes_evaluated": 9,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (293846-293912, avg_depth=1301.6)",
+          "Start boundary: continuous coverage in disputed region (293127-293130, avg_depth=2242.2)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (27155-27200, avg_depth=980.4)",
+          "Start boundary: continuous coverage in disputed region (26358-26361, avg_depth=3521.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=531)",
+          "Intron 2: identical boundaries with strong junction support (n=857)",
+          "Intron 3: identical boundaries with strong junction support (n=594)",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 1982,
+        "ncbi_support": 1982
+      },
+      {
+        "gene": "nad4",
+        "verdict": "strong_support_ncbi",
+        "details": [
+          "Intron 1: strong junction support for NCBI (136553-137908), n=450 vs MitoFlow (136565-137906), n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=3",
+          "Intron 3: strong junction support for NCBI (142624-145065), n=108 vs MitoFlow (142629-145055), n=0",
+          "Stop boundary: continuous coverage in disputed region (145150-145153, avg_depth=1499.8)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 561
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (333602-333605, avg_depth=397.8)",
+          "Start boundary: continuous coverage in disputed region (332532-332583, avg_depth=232.3)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Selenicereus monacanthus",
+    "genes_evaluated": 8,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad4",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=1055, NCBI n=1055",
+          "Intron 2: ambiguous junction support MitoFlow n=190, NCBI n=190"
+        ],
+        "mitoflow_support": 1245,
+        "ncbi_support": 1245
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -89,9 +454,7 @@
           "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
           "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0",
-          "Stop boundary: continuous coverage in disputed region (257758-257761, avg_depth=5503.5)",
-          "Start boundary: continuous coverage in disputed region (252186-252261, avg_depth=3983.4)"
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -99,8 +462,93 @@
       {
         "gene": "rpl16",
         "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps4",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Eucommia ulmoides",
+    "genes_evaluated": 8,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
         "details": [
-          "Stop boundary: continuous coverage in disputed region (181079-181082, avg_depth=498.5)"
+          "Stop boundary: continuous coverage in disputed region (246041-246044, avg_depth=4210.5)",
+          "Start boundary: continuous coverage in disputed region (245316-245325, avg_depth=1515.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad4",
+        "verdict": "strong_support_ncbi",
+        "details": [
+          "Intron 1: strong junction support for NCBI (163452-165179), n=277 vs MitoFlow (163464-165177), n=0",
+          "Intron 2: strong junction support for NCBI (165693-169364), n=6 vs MitoFlow (165709-169360), n=0",
+          "Intron 3: strong junction support for NCBI (169786-171141), n=26 vs MitoFlow (169812-171131), n=0",
+          "Stop boundary: continuous coverage in disputed region (171226-171229, avg_depth=1469.0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 309
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=0, NCBI n=0"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=199)",
+          "Intron 2: identical boundaries with strong junction support (n=170)",
+          "Intron 3: identical boundaries with strong junction support (n=679)",
+          "Intron 4: identical boundaries with strong junction support (n=1124)"
+        ],
+        "mitoflow_support": 2172,
+        "ncbi_support": 2172
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (178126-178129, avg_depth=742.2)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
@@ -109,11 +557,104 @@
         "gene": "rps3",
         "verdict": "no_rna_evidence",
         "details": [
-          "Intron 1: identical boundaries",
-          "Stop boundary: continuous coverage in disputed region (180670-180676, avg_depth=627.3)"
+          "Intron 1: identical boundaries (n=0)"
         ],
         "mitoflow_support": 0,
         "ncbi_support": 0
+      }
+    ]
+  },
+  {
+    "species": "Nymphaea hybrid cultivar 'Joey Tomocik'",
+    "genes_evaluated": 9,
+    "results": [
+      {
+        "gene": "atp6",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (189636-189726, avg_depth=34.1)",
+          "Start boundary: continuous coverage in disputed region (188830-188845, avg_depth=1647.4)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "cox3",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (154072-154075, avg_depth=9935.0)",
+          "Start boundary: continuous coverage in disputed region (153275-153278, avg_depth=7221.8)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad2",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: identical boundaries (n=0)",
+          "Intron 3: identical boundaries (n=0)",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad4",
+        "verdict": "strong_support_ncbi",
+        "details": [
+          "Intron 1: strong junction support for NCBI (223467-224992), n=549 vs MitoFlow (223480-224990), n=0",
+          "Intron 2: strong junction support for NCBI (225506-229792), n=5 vs MitoFlow (225523-229791), n=0",
+          "Intron 3: strong junction support for NCBI (230215-232341), n=139 vs MitoFlow (230222-232331), n=0",
+          "Stop boundary: continuous coverage in disputed region (232401-232426, avg_depth=2179.5)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 693
+      },
+      {
+        "gene": "nad5",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Intron 1: identical boundaries (n=0)",
+          "Intron 2: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 3: ambiguous junction support MitoFlow n=0, NCBI n=0",
+          "Intron 4: identical boundaries (n=0)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "nad7",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=1609)",
+          "Intron 2: identical boundaries with strong junction support (n=1342)",
+          "Intron 3: strong junction support for MitoFlow (254880-255932), n=1533 vs NCBI (254879-255928), n=0",
+          "Intron 4: ambiguous junction support MitoFlow n=3017, NCBI n=3017",
+          "Start boundary: continuous coverage in disputed region (252261-252273, avg_depth=4665.9)"
+        ],
+        "mitoflow_support": 7501,
+        "ncbi_support": 5968
+      },
+      {
+        "gene": "rpl16",
+        "verdict": "no_rna_evidence",
+        "details": [
+          "Stop boundary: continuous coverage in disputed region (181079-181082, avg_depth=496.5)"
+        ],
+        "mitoflow_support": 0,
+        "ncbi_support": 0
+      },
+      {
+        "gene": "rps3",
+        "verdict": "ambiguous",
+        "details": [
+          "Intron 1: identical boundaries with strong junction support (n=35)",
+          "Stop boundary: continuous coverage in disputed region (180670-180676, avg_depth=626.6)"
+        ],
+        "mitoflow_support": 35,
+        "ncbi_support": 35
       },
       {
         "gene": "rps4",

@@ -392,6 +392,7 @@ TRANS_SPLICED_CONFIG = {
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
     "cox1": {"exons": 2, "max_span": 100000, "min_exon_bp": 700, "max_exon_gap": 10000},
+    "ccmFC": {"exons": 2, "max_span": 50000, "min_exon_bp": 50, "max_exon_gap": 10000},
 }
 
 

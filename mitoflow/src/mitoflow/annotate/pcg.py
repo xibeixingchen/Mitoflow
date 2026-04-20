@@ -499,8 +499,15 @@ def annotate_pcg(
 
 
 def _is_variable_pcg(gene_name: str) -> bool:
-    """Return True for variable PCG families that may have 0-2 copies."""
-    return gene_name.lower().startswith(("rps", "rpl", "sdh", "mtt"))
+    """Return True for variable PCG families that may have multiple copies.
+
+    Based on gold-standard observations:
+    - rps/rpl/sdh/mtt: known variable families (0-2 copies)
+    - atp1/atp6/nad4l: observed multiple copies in Glycine max (3/2/2)
+    - atp9/atp8/ccmb: observed duplicates in some species
+    """
+    g = gene_name.lower()
+    return g.startswith(("rps", "rpl", "sdh", "mtt", "atp1", "atp6", "nad4l"))
 
 
 def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> dict[str, GeneAnnotation]:
@@ -539,7 +546,7 @@ def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> 
 
         # PCG duplicate filtering
         if _is_variable_pcg(key):
-            max_copies = 2
+            max_copies = 3  # atp1 observed with 3 copies in Glycine max
         else:
             max_copies = 1
 

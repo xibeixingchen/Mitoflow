@@ -21,7 +21,7 @@ import json
 import logging
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from Bio import SeqIO
 import pandas as pd
 
@@ -50,15 +50,22 @@ def normalize_gene_name(name: str) -> str:
         return ""
     name = name.lower().strip()
     name = name.split(".")[0]  # 移除版本号
+    # 移除连字符后缀 (atp1-1 -> atp1, atp6-2 -> atp6)
+    name = name.split("-")[0]
     # 处理别名
     aliases = {
         "ccmfn": "ccmfn",
         "ccmfc": "ccmfc",
         "ccmfc1": "ccmfc",
         "ccmfc2": "ccmfc",
+        "ccmfn1": "ccmfn",
+        "ccmfn2": "ccmfn",
         "nad4l": "nad4l",
         "matr": "matr",
+        "mat-r": "matr",
         "mttb": "mttb",
+        "rp15": "rpl5",
+        "rnaseh": "rnaseh",
     }
     return aliases.get(name, name)
 
@@ -104,6 +111,115 @@ def parse_genbank_features(gb_files, source_name: str = "") -> Tuple[List[Dict],
                     'strand': feat.location.strand,
                     'product': feat.qualifiers.get('product', [''])[0],
                 })
+
+    return all_features, genome_length
+
+
+def parse_gff_features(gff_file: Path, fasta_file: Optional[Path] = None) -> Tuple[List[Dict], int]:
+    """解析GFF3文件，提取CDS特征。
+
+    需要FASTA文件来获取基因组长度。正确处理Parent关系，
+    从gene行提取名称并映射到CDS/exon行。
+    """
+    all_features = []
+    genome_length = 0
+
+    # 获取基因组长度
+    if fasta_file and fasta_file.exists():
+        try:
+            record = SeqIO.read(fasta_file, "fasta")
+            genome_length = len(record.seq)
+        except Exception:
+            pass
+
+    # 第一遍：建立 ID -> gene_name 映射
+    id_to_name: dict[str, str] = {}
+    lines = [l for l in gff_file.read_text().splitlines() if not l.startswith("#") and l.strip()]
+    for line in lines:
+        parts = line.split("\t")
+        if len(parts) < 9:
+            continue
+        feat_type = parts[2]
+        attrs = parts[8]
+        attr_dict = {}
+        for attr in attrs.split(";"):
+            if "=" in attr:
+                k, v = attr.split("=", 1)
+                attr_dict[k] = v
+
+        name = attr_dict.get("Name", attr_dict.get("name", attr_dict.get("gene", "")))
+        feat_id = attr_dict.get("ID", "")
+        if name and feat_id:
+            id_to_name[feat_id] = normalize_gene_name(name)
+        # gene行直接记录
+        if feat_type == "gene" and name:
+            gene_id = attr_dict.get("ID", "")
+            if gene_id:
+                id_to_name[gene_id] = normalize_gene_name(name)
+
+    # 第二遍：解析特征，CDS通过Parent链查找gene名
+    for line in lines:
+        parts = line.split("\t")
+        if len(parts) < 9:
+            continue
+
+        seqid, source, feat_type, start, end, score, strand, phase, attrs = parts
+
+        if feat_type not in ["gene", "CDS", "tRNA", "rRNA", "exon"]:
+            continue
+
+        attr_dict = {}
+        for attr in attrs.split(";"):
+            if "=" in attr:
+                k, v = attr.split("=", 1)
+                attr_dict[k] = v
+
+        # 确定基因名称
+        gene_name = ""
+        if feat_type == "gene":
+            gene_name = id_to_name.get(attr_dict.get("ID", ""), "")
+        else:
+            # 通过Parent链查找
+            parent = attr_dict.get("Parent", "")
+            # Parent可能包含多个ID（逗号分隔）
+            for p in parent.split(","):
+                p = p.strip()
+                if p in id_to_name:
+                    gene_name = id_to_name[p]
+                    break
+                # 尝试查找Parent的Parent（mRNA -> gene）
+                for line2 in lines:
+                    parts2 = line2.split("\t")
+                    if len(parts2) < 9:
+                        continue
+                    attr_dict2 = {}
+                    for attr2 in parts2[8].split(";"):
+                        if "=" in attr2:
+                            k2, v2 = attr2.split("=", 1)
+                            attr_dict2[k2] = v2
+                    if attr_dict2.get("ID", "") == p and attr_dict2.get("Parent"):
+                        gp = attr_dict2.get("Parent", "").split(",")[0].strip()
+                        if gp in id_to_name:
+                            gene_name = id_to_name[gp]
+                            break
+                if gene_name:
+                    break
+
+        # 转换为0-based坐标
+        start_0 = int(start) - 1
+        end_0 = int(end)
+
+        # 链方向
+        strand_val = 1 if strand == "+" else (-1 if strand == "-" else None)
+
+        all_features.append({
+            'type': feat_type,
+            'gene': gene_name,
+            'start': start_0,
+            'end': end_0,
+            'strand': strand_val,
+            'product': '',
+        })
 
     return all_features, genome_length
 
@@ -164,12 +280,40 @@ def compare_gene_positions(
     common_genes = set(ncbi_pos.keys()) & set(mito_pos.keys())
 
     for gene in common_genes:
-        ncbi_f = ncbi_pos[gene][0]
-        mito_f = mito_pos[gene][0]
+        ncbi_list = ncbi_pos[gene]
+        mito_list = mito_pos[gene]
 
-        start_diff = circular_offset(mito_f['start'], ncbi_f['start'], genome_length) if genome_length else abs(mito_f['start'] - ncbi_f['start'])
-        end_diff = circular_offset(mito_f['end'], ncbi_f['end'], genome_length) if genome_length else abs(mito_f['end'] - ncbi_f['end'])
-        max_diff = max(start_diff, end_diff)
+        if len(ncbi_list) == 1 and len(mito_list) == 1:
+            # 单CDS基因，直接比较
+            ncbi_f = ncbi_list[0]
+            mito_f = mito_list[0]
+            start_diff = circular_offset(mito_f['start'], ncbi_f['start'], genome_length) if genome_length else abs(mito_f['start'] - ncbi_f['start'])
+            end_diff = circular_offset(mito_f['end'], ncbi_f['end'], genome_length) if genome_length else abs(mito_f['end'] - ncbi_f['end'])
+            max_diff = max(start_diff, end_diff)
+        else:
+            # 多CDS基因：逐exon按start排序后配对比较
+            ncbi_sorted = sorted(ncbi_list, key=lambda f: f['start'])
+            mito_sorted = sorted(mito_list, key=lambda f: f['start'])
+
+            pair_max_diffs = []
+            start_diffs = []
+            end_diffs = []
+            for n_f, m_f in zip(ncbi_sorted, mito_sorted):
+                sdiff = circular_offset(m_f['start'], n_f['start'], genome_length) if genome_length else abs(m_f['start'] - n_f['start'])
+                ediff = circular_offset(m_f['end'], n_f['end'], genome_length) if genome_length else abs(m_f['end'] - n_f['end'])
+                pair_max_diffs.append(max(sdiff, ediff))
+                start_diffs.append(sdiff)
+                end_diffs.append(ediff)
+
+            if pair_max_diffs:
+                max_diff = max(pair_max_diffs)
+                # 起始/终止偏差用第一个和最后一个exon的边界
+                start_diff = start_diffs[0]
+                end_diff = end_diffs[-1]
+            else:
+                max_diff = 0
+                start_diff = 0
+                end_diff = 0
 
         # 分类偏差级别
         if max_diff < 50:
@@ -185,12 +329,24 @@ def compare_gene_positions(
         pmga_correction = pmga_corrections.get(gene, [])
         has_correction = len(pmga_correction) > 0
 
+        # 报告位置：单CDS用自身，多CDS用第一个exon
+        if len(ncbi_list) == 1 and len(mito_list) == 1:
+            ncbi_start = ncbi_list[0]['start']
+            ncbi_end = ncbi_list[0]['end']
+            mito_start = mito_list[0]['start']
+            mito_end = mito_list[0]['end']
+        else:
+            ncbi_start = ncbi_sorted[0]['start'] if ncbi_list else 0
+            ncbi_end = ncbi_sorted[-1]['end'] if ncbi_list else 0
+            mito_start = mito_sorted[0]['start'] if mito_list else 0
+            mito_end = mito_sorted[-1]['end'] if mito_list else 0
+
         position_diffs.append({
             'gene': gene,
-            'ncbi_start': ncbi_f['start'],
-            'ncbi_end': ncbi_f['end'],
-            'mito_start': mito_f['start'],
-            'mito_end': mito_f['end'],
+            'ncbi_start': ncbi_start,
+            'ncbi_end': ncbi_end,
+            'mito_start': mito_start,
+            'mito_end': mito_end,
             'start_diff': start_diff,
             'end_diff': end_diff,
             'max_diff': max_diff,
@@ -281,7 +437,8 @@ def validate_single_species(
     species: str,
     ncbi_files,
     mitoflow_dir: Path,
-    corrections: Dict
+    corrections: Dict,
+    prefer_gff: bool = False,
 ) -> Dict:
     """验证单个物种"""
 
@@ -295,15 +452,26 @@ def validate_single_species(
     species_name = species.replace(' ', '_').replace('.', '')
 
     # 解析MitoFlow输出
+    gff_file = mitoflow_dir / "gff" / f"{species_name}.gff"
     mitoflow_file = mitoflow_dir / "genbank" / f"{species_name}.gb"
     if not mitoflow_file.exists():
         mitoflow_file = mitoflow_dir / "genbank" / f"{species_name}.gbk"
 
-    if not mitoflow_file.exists():
+    if prefer_gff and gff_file.exists():
+        fasta_file = mitoflow_dir / "fasta" / f"{species_name}.fasta"
+        if not fasta_file.exists():
+            fasta_file = Path("data/gold_standard/fasta") / f"{species_name}.fasta"
+        mitoflow_features, mito_length = parse_gff_features(gff_file, fasta_file)
+    elif mitoflow_file.exists():
+        mitoflow_features, mito_length = parse_genbank_features(mitoflow_file, "MitoFlow")
+    elif gff_file.exists():
+        fasta_file = mitoflow_dir / "fasta" / f"{species_name}.fasta"
+        if not fasta_file.exists():
+            fasta_file = Path("data/gold_standard/fasta") / f"{species_name}.fasta"
+        mitoflow_features, mito_length = parse_gff_features(gff_file, fasta_file)
+    else:
         logger.warning(f"MitoFlow file not found for {species_name}")
         return None
-
-    mitoflow_features, mito_length = parse_genbank_features(mitoflow_file, "MitoFlow")
 
     # 提取基因集合
     ncbi_genes = {f['gene'] for f in ncbi_features if f['type'] == 'CDS' and f['gene']}
@@ -445,6 +613,7 @@ def main():
     parser.add_argument('--corrections', required=True, help='PMGA修正数据CSV文件')
     parser.add_argument('--output', required=True, help='输出目录')
     parser.add_argument('--species-list', required=True, help='物种列表CSV文件')
+    parser.add_argument('--prefer-gff', action='store_true', help='优先使用GFF文件而非GenBank')
 
     args = parser.parse_args()
 
@@ -453,6 +622,7 @@ def main():
     corrections_file = Path(args.corrections)
     output_dir = Path(args.output)
     species_file = Path(args.species_list)
+    prefer_gff = args.prefer_gff
 
     # 加载修正数据
     logger.info("加载PMGA修正数据...")
@@ -493,7 +663,7 @@ def main():
             continue
 
         logger.info(f"验证: {species}")
-        result = validate_single_species(species, gb_files, mitoflow_dir, corrections)
+        result = validate_single_species(species, gb_files, mitoflow_dir, corrections, prefer_gff=prefer_gff)
 
         if result:
             results.append(result)

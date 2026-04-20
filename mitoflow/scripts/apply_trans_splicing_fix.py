@@ -79,8 +79,6 @@ def apply_fix(species_name: str, fasta_path: Path, gff_path: Path):
 
     changed = False
     updated_lines = list(gff_lines)
-    # Indices to remove (in reverse order)
-    to_remove: set[int] = set()
 
     genes_to_update = {"cox2", "nad1", "nad7", "nad4"}
     for gene_name in genes_to_update:
@@ -91,7 +89,8 @@ def apply_fix(species_name: str, fasta_path: Path, gff_path: Path):
             logger.info(f"{species_name}: {gene_name} not in existing GFF, skipping")
             continue
 
-        # Mark old lines for removal
+        # Mark old lines for removal (per-gene, reset each iteration)
+        to_remove: set[int] = set()
         for idx, _line in gene_blocks[gene_name]:
             to_remove.add(idx)
 
@@ -149,13 +148,31 @@ def apply_fix(species_name: str, fasta_path: Path, gff_path: Path):
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
-    fasta_dir = Path("data/gold_standard/fasta")
-    gff_dir = Path("results/phase4_boundary_fix")
+    import argparse
+    parser = argparse.ArgumentParser(description="Apply trans-splicing fixes to GFF files")
+    parser.add_argument("--gff-dir", default="results/phase3_quick_batch", help="Directory containing species subdirs with GFF files")
+    parser.add_argument("--fasta-dir", default="data/gold_standard/fasta", help="Directory containing FASTA files")
+    parser.add_argument("--species-list", default="data/gold_standard/species_list.csv", help="CSV with species list")
+    args = parser.parse_args()
+
+    fasta_dir = Path(args.fasta_dir)
+    gff_dir = Path(args.gff_dir)
     changed_any = False
 
-    for species_name, _acc in SPECIES:
+    # Load species list
+    import pandas as pd
+    species_df = pd.read_csv(args.species_list)
+
+    for _, row in species_df.iterrows():
+        species_name = row['species']
+        species_safe = species_name.replace(" ", "_").replace(".", "").replace("'", "")
         fasta = fasta_dir / f"{species_name}.fasta"
-        gff = gff_dir / species_name.replace(" ", "_").replace(".", "").replace("'", "") / "gff" / f"{species_name.replace(' ', '_').replace('.', '').replace(chr(39), '')}.gff"
+        gff = gff_dir / species_safe / "gff" / f"{species_safe}.gff"
+        if not fasta.exists():
+            # Try alternative naming
+            alt_fastas = list(fasta_dir.glob(f"{species_safe}*.fasta"))
+            if alt_fastas:
+                fasta = alt_fastas[0]
         changed = apply_fix(species_name, fasta, gff)
         changed_any = changed_any or changed
 

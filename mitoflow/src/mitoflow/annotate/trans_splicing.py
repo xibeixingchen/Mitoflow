@@ -1099,7 +1099,7 @@ def annotate_trans_spliced_genes(
             elif len(current.exons) >= config["exons"]:
                 # Only force BLASTn refinement for genes with known systematic
                 # boundary drift (e.g. nad7). For others, trust existing annotation.
-                if gene_name not in {"nad1", "nad7", "cox2"}:
+                if gene_name not in {"nad1", "nad7", "cox2", "nad4"}:
                     logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
                     continue
                 logger.info(

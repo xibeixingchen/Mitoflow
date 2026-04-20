@@ -82,7 +82,7 @@ def apply_fix(species_name: str, fasta_path: Path, gff_path: Path):
     # Indices to remove (in reverse order)
     to_remove: set[int] = set()
 
-    genes_to_update = {"cox2", "nad1", "nad7"}
+    genes_to_update = {"cox2", "nad1", "nad7", "nad4"}
     for gene_name in genes_to_update:
         if gene_name not in updated:
             continue

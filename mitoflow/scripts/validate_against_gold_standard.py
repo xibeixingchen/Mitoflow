@@ -297,37 +297,51 @@ def compare_gene_positions(
         ncbi_list = ncbi_pos[gene]
         mito_list = mito_pos[gene]
 
-        if len(ncbi_list) == 1 and len(mito_list) == 1:
-            # 单CDS基因，直接比较
-            ncbi_f = ncbi_list[0]
-            mito_f = mito_list[0]
-            start_diff = circular_offset(mito_f['start'], ncbi_f['start'], genome_length) if genome_length else abs(mito_f['start'] - ncbi_f['start'])
-            end_diff = circular_offset(mito_f['end'], ncbi_f['end'], genome_length) if genome_length else abs(mito_f['end'] - ncbi_f['end'])
-            max_diff = max(start_diff, end_diff)
+        # 多CDS基因：使用贪心匹配，为每个NCBI CDS找到最佳MitoFlow CDS
+        ncbi_sorted = sorted(ncbi_list, key=lambda f: f['start'])
+        mito_sorted = sorted(mito_list, key=lambda f: f['start'])
+
+        # 贪心匹配：为每个NCBI CDS找最近的未匹配MitoFlow CDS
+        # 距离阈值：超过此距离视为不同拷贝，不匹配
+        max_match_dist = max(50000, genome_length * 0.05) if genome_length else 50000
+        used_mito = set()
+        pairs = []
+        for n_f in ncbi_sorted:
+            best_m = None
+            best_dist = float('inf')
+            for i, m_f in enumerate(mito_sorted):
+                if i in used_mito:
+                    continue
+                # 优先用起始位置距离，但也考虑链方向一致性
+                dist = abs(m_f['start'] - n_f['start'])
+                if m_f.get('strand') == n_f.get('strand'):
+                    dist *= 0.5  # 相同链优先
+                if dist < best_dist:
+                    best_dist = dist
+                    best_m = i
+            if best_m is not None and best_dist < max_match_dist:
+                used_mito.add(best_m)
+                pairs.append((n_f, mito_sorted[best_m]))
+
+        pair_max_diffs = []
+        start_diffs = []
+        end_diffs = []
+        for n_f, m_f in pairs:
+            sdiff = circular_offset(m_f['start'], n_f['start'], genome_length) if genome_length else abs(m_f['start'] - n_f['start'])
+            ediff = circular_offset(m_f['end'], n_f['end'], genome_length) if genome_length else abs(m_f['end'] - n_f['end'])
+            pair_max_diffs.append(max(sdiff, ediff))
+            start_diffs.append(sdiff)
+            end_diffs.append(ediff)
+
+        if pair_max_diffs:
+            max_diff = max(pair_max_diffs)
+            # 起始/终止偏差用第一个和最后一个匹配exon的边界
+            start_diff = start_diffs[0]
+            end_diff = end_diffs[-1]
         else:
-            # 多CDS基因：逐exon按start排序后配对比较
-            ncbi_sorted = sorted(ncbi_list, key=lambda f: f['start'])
-            mito_sorted = sorted(mito_list, key=lambda f: f['start'])
-
-            pair_max_diffs = []
-            start_diffs = []
-            end_diffs = []
-            for n_f, m_f in zip(ncbi_sorted, mito_sorted):
-                sdiff = circular_offset(m_f['start'], n_f['start'], genome_length) if genome_length else abs(m_f['start'] - n_f['start'])
-                ediff = circular_offset(m_f['end'], n_f['end'], genome_length) if genome_length else abs(m_f['end'] - n_f['end'])
-                pair_max_diffs.append(max(sdiff, ediff))
-                start_diffs.append(sdiff)
-                end_diffs.append(ediff)
-
-            if pair_max_diffs:
-                max_diff = max(pair_max_diffs)
-                # 起始/终止偏差用第一个和最后一个exon的边界
-                start_diff = start_diffs[0]
-                end_diff = end_diffs[-1]
-            else:
-                max_diff = 0
-                start_diff = 0
-                end_diff = 0
+            max_diff = 0
+            start_diff = 0
+            end_diff = 0
 
         # 分类偏差级别
         if max_diff < 50:
@@ -343,15 +357,14 @@ def compare_gene_positions(
         pmga_correction = pmga_corrections.get(gene, [])
         has_correction = len(pmga_correction) > 0
 
-        # 报告位置：单CDS用自身，多CDS用第一个exon
-        if len(ncbi_list) == 1 and len(mito_list) == 1:
-            ncbi_start = ncbi_list[0]['start']
-            ncbi_end = ncbi_list[0]['end']
-            mito_start = mito_list[0]['start']
-            mito_end = mito_list[0]['end']
+        # 报告位置：使用匹配到的第一个和最后一个exon
+        ncbi_start = ncbi_sorted[0]['start'] if ncbi_list else 0
+        ncbi_end = ncbi_sorted[-1]['end'] if ncbi_list else 0
+        if pairs:
+            matched_mito = [m for _, m in pairs]
+            mito_start = min(m['start'] for m in matched_mito)
+            mito_end = max(m['end'] for m in matched_mito)
         else:
-            ncbi_start = ncbi_sorted[0]['start'] if ncbi_list else 0
-            ncbi_end = ncbi_sorted[-1]['end'] if ncbi_list else 0
             mito_start = mito_sorted[0]['start'] if mito_list else 0
             mito_end = mito_sorted[-1]['end'] if mito_list else 0
 

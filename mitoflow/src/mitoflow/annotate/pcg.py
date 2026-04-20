@@ -42,6 +42,8 @@ PER_GENE_MIN_SCORES: dict[str, float] = {
     "nad5": 40.0, "nad6": 40.0, "nad7": 40.0, "nad9": 40.0,
     # Others (ccm/mat/sdh/mtt/rnaseh): intermediate
     "ccmb": 50.0, "ccmc": 50.0, "ccmfc": 50.0, "ccmfn": 50.0,
+    # ccmFC1/2: fragment hits are frequent false positives; require high score
+    "ccmfc1": 80.0, "ccmfc2": 80.0,
     "matr": 50.0,
     "mttb": 50.0,
     "rnaseh": 50.0,
@@ -282,10 +284,20 @@ def _validate_hit_length(hit: HMMHit) -> bool:
     if hit.gene_name.lower() in {g.lower() for g in TRANS_SPLICED_SKIP_VALIDATION}:
         return True  # Skip validation for trans-spliced genes
 
-    if hit.gene_name not in EXPECTED_LENGTHS_WITH_TOLERANCE:
+    # Map fragment gene names (e.g. ccmFC1, ccmFC2) to main gene for length validation
+    GENE_NAME_MAP = {
+        "ccmfc1": "ccmFC", "ccmfc2": "ccmFC",
+        "ccmfn1": "ccmFN", "ccmfn2": "ccmFN",
+        "ccmb1": "ccmB", "ccmb2": "ccmB",
+        "atp6b": "atp6",
+        "rps3a": "rps3", "rps3b": "rps3",
+    }
+    lookup_name = GENE_NAME_MAP.get(hit.gene_name.lower(), hit.gene_name)
+
+    if lookup_name not in EXPECTED_LENGTHS_WITH_TOLERANCE:
         return True
 
-    expected = EXPECTED_LENGTHS_WITH_TOLERANCE[hit.gene_name]
+    expected = EXPECTED_LENGTHS_WITH_TOLERANCE[lookup_name]
     hit_len = hit.end - hit.start + 1
 
     # Reject if over-extended (common case)

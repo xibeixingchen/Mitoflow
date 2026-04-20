@@ -40,10 +40,11 @@ PER_GENE_MIN_SCORES: dict[str, float] = {
     "cox1": 40.0, "cox2": 40.0, "cox3": 40.0,
     "nad1": 40.0, "nad2": 40.0, "nad3": 40.0, "nad4": 40.0, "nad4l": 40.0,
     "nad5": 40.0, "nad6": 40.0, "nad7": 40.0, "nad9": 40.0,
-    # Others (ccm/mat/sdh/mtt): intermediate
+    # Others (ccm/mat/sdh/mtt/rnaseh): intermediate
     "ccmb": 50.0, "ccmc": 50.0, "ccmfc": 50.0, "ccmfn": 50.0,
     "matr": 50.0,
     "mttb": 50.0,
+    "rnaseh": 50.0,
     "sdh3": 50.0, "sdh4": 50.0,
 }
 
@@ -122,7 +123,7 @@ CORE_PCG_41 = [
     "ccmb", "ccmc", "ccmfc", "ccmfn",
     "rpl2", "rpl5", "rpl10", "rpl16",
     "rps1", "rps2", "rps3", "rps4", "rps7", "rps10", "rps12", "rps13", "rps14", "rps19",
-    "matr", "mttb", "sdh3", "sdh4",
+    "matr", "mttb", "rnaseh", "sdh3", "sdh4",
 ]
 
 

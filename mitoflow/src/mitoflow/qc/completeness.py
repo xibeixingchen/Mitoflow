@@ -16,7 +16,7 @@ from ..models.genome import GenomeSequence
 
 logger = logging.getLogger(__name__)
 
-# 41 core PCGs for angiosperm mitochondria
+# 42 core PCGs for angiosperm mitochondria (including rnaseh)
 CORE_PCG_41 = [
     # Complex I (9)
     "nad1", "nad2", "nad3", "nad4", "nad4L", "nad5", "nad6", "nad7", "nad9",
@@ -32,8 +32,8 @@ CORE_PCG_41 = [
     "rpl2", "rpl5", "rpl10", "rpl16",
     "rps1", "rps2", "rps3", "rps4", "rps7",
     "rps10", "rps12", "rps13", "rps14", "rps19",
-    # Other (4)
-    "matR", "mttB", "sdh3", "sdh4",
+    # Other (5)
+    "matR", "mttB", "rnaseh", "sdh3", "sdh4",
 ]
 
 # Variable genes (loss is not necessarily an assembly error)

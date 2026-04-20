@@ -36,7 +36,7 @@ CORE_PCG_41 = [
     "ccmb", "ccmc", "ccmfc", "ccmfn",
     "rpl2", "rpl5", "rpl10", "rpl16",
     "rps1", "rps2", "rps3", "rps4", "rps7", "rps10", "rps12", "rps13", "rps14", "rps19",
-    "matr", "mttb", "sdh3", "sdh4",
+    "matr", "mttb", "rnaseh", "sdh3", "sdh4",
 ]
 
 # RNA编辑相关基因

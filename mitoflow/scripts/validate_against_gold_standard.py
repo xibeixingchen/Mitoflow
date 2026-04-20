@@ -63,6 +63,7 @@ def normalize_gene_name(name: str) -> str:
         "nad4l": "nad4l",
         "matr": "matr",
         "mat-r": "matr",
+        "mat": "matr",
         "mttb": "mttb",
         "rp15": "rpl5",
         "rnaseh": "rnaseh",
@@ -103,14 +104,27 @@ def parse_genbank_features(gb_files, source_name: str = "") -> Tuple[List[Dict],
             gene_name = normalize_gene_name(gene_name)
 
             if feat.type in ['gene', 'CDS', 'tRNA', 'rRNA', 'exon']:
-                all_features.append({
-                    'type': feat.type,
-                    'gene': gene_name,
-                    'start': int(feat.location.start),
-                    'end': int(feat.location.end),
-                    'strand': feat.location.strand,
-                    'product': feat.qualifiers.get('product', [''])[0],
-                })
+                # Handle CompoundLocation (join) for trans-spliced genes:
+                # split into one feature per part so exon-level comparison works.
+                if hasattr(feat.location, 'parts') and len(feat.location.parts) > 1:
+                    for part in feat.location.parts:
+                        all_features.append({
+                            'type': feat.type,
+                            'gene': gene_name,
+                            'start': int(part.start),
+                            'end': int(part.end),
+                            'strand': part.strand,
+                            'product': feat.qualifiers.get('product', [''])[0],
+                        })
+                else:
+                    all_features.append({
+                        'type': feat.type,
+                        'gene': gene_name,
+                        'start': int(feat.location.start),
+                        'end': int(feat.location.end),
+                        'strand': feat.location.strand,
+                        'product': feat.qualifiers.get('product', [''])[0],
+                    })
 
     return all_features, genome_length
 

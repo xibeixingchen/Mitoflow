@@ -197,7 +197,7 @@ def _refine_boundary_by_tblastn(
     gene_name_lower = ann.gene_name.lower()
 
     # Skip trans-spliced genes and any gene with more than one exon
-    if gene_name_lower in TRANS_SPLICED_CONFIG or len(ann.exons) > 1:
+    if gene_name_lower in {k.lower() for k in TRANS_SPLICED_CONFIG} or len(ann.exons) > 1:
         return ann
 
     tblastn = shutil.which("tblastn")

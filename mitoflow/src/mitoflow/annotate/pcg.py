@@ -1261,7 +1261,7 @@ def _refine_boundaries_reference(
             # tblastn aligns the full reference protein; for trans-spliced genes
             # each exon only gets a partial hit. Extending partial hits to find
             # start/stop codons produces systematic errors (e.g., nad4 +36bp).
-            if gene_name in TRANS_SPLICED_CONFIG:
+            if gene_name in {k.lower() for k in TRANS_SPLICED_CONFIG}:
                 logger.debug(
                     f"{gene_name} is a multi-exon gene; using conservative "
                     f"refinement instead of tblastn extension"

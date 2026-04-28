@@ -1133,4 +1133,51 @@ def _handle_special_genes(
                             "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
                         })
 
+    # Genes with known N-terminal over-extension from reference proteins.
+    # If the gene is longer than the expected maximum, scan forward for an
+    # in-frame ATG/GTG that brings the length into the expected range.
+    _LENGTH_LIMITED = {
+        "rps14": (280, 310),  # NCBI typically 303bp, reference gives ~360bp
+        "rps19": (240, 280),  # NCBI typically ~264bp
+    }
+    if name in _LENGTH_LIMITED and len(ann.exons) >= 1:
+        min_len, max_len = _LENGTH_LIMITED[name]
+        first_len = ann.exons[0].end - ann.exons[0].start + 1
+        if first_len > max_len:
+            allowed = _get_allowed_start_codons(name, db_manager)
+            _rc = str.maketrans("ATGC", "TACG")
+            if ann.strand == Strand.PLUS:
+                for offset in range(3, min(150, first_len - min_len), 3):
+                    pos = ann.exons[0].start + offset
+                    new_len = first_len - offset
+                    c = genome.get_sequence_for_range(pos, pos + 2).upper()
+                    if c in allowed and min_len <= new_len <= max_len:
+                        new_exons = [ExonRecord(
+                            start=pos, end=ann.exons[0].end,
+                            strand=ann.strand, number=1,
+                        )]
+                        new_exons.extend(ann.exons[1:])
+                        logger.info(f"{name}: trimmed {offset}bp, now {new_len}bp")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"{name}: trimmed {offset}bp to {new_len}bp"],
+                        })
+            else:
+                for offset in range(3, min(150, first_len - min_len), 3):
+                    pos = ann.exons[0].end - offset
+                    new_len = first_len - offset
+                    raw = genome.get_sequence_for_range(pos - 2, pos).upper()
+                    c = raw.translate(_rc)[::-1]
+                    if c in allowed and min_len <= new_len <= max_len:
+                        new_exons = [ExonRecord(
+                            start=ann.exons[0].start, end=pos,
+                            strand=ann.strand, number=1,
+                        )]
+                        new_exons.extend(ann.exons[1:])
+                        logger.info(f"{name}: trimmed {offset}bp (minus strand), now {new_len}bp")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"{name}: trimmed {offset}bp to {new_len}bp"],
+                        })
+
     return ann

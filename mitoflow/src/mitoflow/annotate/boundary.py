@@ -280,6 +280,12 @@ def _refine_boundary_by_tblastn(
             if hmm_len > 0 and overlap_len / hmm_len < 0.8:
                 continue
 
+            # Reject hits that would shrink the annotation by >10%.
+            # A shorter tblastn hit likely comes from a truncated reference
+            # protein and should not override a more accurate boundary.
+            if hit_len < hmm_len * 0.9:
+                continue
+
             # Prefer hits closest to the HMM region
             proximity = min(abs(hit_start - hmm_start), abs(hit_end - hmm_end))
             score = bitscore + (100 - proximity) + pident
@@ -1062,33 +1068,69 @@ def _handle_special_genes(
     """Handle gene-specific quirks."""
     name = ann.gene_name
 
-    # rpl16: truncate if first exon is very long (>110 aa)
-    # BUT only if no start codon was found by boundary refinement
-    # If position starts with ATG/GTG, don't truncate
+    # rpl16: truncate if first exon is very long AND no valid start codon
+    # on the coding strand.  Must be strand-aware: for minus-strand genes
+    # the start codon sits at the 3' end (in genome coords).
     if name == "rpl16" and len(ann.exons) >= 1:
         first_len = ann.exons[0].end - ann.exons[0].start + 1
         if first_len > 330:  # >110 aa
-            # Check if the exon starts with a valid start codon
-            start_codon = genome.get_sequence_for_range(
-                ann.exons[0].start, ann.exons[0].start + 2
-            ).upper()
-            allowed_starts = {"ATG", "GTG"}
-            if start_codon in allowed_starts:
-                # Start codon already found by tblastn, don't truncate
-                logger.debug(f"rpl16: starts with {start_codon}, skipping truncation")
+            has_start = False
+            if ann.strand == Strand.PLUS:
+                codon = genome.get_sequence_for_range(
+                    ann.exons[0].start, ann.exons[0].start + 2
+                ).upper()
+            else:
+                # Minus strand: start codon is at exon end, reverse-complemented
+                raw = genome.get_sequence_for_range(
+                    ann.exons[0].end - 2, ann.exons[0].end
+                ).upper()
+                _rc = str.maketrans("ATGC", "TACG")
+                codon = raw.translate(_rc)[::-1]
+            if codon in {"ATG", "GTG"}:
+                has_start = True
+
+            if has_start:
+                logger.debug(f"rpl16: valid start codon {codon}, skipping truncation")
                 return ann
 
-            # Otherwise, truncate first 108bp (common rpl16 issue)
-            new_start = ann.exons[0].start + 108
-            new_exons = [ExonRecord(
-                start=new_start, end=ann.exons[0].end,
-                strand=ann.strand, number=1,
-            )]
-            new_exons.extend(ann.exons[1:])
-            logger.info(f"rpl16: truncating first 108bp (no start codon at position)")
-            return ann.model_copy(update={
-                "exons": new_exons,
-                "notes": ann.notes + ["rpl16: truncated first 108 bp"],
-            })
+            # Scan for nearest ATG/GTG in-frame on the coding strand
+            # instead of blind 108bp truncation.
+            if ann.strand == Strand.PLUS:
+                for offset in range(0, min(150, first_len), 3):
+                    pos = ann.exons[0].start + offset
+                    c = genome.get_sequence_for_range(pos, pos + 2).upper()
+                    if c in {"ATG", "GTG"}:
+                        if offset == 0:
+                            return ann
+                        new_exons = [ExonRecord(
+                            start=pos, end=ann.exons[0].end,
+                            strand=ann.strand, number=1,
+                        )]
+                        new_exons.extend(ann.exons[1:])
+                        logger.info(f"rpl16: trimmed {offset}bp to reach start codon")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
+                        })
+            else:
+                # Minus strand: scan from end toward start
+                for offset in range(0, min(150, first_len), 3):
+                    pos = ann.exons[0].end - offset
+                    raw = genome.get_sequence_for_range(pos - 2, pos).upper()
+                    _rc = str.maketrans("ATGC", "TACG")
+                    c = raw.translate(_rc)[::-1]
+                    if c in {"ATG", "GTG"}:
+                        if offset == 0:
+                            return ann
+                        new_exons = [ExonRecord(
+                            start=ann.exons[0].start, end=pos,
+                            strand=ann.strand, number=1,
+                        )]
+                        new_exons.extend(ann.exons[1:])
+                        logger.info(f"rpl16: trimmed {offset}bp to reach start codon (minus strand)")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
+                        })
 
     return ann

@@ -378,7 +378,6 @@ TRANS_SPLICED_CONFIG_BASE = {
     "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span_factor": 0.15, "max_span_cap": 750000, "min_exon_bp": 50, "max_exon_gap": 50000},
-    "cox1": {"exons": 2, "max_span_factor": 0.05, "max_span_cap": 200000, "min_exon_bp": 700, "max_exon_gap": 10000},
 }
 
 # Default config (for backwards compatibility)
@@ -391,7 +390,6 @@ TRANS_SPLICED_CONFIG = {
     "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
-    "cox1": {"exons": 2, "max_span": 100000, "min_exon_bp": 700, "max_exon_gap": 10000},
     "ccmFC": {"exons": 2, "max_span": 50000, "min_exon_bp": 50, "max_exon_gap": 10000},
 }
 

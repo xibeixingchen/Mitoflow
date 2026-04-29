@@ -1182,4 +1182,62 @@ def _handle_special_genes(
                             "notes": ann.notes + [f"{name}: trimmed {offset}bp to {new_len}bp"],
                         })
 
+    # nad5: trim over-extended short exon (exon 3).
+    # The HMM finds an 82-116bp region where the real exon is only ~22bp.
+    # Use the highly conserved 22bp motif to locate the correct boundaries.
+    if name == "nad5" and len(ann.exons) >= 3:
+        _NAD5_SHORT_EXON_MOTIF = "GATATGATGATTGGTTTAGGTA"
+        _NAD5_SHORT_EXON_LEN = 22
+        _rc = str.maketrans("ATGC", "TACG")
+        motif_rc = _NAD5_SHORT_EXON_MOTIF.translate(_rc)[::-1]
+        new_exons = list(ann.exons)
+        changed = False
+        for idx, exon in enumerate(new_exons):
+            exon_len = exon.end - exon.start + 1
+            if exon_len < 50 or exon_len > 160:
+                continue
+            # Get exon sequence from genome
+            if exon.strand == Strand.PLUS or exon.strand is None:
+                seq = genome.get_sequence_for_range(exon.start, exon.end).upper()
+            else:
+                raw = genome.get_sequence_for_range(exon.start, exon.end).upper()
+                seq = raw.translate(_rc)[::-1]
+            # Search for the conserved 22bp motif (allow 1-2 mismatches)
+            best_pos = -1
+            best_mm = len(_NAD5_SHORT_EXON_MOTIF)
+            for i in range(len(seq) - _NAD5_SHORT_EXON_LEN + 1):
+                window = seq[i:i + _NAD5_SHORT_EXON_LEN]
+                mm = sum(1 for a, b in zip(window, _NAD5_SHORT_EXON_MOTIF) if a != b)
+                if mm < best_mm:
+                    best_mm = mm
+                    best_pos = i
+            if best_pos < 0 or best_mm > 2:
+                continue
+            # Compute new boundaries
+            if exon.strand == Strand.PLUS or exon.strand is None:
+                new_start = exon.start + best_pos
+                new_end = new_start + _NAD5_SHORT_EXON_LEN - 1
+            else:
+                new_end = exon.end - best_pos
+                new_start = new_end - _NAD5_SHORT_EXON_LEN + 1
+            old_len = exon.end - exon.start + 1
+            trim = old_len - _NAD5_SHORT_EXON_LEN
+            if trim < 30:
+                continue
+            new_exons[idx] = ExonRecord(
+                start=new_start, end=new_end,
+                strand=exon.strand, number=exon.number,
+            )
+            changed = True
+            logger.info(
+                f"nad5: trimmed exon {idx+1} from {old_len}bp to "
+                f"{_NAD5_SHORT_EXON_LEN}bp ({trim}bp removed, "
+                f"{best_mm} mismatches to motif)"
+            )
+        if changed:
+            return ann.model_copy(update={
+                "exons": new_exons,
+                "notes": ann.notes + ["nad5: trimmed over-extended short exon"],
+            })
+
     return ann

@@ -39,6 +39,7 @@ TRANS_SPLICING_INFO = {
     "rpl2": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons"},
     "rps3": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons"},
     "ccmFC": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons"},
+    "rps10": {"exons": 2, "min_exon_bp": 50, "note": "2 cis-spliced exons (exon1 ~250bp, exon2 ~83bp)"},
 }
 
 
@@ -378,6 +379,7 @@ TRANS_SPLICED_CONFIG_BASE = {
     "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span_factor": 0.15, "max_span_cap": 750000, "min_exon_bp": 50, "max_exon_gap": 50000},
+    "rps10": {"exons": 2, "max_span_factor": 0.01, "max_span_cap": 100000, "min_exon_bp": 50, "max_exon_gap": 5000},
 }
 
 # Default config (for backwards compatibility)
@@ -391,6 +393,7 @@ TRANS_SPLICED_CONFIG = {
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
     "ccmFC": {"exons": 2, "max_span": 50000, "min_exon_bp": 50, "max_exon_gap": 10000},
+    "rps10": {"exons": 2, "max_span": 50000, "min_exon_bp": 50, "max_exon_gap": 5000},
 }
 
 

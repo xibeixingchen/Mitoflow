@@ -659,24 +659,25 @@ def _correct_stop_codon_conservative(
     if ann.is_pseudo or len(ann.exons) == 0:
         return ann
     
-    # Define expected lengths locally
+    # Define expected lengths locally (all lowercase to match gene_name)
     EXPECTED_LENGTHS = {
         "atp1": (1400, 1600), "atp4": (500, 650), "atp6": (900, 1200), "atp8": (400, 550), "atp9": (200, 280),
-        "ccmB": (550, 700), "ccmC": (700, 850), "ccmFC": (2000, 2500), "ccmFN1": (1000, 1300), "ccmFN2": (550, 700),
+        "ccmb": (550, 700), "ccmc": (700, 850), "ccmfc": (1300, 1450), "ccmfn": (1200, 1900),
         "cob": (1100, 1300), "cox1": (1500, 1650), "cox2": (700, 900), "cox3": (750, 900),
-        "matR": (1800, 2100), "mttB": (750, 900),
-        "nad1": (900, 1100), "nad2": (1100, 1400), "nad3": (300, 400), "nad4": (1300, 1600), "nad4L": (250, 350),
+        "matr": (1800, 2100), "mttb": (700, 900),
+        "nad1": (900, 1100), "nad2": (1100, 1400), "nad3": (300, 400), "nad4": (1300, 1600), "nad4l": (250, 350),
         "nad5": (1800, 2300), "nad6": (550, 700), "nad7": (1100, 1400), "nad9": (500, 650),
         "rpl2": (900, 1200), "rpl5": (500, 650), "rpl10": (450, 600), "rpl16": (500, 650),
-        "rps3": (1100, 1500), "rps4": (950, 1150), "rps7": (400, 550), "rps12": (350, 450), "rps14": (280, 380),
+        "rps1": (450, 650), "rps2": (600, 680), "rps3": (1100, 1500), "rps4": (950, 1150),
+        "rps7": (400, 550), "rps10": (320, 440), "rps12": (350, 450), "rps13": (340, 360),
+        "rps14": (280, 380), "rps19": (270, 360),
+        "sdh3": (280, 360), "sdh4": (340, 480),
     }
-    
-    # Don't extend genes that are already reasonable length
+
+    # Note: no early return based on current length — rely on acceptance-time
+    # length guard to reject bad corrections instead.
     current_len = ann.total_exon_length
-    if ann.gene_name in EXPECTED_LENGTHS:
-        min_exp, max_exp = EXPECTED_LENGTHS[ann.gene_name]
-        if min_exp * 0.8 <= current_len <= max_exp * 1.2:
-            return ann
+    gene_key = ann.gene_name.lower()
     
     is_stop_gain = db_manager.is_stop_gain_gene(ann.gene_name)
     last_exon = ann.exons[-1]
@@ -701,10 +702,17 @@ def _correct_stop_codon_conservative(
             if codon in STOP_CODONS:
                 new_end_raw = last_exon.start + i + 2
                 new_end = ((new_end_raw - 1) % genome.length) + 1
-                # Accept if downstream within search_range or slightly upstream
                 end_diff = genome.circular_span(end, new_end)
                 is_downstream = end_diff <= search_range + 3
-                is_upstream = (new_end <= end) and (end - new_end <= 3)
+                if len(ann.exons) == 1:
+                    new_len = new_end - last_exon.start + 1
+                    if gene_key in EXPECTED_LENGTHS:
+                        min_exp, _ = EXPECTED_LENGTHS[gene_key]
+                        is_upstream = (new_end <= end) and (new_len >= min_exp)
+                    else:
+                        is_upstream = (new_end <= end) and (end - new_end <= 3)
+                else:
+                    is_upstream = (new_end <= end) and (end - new_end <= 3)
                 if is_downstream or is_upstream:
                     new_exons = list(ann.exons[:-1])
                     new_exons.append(ExonRecord(
@@ -718,7 +726,15 @@ def _correct_stop_codon_conservative(
                 new_end = ((new_end_raw - 1) % genome.length) + 1
                 end_diff = genome.circular_span(end, new_end)
                 is_downstream = end_diff <= search_range + 3
-                is_upstream = (new_end <= end) and (end - new_end <= 3)
+                if len(ann.exons) == 1:
+                    new_len = new_end - last_exon.start + 1
+                    if gene_key in EXPECTED_LENGTHS:
+                        min_exp, _ = EXPECTED_LENGTHS[gene_key]
+                        is_upstream = (new_end <= end) and (new_len >= min_exp)
+                    else:
+                        is_upstream = (new_end <= end) and (end - new_end <= 3)
+                else:
+                    is_upstream = (new_end <= end) and (end - new_end <= 3)
                 if is_downstream or is_upstream:
                     notes = ann.notes + [f"RNA editing: {codon}->stop (C-to-U)"]
                     exceptions = list(set(ann.exceptions + ["RNA editing"]))
@@ -735,20 +751,34 @@ def _correct_stop_codon_conservative(
     else:
         # Reverse strand
         start = ann.exons[0].start
-        search_from = max(1, start - search_range)
+        # For single-exon genes, search the full exon for stop codons
+        # to handle over-extension at the 3' end (low-coordinate side)
+        if len(ann.exons) == 1:
+            search_from = max(1, start - (ann.exons[0].end - ann.exons[0].start))
+        else:
+            search_from = max(1, start - search_range)
         fwd_seq = genome.get_sequence_for_range(search_from, start + 2)
         rc_seq = fwd_seq.translate(str.maketrans("ATGCatgcNn", "TACGtacgNn"))[::-1]
-        
+
         if len(rc_seq) < 3:
             return ann
-        
+
         for i in range(0, len(rc_seq) - 2, 3):
             codon = rc_seq[i:i+3].upper()
             is_stop = codon in STOP_CODONS
             is_edited_stop = is_stop_gain and codon in STOP_GAIN_CODONS
             if is_stop or is_edited_stop:
                 new_start = start - i
-                if abs(new_start - start) <= search_range and new_start <= start + 3:
+                if len(ann.exons) == 1:
+                    new_len = ann.exons[0].end - new_start + 1
+                    if gene_key in EXPECTED_LENGTHS:
+                        min_exp, max_exp_local = EXPECTED_LENGTHS[gene_key]
+                        accept = new_start >= 1 and (min_exp <= new_len <= max_exp_local)
+                    else:
+                        accept = new_start >= 1 and (new_len <= current_len + 50)
+                else:
+                    accept = abs(new_start - start) <= search_range and new_start <= start + 3
+                if accept:
                     notes = list(ann.notes)
                     exceptions = list(ann.exceptions)
                     if is_edited_stop:
@@ -1144,6 +1174,7 @@ def _handle_special_genes(
         "rps13": (300, 370),  # NCBI typically 351bp, reference gives ~423bp
         "nad9": (520, 600),   # NCBI typically 573bp, reference gives ~660bp
         "rpl5": (480, 590),   # NCBI typically 549-564bp, reference gives ~636bp
+        "rpl10": (470, 530),  # NCBI typically 481-532bp, reference can give ~598bp
     }
     if name in _LENGTH_LIMITED and len(ann.exons) >= 1:
         min_len, max_len = _LENGTH_LIMITED[name]

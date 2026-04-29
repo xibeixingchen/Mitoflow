@@ -1139,6 +1139,7 @@ def _handle_special_genes(
     _LENGTH_LIMITED = {
         "rps14": (280, 310),  # NCBI typically 303bp, reference gives ~360bp
         "rps19": (240, 280),  # NCBI typically ~264bp
+        "nad6": (600, 650),   # NCBI typically 618bp, reference gives ~669bp
     }
     if name in _LENGTH_LIMITED and len(ann.exons) >= 1:
         min_len, max_len = _LENGTH_LIMITED[name]

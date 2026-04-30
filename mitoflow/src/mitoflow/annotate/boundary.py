@@ -444,7 +444,7 @@ def _validate_gene_length(ann: GeneAnnotation, db_manager: DBManager) -> GeneAnn
         "rpl2": (900, 1200),
         "rpl5": (500, 650),
         "rpl10": (450, 600),
-        "rpl16": (500, 650),
+        "rpl16": (480, 580),
         "rps1": (900, 1200),
         "rps3": (1100, 1500),
         "rps4": (950, 1150),
@@ -1101,6 +1101,9 @@ def _handle_special_genes(
     # rpl16: truncate if first exon is very long AND no valid start codon
     # on the coding strand.  Must be strand-aware: for minus-strand genes
     # the start codon sits at the 3' end (in genome coords).
+    # NOTE: even if a start codon exists at the current boundary, if the
+    # gene is over-extended (>480bp), fall through to _LENGTH_LIMITED below
+    # which will trim it to the expected range.
     if name == "rpl16" and len(ann.exons) >= 1:
         first_len = ann.exons[0].end - ann.exons[0].start + 1
         if first_len > 330:  # >110 aa
@@ -1110,7 +1113,6 @@ def _handle_special_genes(
                     ann.exons[0].start, ann.exons[0].start + 2
                 ).upper()
             else:
-                # Minus strand: start codon is at exon end, reverse-complemented
                 raw = genome.get_sequence_for_range(
                     ann.exons[0].end - 2, ann.exons[0].end
                 ).upper()
@@ -1119,49 +1121,52 @@ def _handle_special_genes(
             if codon in {"ATG", "GTG"}:
                 has_start = True
 
-            if has_start:
-                logger.debug(f"rpl16: valid start codon {codon}, skipping truncation")
+            if has_start and first_len <= 480:
+                logger.debug(f"rpl16: valid start codon {codon} and length OK ({first_len}bp)")
                 return ann
 
-            # Scan for nearest ATG/GTG in-frame on the coding strand
-            # instead of blind 108bp truncation.
-            if ann.strand == Strand.PLUS:
-                for offset in range(0, min(150, first_len), 3):
-                    pos = ann.exons[0].start + offset
-                    c = genome.get_sequence_for_range(pos, pos + 2).upper()
-                    if c in {"ATG", "GTG"}:
-                        if offset == 0:
-                            return ann
-                        new_exons = [ExonRecord(
-                            start=pos, end=ann.exons[0].end,
-                            strand=ann.strand, number=1,
-                        )]
-                        new_exons.extend(ann.exons[1:])
-                        logger.info(f"rpl16: trimmed {offset}bp to reach start codon")
-                        return ann.model_copy(update={
-                            "exons": new_exons,
-                            "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
-                        })
-            else:
-                # Minus strand: scan from end toward start
-                for offset in range(0, min(150, first_len), 3):
-                    pos = ann.exons[0].end - offset
-                    raw = genome.get_sequence_for_range(pos - 2, pos).upper()
-                    _rc = str.maketrans("ATGC", "TACG")
-                    c = raw.translate(_rc)[::-1]
-                    if c in {"ATG", "GTG"}:
-                        if offset == 0:
-                            return ann
-                        new_exons = [ExonRecord(
-                            start=ann.exons[0].start, end=pos,
-                            strand=ann.strand, number=1,
-                        )]
-                        new_exons.extend(ann.exons[1:])
-                        logger.info(f"rpl16: trimmed {offset}bp to reach start codon (minus strand)")
-                        return ann.model_copy(update={
-                            "exons": new_exons,
-                            "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
-                        })
+            # If over-extended with a start codon, fall through to _LENGTH_LIMITED
+            if has_start and first_len > 480:
+                logger.debug(f"rpl16: has start codon but over-extended ({first_len}bp > 480bp)")
+                pass  # fall through to _LENGTH_LIMITED below
+            elif not has_start:
+                # Scan for nearest ATG/GTG in-frame on the coding strand
+                _rc = str.maketrans("ATGC", "TACG")
+                if ann.strand == Strand.PLUS:
+                    for offset in range(0, min(150, first_len), 3):
+                        pos = ann.exons[0].start + offset
+                        c = genome.get_sequence_for_range(pos, pos + 2).upper()
+                        if c in {"ATG", "GTG"}:
+                            if offset == 0:
+                                return ann
+                            new_exons = [ExonRecord(
+                                start=pos, end=ann.exons[0].end,
+                                strand=ann.strand, number=1,
+                            )]
+                            new_exons.extend(ann.exons[1:])
+                            logger.info(f"rpl16: trimmed {offset}bp to reach start codon")
+                            return ann.model_copy(update={
+                                "exons": new_exons,
+                                "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
+                            })
+                else:
+                    for offset in range(0, min(150, first_len), 3):
+                        pos = ann.exons[0].end - offset
+                        raw = genome.get_sequence_for_range(pos - 2, pos).upper()
+                        c = raw.translate(_rc)[::-1]
+                        if c in {"ATG", "GTG"}:
+                            if offset == 0:
+                                return ann
+                            new_exons = [ExonRecord(
+                                start=ann.exons[0].start, end=pos,
+                                strand=ann.strand, number=1,
+                            )]
+                            new_exons.extend(ann.exons[1:])
+                            logger.info(f"rpl16: trimmed {offset}bp to reach start codon (minus strand)")
+                            return ann.model_copy(update={
+                                "exons": new_exons,
+                                "notes": ann.notes + [f"rpl16: trimmed {offset}bp to start codon"],
+                            })
 
     # Genes with known N-terminal over-extension from reference proteins.
     # If the gene is longer than the expected maximum, scan forward for an
@@ -1175,6 +1180,7 @@ def _handle_special_genes(
         "nad9": (520, 600),   # NCBI typically 573bp, reference gives ~660bp
         "rpl5": (480, 590),   # NCBI typically 549-564bp, reference gives ~636bp
         "rpl10": (470, 530),  # NCBI typically 481-532bp, reference can give ~598bp
+        "rpl16": (380, 480),  # NCBI typically 434bp, HMM over-extends to ~557bp
     }
     if name in _LENGTH_LIMITED and len(ann.exons) >= 1:
         min_len, max_len = _LENGTH_LIMITED[name]

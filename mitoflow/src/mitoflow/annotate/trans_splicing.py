@@ -376,6 +376,7 @@ TRANS_SPLICED_CONFIG_BASE = {
     "nad5": {"exons": 5, "max_span_factor": 0.7, "max_span_cap": 3000000, "min_exon_bp": 15, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
     "nad7": {"exons": 5, "max_span_factor": 0.3, "max_span_cap": 1500000, "min_exon_bp": 25, "max_exon_gap": None},
+    "cox1": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "cox2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span_factor": 0.1, "max_span_cap": 500000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span_factor": 0.15, "max_span_cap": 750000, "min_exon_bp": 50, "max_exon_gap": 50000},
@@ -389,6 +390,7 @@ TRANS_SPLICED_CONFIG = {
     "nad5": {"exons": 5, "max_span": 2000000, "min_exon_bp": 20, "max_exon_gap": None},
     "nad4": {"exons": 4, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
     "nad7": {"exons": 5, "max_span": 500000, "min_exon_bp": 30, "max_exon_gap": None},
+    "cox1": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "cox2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rpl2": {"exons": 2, "max_span": 200000, "min_exon_bp": 50, "max_exon_gap": 10000},
     "rps3": {"exons": 2, "max_span": 500000, "min_exon_bp": 50, "max_exon_gap": 50000},
@@ -716,7 +718,11 @@ def merge_exons_to_gene(
             # in these cases; they are valuable only for near-full-length hits.
             if coverage_ratio >= 0.85:
                 splice_score = _score_splice_sites(genome, start, end, strand)
-                score = base_score + splice_score
+                # Down-weight splice score so it acts as a tie-breaker, not a
+                # dominant factor.  Plant mitochondrial introns can have
+                # non-canonical splice sites; BLASTn boundaries from reference
+                # exons are more reliable than consensus-based scoring.
+                score = base_score + splice_score * 0.5
             else:
                 score = base_score
             hits_with_score.append((h, score))
@@ -937,6 +943,14 @@ def merge_exons_to_gene(
         source_method="BLAST",
     )
 
+    # Validate merged protein length to catch false positive exons
+    if not _validate_merged_protein_length(annotation, genome):
+        logger.warning(
+            f"{gene_name}: merged protein length validation failed, "
+            f"discarding BLASTn result"
+        )
+        return None
+
     logger.info(
         f"{gene_name}: merged {len(exons)} exons, span={gene_start}-{gene_end} "
         f"({gene_span}bp)"
@@ -1100,8 +1114,8 @@ def annotate_trans_spliced_genes(
                 hmm_discarded.add(gene_name)
             elif len(current.exons) >= config["exons"]:
                 # Only force BLASTn refinement for genes with known systematic
-                # boundary drift (e.g. nad7). For others, trust existing annotation.
-                if gene_name not in {"nad1", "nad7", "cox2", "nad4"}:
+                # boundary drift (e.g. nad7, rpl2). For others, trust existing annotation.
+                if gene_name not in {"nad1", "nad7", "cox2", "nad4", "rpl2"}:
                     logger.debug(f"{gene_name}: already has {len(current.exons)} exons, skipping")
                     continue
                 logger.info(
@@ -1150,3 +1164,69 @@ def annotate_trans_spliced_genes(
             logger.info(f"{gene_name}: successfully merged {len(merged.exons)} exons")
 
     return existing_annotations
+
+
+def _validate_merged_protein_length(
+    annotation: GeneAnnotation, genome: GenomeSequence
+) -> bool:
+    """Validate that merged trans-spliced exons produce a reasonable protein length.
+
+    Extracts the full CDS from all exons, translates it, and checks against
+    expected length range from GENE_LENGTH_RANGES.  This catches cases where
+    a false-positive exon (e.g. a NUMT fragment or repeat) is merged with
+    real exons, producing a severely truncated or over-long protein.
+
+    Args:
+        annotation: Merged gene annotation
+        genome: Genome sequence
+
+    Returns:
+        True if protein length is within acceptable range (70%-130% of expected),
+        or if no expected range is known.  False if severely out of range.
+    """
+    from ..annotate.cds_check import GENE_LENGTH_RANGES
+    expected = GENE_LENGTH_RANGES.get(annotation.gene_name.lower())
+    if not expected:
+        return True  # No reference range, accept
+
+    # Extract CDS sequence from exons (in transcription order)
+    cds_seq = ""
+    for exon in annotation.exons:
+        seq = genome.subsequence(exon.start, exon.end)
+        if exon.strand == Strand.MINUS:
+            seq = str(Seq(seq).reverse_complement())
+        cds_seq += seq
+
+    if not cds_seq:
+        return True
+
+    # Translate (standard code, Table 1)
+    try:
+        protein = str(Seq(cds_seq).translate(to_stop=True))
+    except Exception:
+        return True  # Translation error, don't reject
+
+    aa_len = len(protein)
+    min_exp, max_exp = expected
+    midpoint = (min_exp + max_exp) / 2.0
+
+    # Accept if within 70%-130% of expected midpoint
+    ratio = aa_len / midpoint if midpoint > 0 else 1.0
+    if ratio < 0.70:
+        logger.warning(
+            f"{annotation.gene_name}: protein too short after merge: "
+            f"{aa_len}aa (expected ~{min_exp}-{max_exp}aa, ratio={ratio:.2f})"
+        )
+        return False
+    if ratio > 1.30:
+        logger.warning(
+            f"{annotation.gene_name}: protein too long after merge: "
+            f"{aa_len}aa (expected ~{min_exp}-{max_exp}aa, ratio={ratio:.2f})"
+        )
+        return False
+
+    logger.debug(
+        f"{annotation.gene_name}: protein length OK: {aa_len}aa "
+        f"(expected {min_exp}-{max_exp}aa, ratio={ratio:.2f})"
+    )
+    return True

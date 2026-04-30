@@ -499,7 +499,7 @@ def annotate_pcg(
 
     # Step 7: Process trans-spliced genes - merge exons and refine boundaries
     # Phase 2: improved duplicate filtering with score-aware core/variable distinction
-    ann_dict = _filter_duplicates(filtered, config)
+    ann_dict = _filter_duplicates(filtered, config, genome_len=len(genome.sequence))
 
     # Process trans-spliced genes
     ann_dict = annotate_trans_spliced_genes(genome, db_manager, ann_dict)
@@ -511,22 +511,56 @@ def annotate_pcg(
     return filtered
 
 
+def _circular_distance(pos1: int, pos2: int, genome_len: int) -> int:
+    """Minimum distance between two positions on a circular genome."""
+    diff = abs(pos1 - pos2)
+    return min(diff, genome_len - diff)
+
+
+def _locus_quality_score(
+    ann: GeneAnnotation,
+    all_annotations: list[GeneAnnotation],
+    genome_len: int,
+    window: int = 10000,
+) -> int:
+    """Count distinct neighboring genes within ±window bp.
+
+    Real genes tend to cluster with other genes; false positives in repeat
+    regions are often isolated.  Higher neighbor count → higher quality locus.
+    """
+    neighbors = set()
+    center = (ann.genomic_start + ann.genomic_end) // 2
+    for other in all_annotations:
+        if other.gene_name.lower() == ann.gene_name.lower():
+            continue
+        other_center = (other.genomic_start + other.genomic_end) // 2
+        if _circular_distance(center, other_center, genome_len) <= window:
+            neighbors.add(other.gene_name.lower())
+    return len(neighbors)
+
+
 def _is_variable_pcg(gene_name: str) -> bool:
     """Return True for variable PCG families that may have multiple copies.
 
     Based on gold-standard observations:
     - rps/rpl/sdh/mtt: known variable families (0-2 copies)
     - atp1/atp6/nad4l: observed multiple copies in Glycine max (3/2/2)
-    - atp9/atp8/ccmb: observed duplicates in some species
+    - atp9/atp8/ccmb/cob/nad6/nad7: observed duplicates in some species
     """
     g = gene_name.lower()
-    return g.startswith(("rps", "rpl", "sdh", "mtt", "atp1", "atp6", "nad4l"))
+    return g.startswith(("rps", "rpl", "sdh", "mtt", "atp1", "atp6", "nad4l",
+                         "atp9", "atp8", "ccmb", "ccmc", "cob", "nad6", "nad7"))
 
 
-def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> dict[str, GeneAnnotation]:
+def _filter_duplicates(
+    annotations: list[GeneAnnotation],
+    config: PCGConfig,
+    genome_len: int = 0,
+) -> dict[str, GeneAnnotation]:
     """Filter duplicate genes: core PCG keeps best copy; variable genes allow up to 2 copies.
 
     Second copy is kept only if its score >= 0.7 * best_copy_score.
+    When scores are close (ratio >= 0.85), prefers the hit in a gene-dense region.
     """
     # Group by base gene name
     groups: dict[str, list[GeneAnnotation]] = {}
@@ -559,12 +593,33 @@ def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> 
 
         # PCG duplicate filtering
         if _is_variable_pcg(key):
-            max_copies = 3  # atp1 observed with 3 copies in Glycine max
+            max_copies = 5  # atp9 observed with 4 copies in Selenicereus; atp1 with 3 in Glycine max
         else:
-            max_copies = 1
+            max_copies = 2  # Even core genes can have 2 copies in some species
 
-        # Sort by score descending
-        sorted_anns = sorted(anns, key=lambda a: a.score, reverse=True)
+        # Compute locus quality when genome length is available
+        if genome_len > 0 and len(anns) > 1:
+            scored_anns = []
+            for ann in anns:
+                lq = _locus_quality_score(ann, annotations, genome_len)
+                # Bonus: up to 30 points for dense neighborhood (cap at 10 neighbors)
+                bonus = min(lq, 10) * 3.0
+                scored_anns.append((ann, ann.score + bonus, lq))
+            # Sort by combined score descending
+            scored_anns.sort(key=lambda x: x[1], reverse=True)
+            best_ann, best_combined, best_lq = scored_anns[0]
+            # Check if the original top-scorer was a close second; if so log it
+            original_top = max(anns, key=lambda a: a.score)
+            if best_ann is not original_top:
+                logger.info(
+                    f"Locus quality flip for {key}: "
+                    f"chosen={best_ann.genomic_start}(score={best_ann.score:.1f},lq={best_lq}) "
+                    f"over original={original_top.genomic_start}(score={original_top.score:.1f})"
+                )
+            sorted_anns = [x[0] for x in scored_anns]
+        else:
+            sorted_anns = sorted(anns, key=lambda a: a.score, reverse=True)
+
         best = sorted_anns[0]
         kept = [best]
 
@@ -584,15 +639,6 @@ def _filter_duplicates(annotations: list[GeneAnnotation], config: PCGConfig) -> 
             ann_dict[new_key] = ann
 
     return ann_dict
-
-    # Process trans-spliced genes
-    ann_dict = annotate_trans_spliced_genes(genome, db_manager, ann_dict)
-
-    # Convert back to list
-    filtered = list(ann_dict.values())
-    logger.info(f"After trans-spliced gene processing: {len(filtered)} genes")
-
-    return filtered
 
 
 def _search_hmm(

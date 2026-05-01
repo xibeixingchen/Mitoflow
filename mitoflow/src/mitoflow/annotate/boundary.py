@@ -1181,6 +1181,7 @@ def _handle_special_genes(
         "rpl5": (480, 590),   # NCBI typically 549-564bp, reference gives ~636bp
         "rpl10": (470, 530),  # NCBI typically 481-532bp, reference can give ~598bp
         "rpl16": (380, 480),  # NCBI typically 434bp, HMM over-extends to ~557bp
+        "atp6": (670, 820),   # NCBI typically 719-816bp, HMM over-extends to ~840-890bp
     }
     if name in _LENGTH_LIMITED and len(ann.exons) >= 1:
         min_len, max_len = _LENGTH_LIMITED[name]

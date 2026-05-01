@@ -402,7 +402,16 @@ def _get_gene_search_range(gene_name: str, default_range: int) -> int:
         "matR",
         "mttB",
     }
-    
+
+    # Genes that need WIDER search because they use non-standard start codons
+    # and the real ATG is often further upstream than the HMM-predicted boundary
+    WIDE_SEARCH_GENES = {
+        "mttB": 75,  # ATA/GTG used as start, but real ATG can be 51-63bp upstream
+    }
+
+    if gene_name in WIDE_SEARCH_GENES:
+        return WIDE_SEARCH_GENES[gene_name]
+
     if gene_name in CONSERVATIVE_GENES:
         return min(default_range, 100)  # Very conservative
     
@@ -546,7 +555,11 @@ def _correct_start_codon_conservative(
     # Don't extend genes that are already reasonable length
     current_len = ann.total_exon_length
     logger.debug(f"Boundary correction check for {ann.gene_name}: len={current_len}")
-    if ann.gene_name in EXPECTED_LENGTHS:
+
+    # Genes with non-standard start codons that need correction even at reasonable length
+    _FORCE_START_CORRECTION = {"mttB"}
+
+    if ann.gene_name in EXPECTED_LENGTHS and ann.gene_name not in _FORCE_START_CORRECTION:
         min_exp, max_exp = EXPECTED_LENGTHS[ann.gene_name]
         if min_exp * 0.8 <= current_len <= max_exp * 1.2:
             # Length is reasonable, skip correction
@@ -572,6 +585,7 @@ def _correct_start_codon_conservative(
         
         # Scan backward from HMM start position
         best_start = None
+        best_non_atg = None
         for i in range(offset_in_seq, -1, -3):
             if i + 2 < len(seq):
                 codon = seq[i:i+3].upper()
@@ -579,8 +593,14 @@ def _correct_start_codon_conservative(
                     genome_start = search_from + i
                     # Only accept if within search_range and upstream
                     if genome_start <= start + 3 and abs(genome_start - start) <= search_range:
-                        best_start = genome_start
-                    break
+                        if codon == "ATG":
+                            best_start = genome_start
+                            break
+                        elif best_non_atg is None:
+                            best_non_atg = genome_start
+        # Use ATG if found, otherwise fall back to first non-ATG match
+        if best_start is None:
+            best_start = best_non_atg
         
         if best_start and best_start != start:
             new_exons = [ExonRecord(

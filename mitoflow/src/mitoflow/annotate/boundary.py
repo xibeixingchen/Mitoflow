@@ -94,8 +94,11 @@ def correct_boundaries(
             logger.info(f"Skipping fixed offset for {ann.gene_name} (tblastn refined)")
         # Only do minimal boundary correction - trust HMM hit more
         ann = _correct_start_codon_conservative(ann, genome, db_manager, gene_search_range)
-        ann = _correct_stop_codon_conservative(ann, genome, db_manager, gene_search_range)
         ann = _handle_special_genes(ann, genome, db_manager)
+        # Run stop codon correction AFTER _handle_special_genes (_LENGTH_LIMITED
+        # may trim the start, changing the reading frame and gene length, which
+        # affects which stop-gain codons are acceptable)
+        ann = _correct_stop_codon_conservative(ann, genome, db_manager, gene_search_range)
         ann = _validate_gene_length(ann, db_manager)
         # Phase 3: restore codon phase continuity across exons after boundary shifts
         ann = _restore_phase_continuity(ann, genome)
@@ -200,6 +203,11 @@ def _refine_boundary_by_tblastn(
     if gene_name_lower in {k.lower() for k in TRANS_SPLICED_CONFIG} or len(ann.exons) > 1:
         return ann
 
+    # Skip genes with unreliable tblastn references (truncated reference proteins
+    # cause false shortening of the annotation)
+    _TBLASTN_SHORTEN_ONLY_GENES = {"matr"}
+    _skip_shorten = gene_name_lower in _TBLASTN_SHORTEN_ONLY_GENES
+
     tblastn = shutil.which("tblastn")
     makeblastdb = shutil.which("makeblastdb")
     if not tblastn or not makeblastdb:
@@ -296,6 +304,15 @@ def _refine_boundary_by_tblastn(
 
     if best_hit:
         new_start, new_end = best_hit
+        # For genes with unreliable tblastn references, only accept extensions
+        # (not shortenings) to avoid false truncation from truncated reference proteins
+        if _skip_shorten:
+            if new_end - new_start + 1 < hmm_len * 0.98:
+                logger.info(
+                    f"tblastn: skipping shortening for {ann.gene_name} "
+                    f"({new_end - new_start + 1} < {hmm_len})"
+                )
+                return ann
         logger.info(
             f"tblastn refined {ann.gene_name}: {hmm_start}-{hmm_end} -> {new_start}-{new_end}"
         )
@@ -717,6 +734,10 @@ def _correct_stop_codon_conservative(
         frame_offset = prior_len % 3
 
         # Look for stop codon
+        # For stop-gain genes, collect all valid stop-gain candidates and pick
+        # the one closest to current end (longest gene length), since internal
+        # CAA/CAG/CGA codons are common and not all are real editing sites.
+        best_stop_gain = None  # (new_end, codon, new_len)
         for i in range(frame_offset, len(seq) - 2, 3):
             codon = seq[i:i+3].upper()
             if codon in STOP_CODONS:
@@ -750,23 +771,34 @@ def _correct_stop_codon_conservative(
                     new_len = new_end - last_exon.start + 1
                     if gene_key in EXPECTED_LENGTHS:
                         min_exp, _ = EXPECTED_LENGTHS[gene_key]
-                        is_upstream = (new_end <= end) and (new_len >= min_exp)
+                        is_upstream = (new_end <= end) and (new_len >= min_exp * 0.7)
                     else:
                         is_upstream = (new_end <= end) and (end - new_end <= 3)
                 else:
                     is_upstream = (new_end <= end) and (end - new_end <= 3)
                 if is_downstream or is_upstream:
-                    notes = ann.notes + [f"RNA editing: {codon}->stop (C-to-U)"]
-                    exceptions = list(set(ann.exceptions + ["RNA editing"]))
-                    new_exons = list(ann.exons[:-1])
-                    new_exons.append(ExonRecord(
-                        start=last_exon.start, end=new_end,
-                        strand=ann.strand, number=last_exon.number,
-                    ))
-                    return ann.model_copy(update={
-                        "exons": new_exons, "notes": notes, "exceptions": exceptions
-                    })
-                break
+                    # Keep the upstream candidate closest to current end
+                    # (longest gene that still shortens the annotation).
+                    # Don't consider downstream candidates — stop-gain codons
+                    # should only be used to trim over-extended genes.
+                    if is_upstream and (best_stop_gain is None or new_end > best_stop_gain[0]):
+                        best_stop_gain = (new_end, codon, new_len)
+                # Don't break — keep scanning for stop-gain codons
+
+        # Apply best stop-gain candidate if found (closest to current end)
+        if best_stop_gain:
+            sg_end, sg_codon, sg_len = best_stop_gain
+            if sg_end != end:
+                notes = ann.notes + [f"RNA editing: {sg_codon}->stop (C-to-U)"]
+                exceptions = list(set(ann.exceptions + ["RNA editing"]))
+                new_exons = list(ann.exons[:-1])
+                new_exons.append(ExonRecord(
+                    start=last_exon.start, end=sg_end,
+                    strand=ann.strand, number=last_exon.number,
+                ))
+                return ann.model_copy(update={
+                    "exons": new_exons, "notes": notes, "exceptions": exceptions
+                })
     
     else:
         # Reverse strand
@@ -793,7 +825,9 @@ def _correct_stop_codon_conservative(
                     new_len = ann.exons[0].end - new_start + 1
                     if gene_key in EXPECTED_LENGTHS:
                         min_exp, max_exp_local = EXPECTED_LENGTHS[gene_key]
-                        accept = new_start >= 1 and (min_exp <= new_len <= max_exp_local)
+                        # For stop-gain RNA editing, use relaxed min threshold
+                        eff_min = min_exp * 0.7 if is_edited_stop else min_exp
+                        accept = new_start >= 1 and (eff_min <= new_len <= max_exp_local)
                     else:
                         accept = new_start >= 1 and (new_len <= current_len + 50)
                 else:
@@ -815,8 +849,11 @@ def _correct_stop_codon_conservative(
                     if exceptions != list(ann.exceptions):
                         updates["exceptions"] = exceptions
                     return ann.model_copy(update=updates)
-                break
-    
+                # For stop-gain codons, don't break — keep scanning for a
+                # better candidate. Only standard stops are definite termini.
+                if is_stop:
+                    break
+
     return ann
 
 
@@ -1241,6 +1278,48 @@ def _handle_special_genes(
                         return ann.model_copy(update={
                             "exons": new_exons,
                             "notes": ann.notes + [f"{name}: trimmed {offset}bp to {new_len}bp"],
+                        })
+
+    # nad7: first exon is systematically over-extended by ~75bp (BLASTn reference
+    # includes upstream sequence). NCBI exon1 is consistently 144bp. Scan forward
+    # for an in-frame ATG that trims the first exon to a reasonable size.
+    if name == "nad7" and len(ann.exons) >= 2:
+        first_len = ann.exons[0].end - ann.exons[0].start + 1
+        if first_len > 165:
+            _rc = str.maketrans("ATGC", "TACG")
+            allowed = _get_allowed_start_codons(name, db_manager)
+            if ann.strand == Strand.PLUS:
+                for offset in range(3, min(225, first_len - 100), 3):
+                    pos = ann.exons[0].start + offset
+                    new_len = first_len - offset
+                    c = genome.get_sequence_for_range(pos, pos + 2).upper()
+                    if c == "ATG" and 100 <= new_len <= 300:
+                        new_exons = list(ann.exons)
+                        new_exons[0] = ExonRecord(
+                            start=pos, end=ann.exons[0].end,
+                            strand=ann.strand, number=1,
+                        )
+                        logger.info(f"nad7: trimmed exon1 {offset}bp, now {new_len}bp")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"nad7: trimmed exon1 {offset}bp to {new_len}bp"],
+                        })
+            else:
+                for offset in range(3, min(225, first_len - 100), 3):
+                    pos = ann.exons[0].end - offset
+                    new_len = first_len - offset
+                    raw = genome.get_sequence_for_range(pos - 2, pos).upper()
+                    c = raw.translate(_rc)[::-1]
+                    if c == "ATG" and 100 <= new_len <= 300:
+                        new_exons = list(ann.exons)
+                        new_exons[0] = ExonRecord(
+                            start=ann.exons[0].start, end=pos,
+                            strand=ann.strand, number=1,
+                        )
+                        logger.info(f"nad7: trimmed exon1 {offset}bp (minus), now {new_len}bp")
+                        return ann.model_copy(update={
+                            "exons": new_exons,
+                            "notes": ann.notes + [f"nad7: trimmed exon1 {offset}bp to {new_len}bp"],
                         })
 
     # nad5: trim over-extended short exon (exon 3).

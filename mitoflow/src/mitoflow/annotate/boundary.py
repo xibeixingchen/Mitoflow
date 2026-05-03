@@ -754,6 +754,27 @@ def _correct_stop_codon_conservative(
                 else:
                     is_upstream = (new_end <= end) and (end - new_end <= 3)
                 if is_downstream or is_upstream:
+                    # Before accepting this standard stop, check if a
+                    # stop-gain (RNA editing) candidate upstream is closer
+                    # to the expected length — it may be the real terminus.
+                    if best_stop_gain is not None:
+                        sg_end, sg_codon, sg_len = best_stop_gain
+                        if sg_end < new_end and gene_key in EXPECTED_LENGTHS:
+                            min_exp, max_exp = EXPECTED_LENGTHS[gene_key]
+                            # Prefer stop-gain if it brings length closer to max_exp
+                            cur_dev = abs(new_len - max_exp)
+                            sg_dev = abs(sg_len - max_exp)
+                            if sg_dev < cur_dev:
+                                notes = ann.notes + [f"RNA editing: {sg_codon}->stop (C-to-U)"]
+                                exceptions = list(set(ann.exceptions + ["RNA editing"]))
+                                new_exons = list(ann.exons[:-1])
+                                new_exons.append(ExonRecord(
+                                    start=last_exon.start, end=sg_end,
+                                    strand=ann.strand, number=last_exon.number,
+                                ))
+                                return ann.model_copy(update={
+                                    "exons": new_exons, "notes": notes, "exceptions": exceptions
+                                })
                     new_exons = list(ann.exons[:-1])
                     new_exons.append(ExonRecord(
                         start=last_exon.start, end=new_end,

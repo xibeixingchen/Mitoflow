@@ -225,6 +225,8 @@ def rna_edit(
     from .rna_edit.predictor import (
         EditingSite, EditingResult,
         predict_editing_from_known_sites,
+        predict_editing_by_homology,
+        load_reference_proteins,
         correct_protein_with_editing, build_editing_result,
     )
     from .core.output import OutputManager
@@ -234,10 +236,24 @@ def rna_edit(
     out = OutputManager(output, name)
     out.setup()
 
+    # Load reference proteins: user-supplied or bundled
+    ref_proteins = {}
+    if ref and ref.exists():
+        for r in SeqIO.parse(str(ref), "fasta"):
+            ref_proteins[r.id.lower()] = str(r.seq).upper()
+        console.print(f"Loaded {len(ref_proteins)} reference proteins from {ref}")
+    else:
+        ref_proteins = load_reference_proteins()
+        if ref_proteins:
+            console.print(f"Using {len(ref_proteins)} bundled reference proteins")
+        else:
+            console.print("[yellow]No reference proteins found; using rule-based prediction only[/]")
+
     # Parse GenBank and predict editing for each CDS
     record = next(SeqIO.parse(str(input), "genbank"))
     genome_seq = str(record.seq).upper()
     all_sites = []
+    homology_genes = 0
 
     for feat in record.features:
         if feat.type != "CDS":
@@ -251,13 +267,32 @@ def rna_edit(
         strand = feat.location.strand or 1
         cds_start = int(feat.location.start) + 1
 
+        # Rule-based prediction (always run)
         sites = predict_editing_from_known_sites(
             gene_name, cds_seq, cds_start, strand, len(genome_seq),
         )
         all_sites.extend(sites)
 
+        # Homology-based prediction (if reference available)
+        gene_key = gene_name.lower()
+        if gene_key in ref_proteins:
+            homo_sites = predict_editing_by_homology(
+                genome_seq, gene_name, cds_seq, cds_start, strand,
+                ref_proteins[gene_key],
+            )
+            # Merge: homology sites may overlap with rule-based; deduplicate
+            known_positions = {(s.gene, s.position_cds) for s in sites}
+            for hs in homo_sites:
+                if (hs.gene, hs.position_cds) not in known_positions:
+                    all_sites.append(hs)
+                    known_positions.add((hs.gene, hs.position_cds))
+            if homo_sites:
+                homology_genes += 1
+
     result = build_editing_result(all_sites)
     console.print(result.summary())
+    if homology_genes > 0:
+        console.print(f"Homology-based prediction contributed for {homology_genes} genes")
 
     report_path = out.report_dir / f"{name}_rna_editing.txt"
     report_path.write_text(result.summary())

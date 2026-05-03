@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from Bio.Align import PairwiseAligner
+
 logger = logging.getLogger(__name__)
 
 # NCBI Table 1 codons
@@ -103,6 +105,37 @@ class EditingResult:
         return "\n".join(lines)
 
 
+def load_reference_proteins(
+    data_dir: Path | None = None,
+) -> dict[str, str]:
+    """Load bundled reference (edited) protein sequences.
+
+    Searches blast_refs/pcg/*.Protein.fasta in the package data directory.
+    Returns dict mapping gene_name -> protein_sequence.
+    """
+    if data_dir is None:
+        from .. import data as pkg_data
+        data_dir = Path(pkg_data.__path__[0])
+
+    ref_dir = data_dir / "blast_refs" / "pcg"
+    if not ref_dir.exists():
+        return {}
+
+    references: dict[str, str] = {}
+    for fasta_file in sorted(ref_dir.glob("*Protein*.fasta")):
+        gene_name = fasta_file.stem.split(".")[0]
+        try:
+            from Bio import SeqIO
+            records = list(SeqIO.parse(str(fasta_file), "fasta"))
+            if records:
+                references[gene_name.lower()] = str(records[0].seq).upper()
+        except Exception:
+            pass
+
+    logger.info(f"Loaded {len(references)} reference proteins")
+    return references
+
+
 def predict_editing_by_homology(
     genome_seq: str,
     gene_name: str,
@@ -135,43 +168,64 @@ def predict_editing_by_homology(
     """
     sites = []
 
-    # Translate genomic CDS
     genomic_protein = _translate(cds_seq)
     if not genomic_protein:
         return sites
 
-    # Simple pairwise alignment
     ref_prot = reference_protein.upper().rstrip("*")
     gen_prot = genomic_protein.rstrip("*")
 
     if not ref_prot or not gen_prot:
         return sites
 
-    # Align using simple Needleman-Wunsch or just iterate
-    matches = 0
-    alignment_len = min(len(ref_prot), len(gen_prot))
+    # Global pairwise alignment with proper gap handling.
+    # This avoids frame-shifted mismatches that plague position-by-position
+    # comparison when the genomic translation has indels vs the reference.
+    aligner = PairwiseAligner()
+    aligner.mode = "global"
+    aligner.match_score = 2
+    aligner.mismatch_score = -1
+    aligner.open_gap_score = -3
+    aligner.extend_gap_score = -1
 
-    if alignment_len == 0:
+    alignments = aligner.align(ref_prot, gen_prot)
+    if not alignments:
         return sites
 
-    for i in range(alignment_len):
-        if gen_prot[i] == ref_prot[i]:
-            matches += 1
-
-    identity = matches / alignment_len * 100
+    best = alignments[0]
+    max_score = max(len(ref_prot), len(gen_prot)) * aligner.match_score
+    identity = best.score / max_score * 100 if max_score > 0 else 0
     if identity < min_identity:
         return sites
 
-    # Check each amino acid mismatch
-    for i in range(alignment_len):
-        gen_aa = gen_prot[i]
-        ref_aa = ref_prot[i]
+    # Build position mapping from aligned blocks
+    aligned_ref, aligned_gen = best.aligned[0], best.aligned[1]
+    ref_to_gen = {}
+    gen_to_ref = {}
 
+    for (rs, re), (gs, ge) in zip(aligned_ref, aligned_gen):
+        for rp in range(rs, re):
+            gp = gs + (rp - rs)
+            if gp < ge and gp < len(gen_prot):
+                ref_to_gen[rp] = gp
+                gen_to_ref[gp] = rp
+
+    # Check each aligned genomic position for C->U editing candidates
+    genome_len = len(genome_seq)
+    checked = set()
+
+    for gen_pos in range(len(gen_prot)):
+        if gen_pos not in gen_to_ref:
+            continue
+        ref_pos = gen_to_ref[gen_pos]
+        gen_aa = gen_prot[gen_pos]
+        if ref_pos >= len(ref_prot):
+            continue
+        ref_aa = ref_prot[ref_pos]
         if gen_aa == ref_aa:
             continue
 
-        # Check if C→U editing could explain the difference
-        codon_idx = i * 3
+        codon_idx = gen_pos * 3
         if codon_idx + 2 >= len(cds_seq):
             continue
 
@@ -179,46 +233,47 @@ def predict_editing_by_homology(
         if len(codon) < 3:
             continue
 
-        # Try C→U at each position in the codon
         for pos in range(3):
             if codon[pos] != "C":
                 continue
+            if (codon_idx + pos) in checked:
+                continue
 
             edited = list(codon)
-            edited[pos] = "T"  # C→U = T in DNA
+            edited[pos] = "T"
             edited_codon = "".join(edited)
-
             edited_aa = CODON_TABLE.get(edited_codon, "X")
-            if edited_aa == ref_aa:
-                # Found a valid editing site
-                is_syn = (gen_aa == edited_aa)
-                is_start = (i == 0 and codon == "ACG" and edited_codon == "ATG")
 
-                original_stop = CODON_TABLE.get(codon, "") == "*"
-                edited_not_stop = edited_aa != "*"
-                is_stop_removal = (not original_stop and not edited_not_stop)
+            if edited_aa != ref_aa:
+                continue
 
-                # Calculate genome position
-                genome_pos = _cds_to_genome_pos(
-                    codon_idx + pos + 1, cds_start, strand, len(genome_seq)
-                )
+            checked.add(codon_idx + pos)
 
-                site = EditingSite(
-                    gene=gene_name,
-                    position_cds=codon_idx + pos + 1,
-                    position_genome=genome_pos,
-                    codon_position=pos + 1,
-                    original_codon=codon,
-                    edited_codon=edited_codon,
-                    original_aa=gen_aa,
-                    edited_aa=edited_aa,
-                    is_synonymous=is_syn,
-                    is_start_codon_creation=is_start,
-                    is_stop_codon_removal=is_stop_removal,
-                    confidence="high" if identity > 80 else "medium",
-                )
-                sites.append(site)
-                break  # Only one C per codon position needed
+            is_syn = (gen_aa == edited_aa)
+            is_start = (gen_pos == 0 and codon == "ACG" and edited_codon == "ATG")
+            is_stop_removal = (CODON_TABLE.get(codon) == "*" and edited_aa != "*")
+
+            confidence = "high" if identity > 80 else "medium" if identity > 60 else "low"
+
+            genome_pos = _cds_to_genome_pos(
+                codon_idx + pos + 1, cds_start, strand, genome_len
+            )
+
+            sites.append(EditingSite(
+                gene=gene_name,
+                position_cds=codon_idx + pos + 1,
+                position_genome=genome_pos,
+                codon_position=pos + 1,
+                original_codon=codon,
+                edited_codon=edited_codon,
+                original_aa=gen_aa,
+                edited_aa=edited_aa,
+                is_synonymous=is_syn,
+                is_start_codon_creation=is_start,
+                is_stop_codon_removal=is_stop_removal,
+                confidence=confidence,
+            ))
+            break
 
     return sites
 

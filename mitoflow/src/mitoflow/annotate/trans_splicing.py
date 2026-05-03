@@ -911,12 +911,12 @@ def merge_exons_to_gene(
     else:
         strand = strands[0]
 
-    # Sort exons by genomic position in transcription order
-    # Plus strand: 5'->3' is ascending start coordinate
-    # Minus strand: 5'->3' is descending end coordinate
-    # Mixed strand (e.g. plant mitochondrial nad2): preserve exon number order,
-    # which reflects the known biological transcription order for trans-spliced genes
-    if len(set(strands)) > 1:
+    # For trans-spliced genes, exon_num reflects the biological transcription
+    # order.  Genomic-position sort is wrong when exons are scattered across
+    # the genome (e.g. exon 3 at 12 kb before exon 1 at 252 kb).
+    # For cis-spliced genes, genomic sort is still correct.
+    is_trans_spliced = gene_name.lower() in {"nad1", "nad2", "nad5"}
+    if is_trans_spliced or len(set(strands)) > 1:
         best_exons.sort(key=lambda e: e[3])  # sort by exon_num
     elif strand == Strand.PLUS:
         best_exons.sort(key=lambda e: e[0])
@@ -1257,7 +1257,8 @@ def _try_alternative_combinations(
         strands = [e[2] for e in alt_exons]
         strand = max(set(strands), key=strands.count) if len(set(strands)) > 1 else strands[0]
 
-        if len(set(strands)) > 1:
+        is_ts = gene_name.lower() in {"nad1", "nad2", "nad5"}
+        if is_ts or len(set(strands)) > 1:
             alt_exons.sort(key=lambda e: e[3])
         elif strand == Strand.PLUS:
             alt_exons.sort(key=lambda e: e[0])

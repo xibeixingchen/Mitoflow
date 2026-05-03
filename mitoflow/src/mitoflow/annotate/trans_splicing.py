@@ -945,6 +945,19 @@ def merge_exons_to_gene(
 
     # Validate merged protein length to catch false positive exons
     if not _validate_merged_protein_length(annotation, genome):
+        # Try alternative exon combinations before giving up.
+        # The quality-best exons may come from different repeat copies;
+        # other combinations may produce a valid protein.
+        alt_annotation = _try_alternative_combinations(
+            gene_name, exon_hits, expected_exons, config,
+            genome, best_exons, gene_span, gene_start, gene_end
+        )
+        if alt_annotation:
+            logger.info(
+                f"{gene_name}: alternative combination passed protein validation, "
+                f"span={alt_annotation.exons[0].start}-{alt_annotation.exons[-1].end}"
+            )
+            return alt_annotation
         logger.warning(
             f"{gene_name}: merged protein length validation failed, "
             f"discarding BLASTn result"
@@ -1164,6 +1177,117 @@ def annotate_trans_spliced_genes(
             logger.info(f"{gene_name}: successfully merged {len(merged.exons)} exons")
 
     return existing_annotations
+
+
+def _try_alternative_combinations(
+    gene_name: str,
+    exon_hits: dict[int, list[tuple[int, int, Strand, float, int, int]]],
+    expected_exons: int,
+    config: dict,
+    genome: GenomeSequence,
+    primary_exons: list[tuple[int, int, Strand, int]],
+    primary_span: int,
+    primary_start: int,
+    primary_end: int,
+) -> GeneAnnotation | None:
+    """Try alternative exon combinations when primary selection fails protein validation.
+
+    Strategy:
+    1. Try each exon-1 hit as anchor (up to 5 candidates)
+    2. For each anchor, select exons 2..N by quality score (not proximity)
+    3. Build gene annotation and validate protein length
+    4. Return the first combination that passes validation
+    """
+    exon1_hits = exon_hits.get(1, [])
+    if len(exon1_hits) <= 1:
+        return None  # Only one exon-1, no alternatives to try
+
+    genome_length = len(genome.sequence)
+    expected_nums = set(range(1, expected_exons + 1))
+
+    # Score exon-1 hits by quality
+    exon1_scored = []
+    for h in exon1_hits:
+        coverage_ratio = h[4] / h[5] if h[5] > 0 else 0
+        full_length_bonus = 100 if coverage_ratio >= 0.9 else 0
+        score = full_length_bonus + h[3] * coverage_ratio
+        exon1_scored.append((h, score))
+    exon1_scored.sort(key=lambda x: x[1], reverse=True)
+
+    for e1_hit, e1_score in exon1_scored[:5]:
+        # Skip the primary exon-1 if it's the same one that failed
+        e1_start, e1_end, e1_strand = e1_hit[0], e1_hit[1], e1_hit[2]
+        alt_exons = [(e1_start, e1_end, e1_strand, 1)]
+
+        for exon_num in range(2, expected_exons + 1):
+            hits_n = exon_hits.get(exon_num, [])
+            if not hits_n:
+                break
+            # Pick best quality hit (not already used for a different exon)
+            best_hit = max(hits_n, key=lambda h: h[3] * (h[4] / h[5] if h[5] > 0 else 0))
+            alt_exons.append((best_hit[0], best_hit[1], best_hit[2], exon_num))
+
+        if len(alt_exons) != expected_exons:
+            continue
+
+        # Skip if this combination is identical to primary
+        if alt_exons == primary_exons:
+            continue
+
+        # Compute span
+        alt_sorted = sorted(alt_exons, key=lambda e: e[0])
+        alt_max_gap = 0
+        for i in range(len(alt_sorted) - 1):
+            g = alt_sorted[i + 1][0] - alt_sorted[i][1] - 1
+            if g > alt_max_gap:
+                alt_max_gap = g
+        alt_wrap = alt_sorted[0][0] + (genome_length - alt_sorted[-1][1]) - 1
+        if alt_wrap > alt_max_gap:
+            alt_max_gap = alt_wrap
+        alt_span = genome_length - alt_max_gap
+
+        # Validate span
+        max_span = config["max_span"]
+        if alt_span > max_span:
+            continue
+
+        # Build gene annotation
+        alt_start = min(e[0] for e in alt_exons)
+        alt_end = max(e[1] for e in alt_exons)
+        strands = [e[2] for e in alt_exons]
+        strand = max(set(strands), key=strands.count) if len(set(strands)) > 1 else strands[0]
+
+        if len(set(strands)) > 1:
+            alt_exons.sort(key=lambda e: e[3])
+        elif strand == Strand.PLUS:
+            alt_exons.sort(key=lambda e: e[0])
+        else:
+            alt_exons.sort(key=lambda e: e[1], reverse=True)
+
+        exons = []
+        cumulative_len = 0
+        for i, e in enumerate(alt_exons, 1):
+            phase = cumulative_len % 3
+            exons.append(ExonRecord(start=e[0], end=e[1], strand=e[2], number=i, phase=phase))
+            cumulative_len += e[1] - e[0] + 1
+
+        annotation = GeneAnnotation(
+            gene_name=gene_name,
+            gene_type="CDS",
+            exons=exons,
+            strand=strand,
+            notes=[f"Merged from {len(exons)} exons via BLASTn (alternative)"],
+            source_method="BLAST",
+        )
+
+        if _validate_merged_protein_length(annotation, genome):
+            logger.info(
+                f"{gene_name}: alternative exon-1 anchor at {e1_start} "
+                f"passed protein validation (span={alt_span}bp)"
+            )
+            return annotation
+
+    return None
 
 
 def _validate_merged_protein_length(

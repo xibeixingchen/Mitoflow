@@ -289,7 +289,37 @@ def rna_edit(
             if homo_sites:
                 homology_genes += 1
 
-    result = build_editing_result(all_sites)
+    # Flanking context validation: filter low-confidence candidates
+    from .rna_edit.predictor import score_editing_context
+
+    # Build gene -> CDS lookup for context scoring
+    gene_cds_map = {}
+    for feat in record.features:
+        if feat.type != "CDS":
+            continue
+        gn = feat.qualifiers.get("gene", feat.qualifiers.get("locus_tag", ["unknown"]))[0]
+        gene_cds_map[gn] = str(feat.extract(record.seq)).upper()
+
+    filtered_sites = []
+    rejected = 0
+    for site in all_sites:
+        cds = gene_cds_map.get(site.gene, "")
+        if cds:
+            ctx_score, flag = score_editing_context(cds, site.position_cds)
+            if flag == "REJECT":
+                rejected += 1
+                continue
+            if flag == "WEAK" and site.confidence == "low":
+                rejected += 1
+                continue
+            if flag == "WEAK":
+                site.confidence = "low"
+        filtered_sites.append(site)
+
+    if rejected > 0:
+        console.print(f"[yellow]Context filter: {rejected} low-confidence sites removed[/]")
+
+    result = build_editing_result(filtered_sites)
     console.print(result.summary())
     if homology_genes > 0:
         console.print(f"Homology-based prediction contributed for {homology_genes} genes")
@@ -304,6 +334,36 @@ def rna_edit(
         plot_files = plot_all_rna_edit(result.sites, out.result_dir, name, dpi)
         for pname, ppath in plot_files.items():
             console.print(f"  Plot: {ppath}")
+
+    # Site table (TSV)
+    if result.sites:
+        table_path = out.report_dir / f"{name}_editing_sites.tsv"
+        with open(table_path, "w") as f:
+            f.write("Gene\tGenome_Pos\tCDS_Pos\tCodon_Pos\tOriginal_Codon\t"
+                    "Edited_Codon\tOriginal_AA\tEdited_AA\tSynonymous\t"
+                    "Start_Creation\tStop_Removal\tConfidence\n")
+            for s in sorted(result.sites, key=lambda x: (x.gene, x.position_genome)):
+                f.write(f"{s.gene}\t{s.position_genome}\t{s.position_cds}\t"
+                        f"{s.codon_position}\t{s.original_codon}\t{s.edited_codon}\t"
+                        f"{s.original_aa}\t{s.edited_aa}\t"
+                        f"{'Y' if s.is_synonymous else 'N'}\t"
+                        f"{'Y' if s.is_start_codon_creation else 'N'}\t"
+                        f"{'Y' if s.is_stop_codon_removal else 'N'}\t"
+                        f"{s.confidence}\n")
+        console.print(f"  Site table: {table_path}")
+
+        # VCF output
+        from .rna_edit.corrector import generate_editing_vcf
+        vcf_path = generate_editing_vcf(result.sites, genome_seq, out.report_dir / f"{name}_editing.vcf")
+        console.print(f"  VCF: {vcf_path}")
+
+        # Corrected GenBank
+        corrected_gb = out.gb_dir / f"{name}_corrected.gb"
+        from .rna_edit.corrector import correct_genbank_proteins
+        corr_stats = correct_genbank_proteins(input, result.sites, corrected_gb)
+        console.print(f"  Corrected GenBank: {corrected_gb}")
+        console.print(f"    ({corr_stats['genes_corrected']} genes, "
+                      f"{corr_stats['total_sites_applied']} sites applied)")
 
 
 @app.command()

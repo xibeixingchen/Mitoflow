@@ -358,6 +358,67 @@ def predict_editing_from_known_sites(
     return sites
 
 
+# ---------------------------------------------------------------------------
+# Flanking context scoring for C->U editing
+# ---------------------------------------------------------------------------
+
+# Position weight matrix: frequency of bases at each flanking position
+# relative to the edited C, based on known angiosperm editing sites.
+# -2  -1  [C]  +1  +2
+_EDITING_PWM = {
+    -2: {"A": 0.28, "C": 0.22, "G": 0.18, "T": 0.32},
+    -1: {"A": 0.10, "C": 0.25, "G": 0.10, "T": 0.55},
+    +1: {"A": 0.30, "C": 0.22, "G": 0.08, "T": 0.40},
+    +2: {"A": 0.28, "C": 0.20, "G": 0.22, "T": 0.30},
+}
+
+
+def score_editing_context(
+    cds_seq: str,
+    cds_position: int,
+) -> tuple[float, str]:
+    """Score a candidate editing site by its flanking sequence context.
+
+    Plant mitochondrial C->U editing has strong preferences:
+    - Pyrimidines (T/C) favoured at -1 position
+    - G strongly disfavoured at +1 position
+    - Moderate preferences at -2 and +2
+
+    Returns (score, flag) where score is 0.0-1.0 and flag is
+    "PASS", "WEAK", or "REJECT".
+    """
+    pos = cds_position - 1  # 0-based index in CDS
+    if pos < 2 or pos + 3 > len(cds_seq):
+        return 0.5, "PASS"  # edge: insufficient context
+
+    flank_2 = cds_seq[pos - 2].upper()
+    flank_1 = cds_seq[pos - 1].upper()
+    flank_p1 = cds_seq[pos + 1].upper() if pos + 1 < len(cds_seq) else "N"
+    flank_p2 = cds_seq[pos + 2].upper() if pos + 2 < len(cds_seq) else "N"
+
+    scores = []
+    for offset, base in [(-2, flank_2), (-1, flank_1), (+1, flank_p1), (+2, flank_p2)]:
+        if base in _EDITING_PWM[offset]:
+            scores.append(_EDITING_PWM[offset][base])
+        else:
+            scores.append(0.1)
+
+    avg_score = sum(scores) / len(scores) if scores else 0.5
+
+    # Hard filters
+    if flank_p1 == "G":
+        return avg_score * 0.5, "REJECT"   # +1 G is extremely rare
+    if flank_1 == "G":
+        return avg_score * 0.7, "WEAK"     # -1 G is unusual
+
+    if avg_score >= 0.25:
+        return avg_score, "PASS"
+    elif avg_score >= 0.15:
+        return avg_score, "WEAK"
+    else:
+        return avg_score, "REJECT"
+
+
 def correct_protein_with_editing(
     cds_seq: str,
     sites: list,

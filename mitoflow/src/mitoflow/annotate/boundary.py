@@ -355,13 +355,12 @@ def _apply_fixed_offset_correction(ann: GeneAnnotation, genome: GenomeSequence) 
     if gene_name_lower not in FIXED_OFFSET_GENES:
         return ann
 
-    # Guard: skip BLAST-based annotations from trans-spliced exon refinement
-    # (already aligned to reference exons, fixed offsets would destroy accuracy)
-    if ann.source_method == "BLAST":
+    # Guard: skip annotations already resolved by trans-splicing
+    # (BLAST or HMM-merged multi-exon — offsets would destroy accuracy)
+    if ann.source_method in ("BLAST", "HMM-merged"):
         return ann
 
-    # Guard: skip multi-exon annotations for cox2 (trans-splicing already resolved)
-    if gene_name_lower == "cox2" and len(ann.exons) >= 2:
+    if len(ann.exons) >= 2:
         return ann
 
     offset_config = FIXED_OFFSET_GENES[gene_name_lower]
@@ -775,17 +774,14 @@ def _correct_stop_codon_conservative(
                     else:
                         is_upstream = (new_end <= end) and (end - new_end <= 3)
                 else:
+                    new_len = 0
                     is_upstream = (new_end <= end) and (end - new_end <= 3)
                 if is_downstream or is_upstream:
-                    # Keep the upstream candidate closest to current end
-                    # (longest gene that still shortens the annotation).
-                    # Don't consider downstream candidates — stop-gain codons
-                    # should only be used to trim over-extended genes.
                     if is_upstream and (best_stop_gain is None or new_end > best_stop_gain[0]):
                         best_stop_gain = (new_end, codon, new_len)
                 # Don't break — keep scanning for stop-gain codons
 
-        # Apply best stop-gain candidate if found (closest to current end)
+        # Apply best stop-gain candidate if found
         if best_stop_gain:
             sg_end, sg_codon, sg_len = best_stop_gain
             if sg_end != end:
@@ -849,8 +845,6 @@ def _correct_stop_codon_conservative(
                     if exceptions != list(ann.exceptions):
                         updates["exceptions"] = exceptions
                     return ann.model_copy(update=updates)
-                # For stop-gain codons, don't break — keep scanning for a
-                # better candidate. Only standard stops are definite termini.
                 if is_stop:
                     break
 

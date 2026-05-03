@@ -663,8 +663,8 @@ def cms(
     threads: int = typer.Option(4, "-t", "--threads", help="Number of threads"),
     min_orf: int = typer.Option(300, "--min-orf", help="Minimum ORF length (bp)"),
     gene_db: Optional[Path] = typer.Option(None, "--gene-db", help="Mitochondrial gene protein FASTA for chimera detection"),
-    ml_scorer: bool = typer.Option(False, "--ml-scorer", help="Use ML-based CMS scoring if available"),
-    model_path: Optional[Path] = typer.Option(None, "--model-path", help="Path to trained CMS scorer model"),
+    ml_scorer: bool = typer.Option(True, "--ml-scorer/--no-ml-scorer", help="Use ML-based CMS scoring (default: on)"),
+    model_path: Optional[Path] = typer.Option(None, "--model-path", help="Path to trained CMS scorer model (auto-detect if not set)"),
     use_plm: bool = typer.Option(False, "--use-plm", help="Include ESM-2 pLM features when using ML scorer"),
     plm_model_path: Optional[Path] = typer.Option(None, "--plm-model-path", help="Local path to ESM-2 model directory"),
     plot: bool = typer.Option(True, "--plot/--no-plot", help="Generate visualization plots"),
@@ -716,6 +716,8 @@ def cms(
         use_plm=use_plm,
         plm_model_path=plm_model_path,
     )
+    model_type_str = getattr(result, 'model_type', 'ML') if ml_scorer else 'heuristic'
+    console.print(f"[dim]Scoring: {model_type_str}[/]")
     console.print(result.summary())
     if ml_scorer and result.candidates and result.candidates[0].ml_confidence > 0:
         console.print(f"[dim]ML scorer active (top confidence: {result.candidates[0].ml_confidence:.1f})[/]")

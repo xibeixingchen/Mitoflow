@@ -1,0 +1,31 @@
+{
+  "model_type": "rf",
+  "feature_importance": {
+    "cms_identity": 0.32376595627959454,
+    "cms_homolog_score": 0.2736896877769602,
+    "has_cms_homolog": 0.2235454389470316,
+    "charge": 0.04031234800801357,
+    "dist_to_nearest_gene": 0.04030159391251326,
+    "n_cys": 0.021599077130506992,
+    "n_pos": 0.018670475459621052,
+    "aromaticity": 0.011576427647211566,
+    "gravy": 0.01127401987223861,
+    "n_neg": 0.008689248547776838,
+    "n_ser_thr": 0.008428907952265335,
+    "mw": 0.00769560432073292,
+    "length_aa": 0.006436583194533639,
+    "n_met": 0.004014630950999792,
+    "chimera_entropy": 0.0,
+    "chimera_score": 0.0,
+    "has_proximal_boost": 0.0,
+    "max_qcov": 0.0,
+    "n_chimera_sources": 0.0,
+    "n_nearby_5kb": 0.0,
+    "nearest_is_proximal": 0.0,
+    "total_qcov": 0.0
+  },
+  "n_training_samples": 260,
+  "n_features": 22,
+  "cv_auc_mean": 0.9967391304347826,
+  "cv_auc_std": 0.006521739130434767
+}

@@ -257,7 +257,7 @@ def predict_cms(
             if ml_scorer_path:
                 ml_scorer = MLCMSScorer(ml_scorer_path)
             else:
-                default_path = Path(__file__).parent / "data" / "cms" / "models"
+                default_path = Path(__file__).parent / "data" / "models"
                 if (default_path / "cms_logreg.joblib").exists() or (default_path / "cms_lgbm.joblib").exists():
                     ml_scorer = MLCMSScorer(default_path)
                 else:

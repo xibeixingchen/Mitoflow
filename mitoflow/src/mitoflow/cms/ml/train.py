@@ -45,7 +45,7 @@ def train_cms_scorer(
     Returns:
         Fitted MLCMSScorer.
     """
-    model_type = "lgbm" if tier == 2 else "logreg"
+    model_type = "lgbm" if tier == 2 else "rf" if tier == 3 else "logreg"
     if model_type == "lgbm":
         try:
             import lightgbm as lgb  # noqa: F401

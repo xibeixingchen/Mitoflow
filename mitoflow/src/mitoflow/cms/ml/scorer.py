@@ -35,6 +35,7 @@ class MLCMSScorer:
     Supports:
       - Tier 1: LogisticRegression + StandardScaler
       - Tier 2: LightGBM (optionally with classical + pLM features)
+      - Tier 3: RandomForest
     """
 
     def __init__(self, model_path: Path | None = None):
@@ -55,6 +56,7 @@ class MLCMSScorer:
 
         logreg_file = model_path / "cms_logreg.joblib"
         lgbm_file = model_path / "cms_lgbm.joblib"
+        rf_file = model_path / "cms_rf.joblib"
         scaler_file = model_path / "cms_scaler.joblib"
         names_file = model_path / "feature_names.json"
         type_file = model_path / "model_type.json"
@@ -67,6 +69,10 @@ class MLCMSScorer:
             if not lgbm_file.exists():
                 raise FileNotFoundError(f"LightGBM model file not found: {lgbm_file}")
             self.model = joblib.load(lgbm_file)
+        elif self.model_type == "rf":
+            if not rf_file.exists():
+                raise FileNotFoundError(f"RF model file not found: {rf_file}")
+            self.model = joblib.load(rf_file)
         else:
             if not logreg_file.exists():
                 raise FileNotFoundError(f"Model file not found: {logreg_file}")
@@ -92,6 +98,8 @@ class MLCMSScorer:
         if self.model is not None:
             if self.model_type == "lgbm":
                 joblib.dump(self.model, model_path / "cms_lgbm.joblib")
+            elif self.model_type == "rf":
+                joblib.dump(self.model, model_path / "cms_rf.joblib")
             else:
                 joblib.dump(self.model, model_path / "cms_logreg.joblib")
         if self.scaler is not None:
@@ -125,7 +133,13 @@ class MLCMSScorer:
         self.scaler = StandardScaler()
         X_scaled = self.scaler.fit_transform(X)
 
-        if model_type == "lgbm":
+        if model_type == "rf":
+            from sklearn.ensemble import RandomForestClassifier
+            self.model = RandomForestClassifier(
+                n_estimators=200, max_depth=10, random_state=42, class_weight="balanced"
+            )
+            self.model.fit(X_scaled, y)
+        elif model_type == "lgbm":
             if not LIGHTGBM_AVAILABLE:
                 raise ImportError("lightgbm is required for Tier 2 CMS scoring")
             self.model = lgb.LGBMClassifier(

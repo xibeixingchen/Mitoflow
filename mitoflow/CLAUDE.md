@@ -186,3 +186,32 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+## AI Multi-Agent Platform Reference Projects
+
+MitoFlow AI 平台开发过程中参考了以下开源项目：
+
+| 项目 | 仓库 | 借鉴内容 |
+|------|------|----------|
+| **DeepAgents** (LangChain) | `github.com/langchain-ai/deepagents` | LangGraph 状态机、子 Agent 委派 (`task`)、planning middleware |
+| **ClawBio** | `github.com/ClawBio/ClawBio` | SKILL.md 规格优先设计、58 个生物信息技能、Galaxy Bridge |
+| **BioClaw** | `github.com/Runchuan-BU/BioClaw` | 会话隔离、容器沙箱、自动 Notebook 导出 |
+| **STELLA** | `github.com/zaixizhang/STELLA` | Manager/Dev/Critic 三 Agent 模式、Tool Ocean、OpenRouter 网关 |
+| **ScienceClaw** | `github.com/AgentTeam-TaichuAI/ScienceClaw` | Vue 3 聊天 UI、MongoDB 会话存储、模型设置面板 |
+
+### 本地克隆位置
+
+```bash
+/home/jiazc/software/deepagents    # LangGraph agent framework
+/home/jiazc/software/ClawBio       # Bioinformatics skill library
+/home/jiazc/software/ScienceClaw   # Vue 3 + FastAPI science agent
+/home/jiazc/software/STELLA        # Biomedical multi-agent system
+```
+
+### MitoFlow AI 架构决策
+
+- **Provider 适配**：自研 `OpenAIChatAdapter` + `AnthropicAdapter`，支持 13 个大模型
+- **工具注册**：22 个工具，4 级安全分类（read_only / writes_output / launches_job / external_network）
+- **Web 前端**：FastAPI 直出 HTML5 单页应用，紫色→绿色渐变主题
+- **会话持久**：JSONL 消息 + JSON 元数据，重启不丢失
+- **工作空间**：每 session 独立目录，分析结果自动关联

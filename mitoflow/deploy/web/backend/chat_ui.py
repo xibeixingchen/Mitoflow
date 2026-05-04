@@ -516,24 +516,39 @@ async function refreshResFiles(){
   if(resTab!=='files')return;
   var ssid=sid||'default',rc=$('resContent');if(!rc)return;
   rc.innerHTML='<div style="text-align:center;color:var(--sub);padding:.5rem;font-size:.7rem">Loading...</div>';
+  var h='',hasAny=false;
+  // ── Uploaded files ──
+  try{
+    var r=await fetch(API+'/files/list?session_id='+ssid);
+    if(r.ok){var d=await r.json();if(d.files&&d.files.length){
+      h+='<div style="font-weight:600;margin-bottom:.3rem;font-size:.7rem;color:var(--accent)">📤 Uploaded</div>';
+      for(var i=0;i<d.files.length;i++){var f=d.files[i],icon=fi(f.type),sz=f.size>1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(0)+' KB';
+        h+='<div onclick="previewFile(\''+esc(f.name)+'\')" style="padding:.2rem .3rem;cursor:pointer;border-radius:3px;font-size:.65rem;display:flex;align-items:center;gap:.2rem" onmouseover="this.style.background=\'#f0f4f8\'" onmouseout="this.style.background=\'transparent\'"><span>'+icon+'</span>'+esc(f.name)+' <span style="color:var(--sub);font-size:.6rem;margin-left:auto">'+sz+'</span></div>';
+      }
+      hasAny=true;
+    }}
+  }catch(e){}
+  // ── Analysis Results ──
   try{
     var rr=await fetch(API+'/ai/sessions/'+ssid+'/results');
-    if(!rr.ok){rc.innerHTML='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.72rem">No results for this session.</div>';return}
-    var rd=await rr.json();window._lastResults=rd.results||[];
-    if(!rd.results||!rd.results.length){rc.innerHTML='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.72rem">No analysis results for this session yet.</div>';return}
-    var tree={};
-    for(var j=0;j<rd.results.length;j++){
-      var parts=rd.results[j].path.split('/'),node=tree;
-      for(var k=0;k<parts.length;k++){
-        if(!node[parts[k]])node[parts[k]]=k===parts.length-1?{_files:rd.results[j].files,_base:rd.results[j].base,_full:rd.results[j].path}:{};
-        node=node[parts[k]];
+    if(rr.ok){var rd=await rr.json();window._lastResults=rd.results||[];
+      if(rd.results&&rd.results.length){
+        var tree={};
+        for(var j=0;j<rd.results.length;j++){
+          var parts=rd.results[j].path.split('/'),node=tree;
+          for(var k=0;k<parts.length;k++){
+            if(!node[parts[k]])node[parts[k]]=k===parts.length-1?{_files:rd.results[j].files,_base:rd.results[j].base,_full:rd.results[j].path}:{};
+            node=node[parts[k]];
+          }
+        }
+        h+='<div style="font-weight:600;margin:.6rem 0 .2rem;font-size:.7rem;color:var(--accent)">📊 Results</div>';
+        _treeId=0;
+        try{h+=renderTree(tree,ssid,0)}catch(e2){h+='<div style="color:var(--red);font-size:.6rem">Tree error</div>'}
+        hasAny=true;
       }
     }
-    _treeId=0;
-    var h='<div style="font-weight:600;margin-bottom:.4rem;font-size:.73rem;color:var(--accent)">📊 Analysis Results</div>';
-    try{h+=renderTree(tree,ssid,0)}catch(e2){h+='<div style="color:var(--red);font-size:.65rem">Tree render error</div>'}
-    rc.innerHTML=h;
-  }catch(e){rc.innerHTML='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.72rem">Error loading results</div>'}
+  }catch(e){}
+  rc.innerHTML=h||'<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.7rem">No files or results for this session.</div>';
 }
 
 var _treeId=0;
@@ -598,34 +613,24 @@ function addStep(module,result,detail,toolsUsed){
 }
 function renderPipe(){
   var rc=$('resContent');if(!rc)return;
-  var h='<div style="font-weight:600;margin-bottom:.5rem;font-size:.73rem;color:var(--accent)">▸ Workflow</div>';
+  var h='<div style="font-weight:600;margin-bottom:.5rem;font-size:.73rem;color:var(--accent)">▸ Data Flow</div>';
   if(!pipelineSteps.length){
-    h+='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.7rem;line-height:1.5">The analysis workflow will appear here.<br><br>📤 Upload → 🧬 Annotate → ✅ QC → 📊 Visualize</div>';
+    h+='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.7rem;line-height:1.5">Analysis flow appears here as you work.</div>';
   } else {
     for(var i=0;i<pipelineSteps.length;i++){
       var s=pipelineSteps[i];
       h+='<div style="padding:.4rem .5rem;margin:.2rem 0;background:#fff;border:1px solid var(--border);border-radius:8px;border-left:3px solid var(--accent)">';
       h+='<div style="font-weight:600;font-size:.72rem">'+(i+1)+'. '+s.module+'</div>';
-      h+='<div style="font-size:.65rem;color:var(--sub);line-height:1.3;margin-top:.15rem">'+s.output+'</div>';
+      h+='<div style="font-size:.63rem;color:var(--sub);line-height:1.3;margin-top:.1rem">'+s.output+'</div>';
       if(s.tools&&s.tools.length){
-        h+='<div style="margin-top:.2rem">';
+        h+='<div style="margin-top:.15rem">';
         for(var ti=0;ti<s.tools.length;ti++){
-          var t=s.tools[ti];
-          h+='<span style="display:inline-block;background:#eef2ff;color:var(--accent);padding:1px 4px;border-radius:3px;margin:1px;font-size:.6rem">'+t.name+'</span>';
+          h+='<span style="display:inline-block;background:#eef2ff;color:var(--accent);padding:1px 4px;border-radius:3px;margin:1px;font-size:.6rem">'+s.tools[ti].name+'</span>';
         }
         h+='</div>';
       }
-      h+='<div style="font-size:.6rem;color:var(--sub);margin-top:.1rem">'+s.time+'</div>';
+      h+='<div style="font-size:.58rem;color:var(--sub);margin-top:.1rem">'+s.time+'</div>';
       h+='</div>';
-    }
-  }
-  // Output directories as separate section
-  var results=window._lastResults||[];
-  if(results.length){
-    h+='<div style="font-weight:600;margin:.6rem 0 .2rem;font-size:.7rem;color:var(--accent)">▸ Output</div>';
-    for(var j=0;j<results.length;j++){
-      var r=results[j];
-      h+='<div style="padding:.2rem .4rem;margin:.1rem 0;font-size:.65rem;cursor:pointer" onclick="go(\'results\')">📁 '+r.path+' <span style="color:var(--sub)">('+r.files.length+')</span></div>';
     }
   }
   rc.innerHTML=h;

@@ -450,7 +450,15 @@ async function send(){const input=$('chatInput');if(!input)return;const text=inp
       ms.appendChild(ai);
       var toolsUsed=tools.map(function(t){return{name:t.name,content:(t.content||'').substring(0,60)}});
       var detail='';if(tools.length){detail=tools.map(function(t,i){return (i+1)+'. '+t.name+': '+(t.content||'').substring(0,80)}).join('\n')}
-      addStep('Query',tools.length?tools.length+' tools':'Direct answer',detail,toolsUsed);
+      var stepLabel='Q&A';
+      if(tools.length){var tnames=tools.map(function(t){return t.name});
+        if(tnames.join(' ').indexOf('annotation')>=0||tnames.join(' ').indexOf('run_annotation')>=0)stepLabel='🧬 Annotation';
+        else if(tnames.join(' ').indexOf('visual')>=0)stepLabel='📊 Visualization';
+        else if(tnames.join(' ').indexOf('upload')>=0||tnames.join(' ').indexOf('workspace')>=0)stepLabel='📤 Data Upload';
+        else if(tnames.join(' ').indexOf('qc')>=0)stepLabel='✅ Quality Check';
+        else stepLabel='🔍 Analysis';
+      }
+      addStep(stepLabel,tools.length?tools.length+' tool(s) called':'Direct answer',detail,toolsUsed);
       loadResults();
     }else{var em='Error '+r.status;try{var ed=await r.json();em=ed.detail||em}catch(_){}showErr(em)}
   }catch(e){var tb2=$('thk');if(tb2)tb2.remove();showErr('Network: '+e.message)}
@@ -461,7 +469,7 @@ function showErr(msg){const d=msgEl('a','❌ '+esc(msg));const inner=d.querySele
 function scrollD(){const c=$('chatMsgs');if(c)setTimeout(()=>c.scrollTop=c.scrollHeight,50)}
 function quickAsk(q){$('chatInput').value=q;send()}
 function quickUpload(){const fi=$('fileInput');if(fi)fi.click()}
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;')}
 function md(t){if(!t)return'';let o=t;o=o.replace(/^### (.+)$/gm,'<h3>$1</h3>');o=o.replace(/^## (.+)$/gm,'<h2>$1</h2>');o=o.replace(/^# (.+)$/gm,'<h1>$1</h1>');o=o.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');o=o.replace(/`([^`\n]+)`/g,'<code>$1</code>');o=o.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
   if(/\|.+\|/.test(o)){let rows=o.split('\n'),th='',inTable=false,inHead=false;for(let i=0;i<rows.length;i++){let r=rows[i].trim();if(r.startsWith('|')&&r.endsWith('|')){if(!inTable){inTable=true;inHead=true;th+='<table><thead>'}let cells=r.split('|').filter(c=>c.trim()).map(c=>c.trim());if(/^[\s\-:]+$/.test(cells[0]||'')){inHead=false;th+='</thead><tbody>';continue}let tag=inHead?'th':'td';th+='<tr>'+cells.map(c=>'<'+tag+'>'+c+'</'+tag+'>').join('')+'</tr>'}else{if(inTable){inTable=false;th+='</tbody></table>';rows[i]=th+'\n'+r}}if(i===rows.length-1&&inTable){th+='</tbody></table>';rows.push(th)}}o=rows.join('\n')}
   o=o.replace(/^- (.+)$/gm,'<li>$1</li>');o=o.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul>$1</ul>');
@@ -476,7 +484,7 @@ function runManual(id){var m=MODULES.find(function(x){return x.id===id})||SKILLS
 // ── Files ──
 async function uploadFiles(fl){if(!fl||!fl.length)return;if(!sid){try{const r=await fetch(API+'/ai/sessions',{method:'POST'});if(r.ok){const d=await r.json();sid=d.session_id;sessions[sid]={}}}catch(e){showErr('Create session first');return}}
   const fd=new FormData();fd.append('session_id',sid);for(const f of fl)fd.append('files',f);const z=$('uploadZone');if(z)z.style.opacity='0.5';
-  try{const r=await fetch(API+'/files/upload',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.errors&&d.errors.length)d.errors.forEach(e=>showErr('Upload: '+e));if(d.uploaded&&d.uploaded.length){refreshFiles();refreshResFiles();addStep('Upload',d.uploaded.length+' files')}}}catch(e){showErr('Upload: '+e.message)}
+  try{const r=await fetch(API+'/files/upload',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.errors&&d.errors.length)d.errors.forEach(e=>showErr('Upload: '+e));if(d.uploaded&&d.uploaded.length){refreshFiles();refreshResFiles();addStep('📤 Data Upload',d.uploaded.length+' file(s) uploaded',d.uploaded.map(function(f){return f.name}).join(', '))}}}catch(e){showErr('Upload: '+e.message)}
   if(z)z.style.opacity='1';$('fileInput').value='';$('dirInput').value=''}
 function handleDrop(e){e.preventDefault();const z=$('uploadZone');if(z){z.style.borderColor='var(--border)';z.style.background='var(--surface)'}if(e.dataTransfer.files.length)uploadFiles(e.dataTransfer.files)}
 async function refreshFiles(){
@@ -521,8 +529,9 @@ async function refreshResFiles(){
         node=node[parts[k]];
       }
     }
-    _treeId=0;var h='<div style="font-weight:600;margin-bottom:.4rem;font-size:.73rem;color:var(--accent)">📊 Analysis Results</div>';
-    h+=renderTree(tree,ssid,0);
+    _treeId=0;
+    var h='<div style="font-weight:600;margin-bottom:.4rem;font-size:.73rem;color:var(--accent)">📊 Analysis Results</div>';
+    try{h+=renderTree(tree,ssid,0)}catch(e2){h+='<div style="color:var(--red);font-size:.65rem">Tree render error</div>'}
     rc.innerHTML=h;
   }catch(e){rc.innerHTML='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.72rem">Error loading results</div>'}
 }
@@ -589,38 +598,34 @@ function addStep(module,result,detail,toolsUsed){
 }
 function renderPipe(){
   var rc=$('resContent');if(!rc)return;
-  var results=window._lastResults||[];
-  var h='<div style="font-weight:600;margin-bottom:.6rem;font-size:.78rem;color:var(--accent)">▸ Analysis Trace</div>';
-  if(!pipelineSteps.length&&!results.length){
-    h+='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.75rem;line-height:1.5">Run an analysis to see the execution trace here.<br><br><span style="color:var(--accent)">annotate</span> → <span style="color:var(--accent)">QC</span> → <span style="color:var(--accent)">visualize</span></div>';
-  }
-  // Pipeline steps
-  if(pipelineSteps.length){
+  var h='<div style="font-weight:600;margin-bottom:.5rem;font-size:.73rem;color:var(--accent)">▸ Workflow</div>';
+  if(!pipelineSteps.length){
+    h+='<div style="color:var(--sub);text-align:center;padding:1rem;font-size:.7rem;line-height:1.5">The analysis workflow will appear here.<br><br>📤 Upload → 🧬 Annotate → ✅ QC → 📊 Visualize</div>';
+  } else {
     for(var i=0;i<pipelineSteps.length;i++){
       var s=pipelineSteps[i];
-      h+='<div style="padding:.5rem .6rem;margin:.3rem 0;background:#f8fafb;border-radius:8px;border-left:3px solid var(--accent);word-wrap:break-word;overflow-wrap:break-word">';
-      h+='<div style="font-weight:600;font-size:.75rem;color:var(--text);margin-bottom:.2rem">'+(i+1)+'. '+s.module+' <span style="font-weight:400;color:var(--sub);font-size:.68rem">'+s.time+'</span></div>';
-      // Tools used
+      h+='<div style="padding:.4rem .5rem;margin:.2rem 0;background:#fff;border:1px solid var(--border);border-radius:8px;border-left:3px solid var(--accent)">';
+      h+='<div style="font-weight:600;font-size:.72rem">'+(i+1)+'. '+s.module+'</div>';
+      h+='<div style="font-size:.65rem;color:var(--sub);line-height:1.3;margin-top:.15rem">'+s.output+'</div>';
       if(s.tools&&s.tools.length){
-        h+='<div style="font-size:.7rem;color:var(--sub);margin:.2rem 0;word-break:break-all">';
+        h+='<div style="margin-top:.2rem">';
         for(var ti=0;ti<s.tools.length;ti++){
-          var t=s.tools[ti],icon=t.name.indexOf('gene')>=0?'🧬':t.name.indexOf('web')>=0?'🌐':t.name.indexOf('wiki')>=0?'📖':t.name.indexOf('list')>=0?'📋':'🔧';
-          h+='<span style="display:inline-block;background:#eef2ff;color:var(--accent);padding:1px 5px;border-radius:4px;margin:1px 2px;font-size:.65rem">'+icon+' '+t.name+'</span>';
+          var t=s.tools[ti];
+          h+='<span style="display:inline-block;background:#eef2ff;color:var(--accent);padding:1px 4px;border-radius:3px;margin:1px;font-size:.6rem">'+t.name+'</span>';
         }
         h+='</div>';
       }
-      if(s.detail)h+='<div style="font-size:.68rem;color:var(--sub);word-break:break-all;line-height:1.4;white-space:pre-wrap">'+s.detail+'</div>';
+      h+='<div style="font-size:.6rem;color:var(--sub);margin-top:.1rem">'+s.time+'</div>';
       h+='</div>';
     }
   }
-  // Result directories
+  // Output directories as separate section
+  var results=window._lastResults||[];
   if(results.length){
-    h+='<div style="font-weight:600;margin:.8rem 0 .3rem;font-size:.75rem;color:var(--accent)">▸ Output Directories</div>';
+    h+='<div style="font-weight:600;margin:.6rem 0 .2rem;font-size:.7rem;color:var(--accent)">▸ Output</div>';
     for(var j=0;j<results.length;j++){
-      var r=results[j],nms=r.files.slice(0,4).map(function(f){return f.name}).join(', ');
-      if(r.files.length>4)nms+=', +'+(r.files.length-4)+' more';
-      h+='<div style="padding:.35rem .5rem;margin:.15rem 0;background:#f0fdf4;border-radius:6px;font-size:.7rem;cursor:pointer;word-wrap:break-word" onclick="go(\'results\')">';
-      h+='📁 <strong>'+r.path+'</strong><br><span style="color:var(--sub);font-size:.65rem">'+r.files.length+' files: '+nms+'</span></div>';
+      var r=results[j];
+      h+='<div style="padding:.2rem .4rem;margin:.1rem 0;font-size:.65rem;cursor:pointer" onclick="go(\'results\')">📁 '+r.path+' <span style="color:var(--sub)">('+r.files.length+')</span></div>';
     }
   }
   rc.innerHTML=h;

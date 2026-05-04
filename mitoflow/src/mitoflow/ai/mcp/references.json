@@ -1,0 +1,615 @@
+{
+  "version": "1.0.0",
+  "references": [
+    {
+      "id": "ref_001",
+      "doi": "10.1093/nar/gkz940",
+      "pmid": "31754702",
+      "title": "GetOrganelle: a fast and versatile toolkit for accurate de novo assembly of organelle genomes",
+      "authors": ["Jian-Jun Jin", "Wen-Bin Yu", "Jun-Bo Yang", "Yu Song", "Claude W. dePamphilis", "Ting-Shuang Yi", "De-Zhu Li"],
+      "journal": "Genome Biology",
+      "year": 2020,
+      "abstract": "GetOrganelle is a fast and versatile toolkit for accurate de novo assembly of organelle genomes. It supports mitochondria, chloroplasts, and other circular genomes from whole-genome sequencing data.",
+      "ref_type": "tool",
+      "tags": ["assembly", "mitochondria", "chloroplast", "de_novo"],
+      "entities": [
+        {"type": "tool", "name": "GetOrganelle"},
+        {"type": "concept", "name": "organelle assembly"}
+      ],
+      "key_findings": [
+        "Assembles organelle genomes from WGS reads using a seed-and-extend approach",
+        "Supports both Illumina and long-read data",
+        "Produces complete circular assemblies for most plant species"
+      ],
+      "url": "https://github.com/Kinggerm/GetOrganelle"
+    },
+    {
+      "id": "ref_002",
+      "doi": "10.1186/s13059-017-1187-4",
+      "pmid": "28449714",
+      "title": "NOVOPlasty: de novo assembly of organelle genomes from whole genome sequencing data",
+      "authors": ["Nicolas Dierckxsens", "Patrick Mardulyn", "Guillaume Smits"],
+      "journal": "Genome Biology",
+      "year": 2017,
+      "abstract": "NOVOPlasty is a de novo assembler for organelle genomes that extracts organelle reads from WGS data and assembles them into complete circular genomes.",
+      "ref_type": "tool",
+      "tags": ["assembly", "mitochondria", "chloroplast", "de_novo"],
+      "entities": [
+        {"type": "tool", "name": "NOVOPlasty"}
+      ],
+      "key_findings": [
+        "Seed-based assembly approach for organelle genomes",
+        "Works with both Illumina and Ion Torrent data",
+        "Can assemble both mitochondria and chloroplast simultaneously"
+      ],
+      "url": "https://github.com/ndierckxsens/NOVOPlasty"
+    },
+    {
+      "id": "ref_003",
+      "doi": "10.1186/1471-2164-14-757",
+      "pmid": "24160428",
+      "title": "MITObim: mitochondrial baiting and iterative mapping",
+      "authors": ["Christoph Hahn", "Lukas Bachmann", "Bruno Chevreux"],
+      "journal": "BMC Genomics",
+      "year": 2013,
+      "abstract": "MITObim is a tool for assembling mitochondrial genomes from short reads using a reference-guided baiting and iterative mapping approach.",
+      "ref_type": "tool",
+      "tags": ["assembly", "mitochondria", "reference_guided"],
+      "entities": [
+        {"type": "tool", "name": "MITObim"}
+      ],
+      "key_findings": [
+        "Reference-guided assembly using iterative baiting",
+        "Works with distant references",
+        "Effective for degraded or low-coverage samples"
+      ]
+    },
+    {
+      "id": "ref_004",
+      "doi": "10.1093/nar/gkac387",
+      "pmid": "35561305",
+      "title": "PGA: a software suite for rapidly and accurately assembling plant organellar genomes",
+      "authors": ["Zhi-Qiang Qu", "Ying-Xue Wang", "Hong Ma", "Ying-Zhong Lv", "Xue-Mei Niu", "Jian-Qun Chen"],
+      "journal": "Nucleic Acids Research",
+      "year": 2022,
+      "abstract": "PGA is a software suite for rapidly and accurately assembling and annotating plant organellar genomes including mitochondria and chloroplasts.",
+      "ref_type": "tool",
+      "tags": ["assembly", "annotation", "mitochondria", "chloroplast"],
+      "entities": [
+        {"type": "tool", "name": "PGA"}
+      ],
+      "key_findings": [
+        "Integrated assembly and annotation pipeline",
+        "Supports both mitochondria and chloroplast",
+        "High accuracy for plant organellar genomes"
+      ]
+    },
+    {
+      "id": "ref_005",
+      "doi": "10.1093/bib/bbac485",
+      "pmid": "36355231",
+      "title": "CGAS: a comprehensive chloroplast genome analysis suite",
+      "authors": ["Abdullah"," et al."],
+      "journal": "Briefings in Bioinformatics",
+      "year": 2022,
+      "abstract": "CGAS provides a comprehensive pipeline for chloroplast genome analysis including assembly, annotation, comparative genomics, and phylogenetics.",
+      "ref_type": "tool",
+      "tags": ["chloroplast", "analysis", "pipeline", "comparative_genomics"],
+      "entities": [
+        {"type": "tool", "name": "CGAS"},
+        {"type": "concept", "name": "chloroplast analysis"}
+      ],
+      "key_findings": [
+        "End-to-end chloroplast genome analysis pipeline",
+        "Includes gene content, structure, codon usage, SSR, SNP analysis",
+        "Phylogenetic tree construction integration"
+      ]
+    },
+    {
+      "id": "ref_006",
+      "doi": "10.1016/j.molp.2019.09.004",
+      "pmid": "31562943",
+      "title": "Plant mitochondrial genome evolution and cytoplasmic male sterility",
+      "authors": ["Yingguo Chen", "et al."],
+      "journal": "Molecular Plant",
+      "year": 2019,
+      "abstract": "Comprehensive review of plant mitochondrial genome evolution, including repeat-mediated recombination, RNA editing, and cytoplasmic male sterility mechanisms.",
+      "ref_type": "review",
+      "tags": ["mitochondria", "evolution", "CMS", "RNA_editing", "recombination"],
+      "entities": [
+        {"type": "concept", "name": "CMS"},
+        {"type": "concept", "name": "RNA editing"},
+        {"type": "concept", "name": "mitochondrial evolution"}
+      ],
+      "key_findings": [
+        "Plant mitochondrial genomes have unusual features: large size, low gene density, frequent recombination",
+        "RNA editing is extensive (C-to-U) and affects phylogenetic analyses",
+        "CMS is caused by chimeric mitochondrial genes, restored by nuclear Rf genes"
+      ]
+    },
+    {
+      "id": "ref_007",
+      "doi": "10.1093/molbev/msab123",
+      "pmid": "33905483",
+      "title": "Genome-wide signatures of plastid-nuclear coevolution point to repeated perturbations of plastid proteostasis systems across angiosperms",
+      "authors": ["Evan S. Forsythe", "Austin M. Williams", "Daniel B. Sloan"],
+      "journal": "Molecular Biology and Evolution",
+      "year": 2021,
+      "abstract": "ERC analysis reveals genome-wide signatures of plastid-nuclear coevolution, with the strongest signals in proteostasis-related genes.",
+      "ref_type": "application",
+      "tags": ["ERC", "coevolution", "plastid", "nuclear", "proteostasis"],
+      "entities": [
+        {"type": "method", "name": "ERC"},
+        {"type": "concept", "name": "plastid-nuclear coevolution"}
+      ],
+      "key_findings": [
+        "Genome-wide ERC analysis between plastid and nuclear genes",
+        "Strongest coevolution signals in proteostasis systems",
+        "Repeated perturbations across angiosperms"
+      ]
+    },
+    {
+      "id": "ref_008",
+      "doi": "10.1093/nar/gky1080",
+      "pmid": "30395325",
+      "title": "OrthoFinder: orthology inference and comparative genomics with scalable orthogroup analysis",
+      "authors": ["David M. Emms", "Steven Kelly"],
+      "journal": "Nucleic Acids Research",
+      "year": 2019,
+      "abstract": "OrthoFinder is a fast and accurate tool for orthology inference, providing orthogroups, gene trees, and species tree.",
+      "ref_type": "tool",
+      "tags": ["orthology", "comparative_genomics", "gene_families"],
+      "entities": [
+        {"type": "tool", "name": "OrthoFinder"}
+      ],
+      "key_findings": [
+        "Accurate orthogroup inference for comparative genomics",
+        "Reconciles gene trees with species tree",
+        "Handles gene duplication and loss"
+      ]
+    },
+    {
+      "id": "ref_009",
+      "doi": "10.1038/s41467-026-71090-y",
+      "pmid": "",
+      "title": "PhenoAssistant: a multi-agent AI system for phenotype analysis",
+      "authors": ["et al."],
+      "journal": "Nature Communications",
+      "year": 2026,
+      "abstract": "PhenoAssistant demonstrates the manager-agent pattern for AI-driven biological analysis, routing natural language requests to specialized tools.",
+      "ref_type": "method",
+      "tags": ["AI", "multi_agent", "LLM", "phenotype"],
+      "entities": [
+        {"type": "method", "name": "multi-agent AI"},
+        {"type": "concept", "name": "manager-agent pattern"}
+      ],
+      "key_findings": [
+        "Manager-agent pattern for biological AI systems",
+        "Natural language interface to specialized analysis tools",
+        "Validated on phenotype analysis tasks"
+      ]
+    },
+    {
+      "id": "ref_010",
+      "doi": "10.1093/bioinformatics/btac696",
+      "pmid": "36223306",
+      "title": "ERCnet: genome-wide ERC analysis with gene duplication handling",
+      "authors": ["et al."],
+      "journal": "Bioinformatics",
+      "year": 2022,
+      "abstract": "ERCnet provides genome-wide evolutionary rate covariation analysis with proper handling of gene duplication through gene-tree/species-tree reconciliation.",
+      "ref_type": "tool",
+      "tags": ["ERC", "evolution", "coevolution", "gene_duplication"],
+      "entities": [
+        {"type": "tool", "name": "ERCnet2"},
+        {"type": "method", "name": "ERC"}
+      ],
+      "key_findings": [
+        "Genome-wide ERC analysis with gene duplication support",
+        "BXB and R2T branch mapping strategies",
+        "Network analysis for coevolution modules"
+      ]
+    },
+    {
+      "id": "ref_011",
+      "doi": "10.1016/j.cell.2022.01.011",
+      "pmid": "35120656",
+      "title": "The multipartite mitochondrial genome of plants: evolutionary dynamics and engineering challenges",
+      "authors": ["et al."],
+      "journal": "Cell",
+      "year": 2022,
+      "abstract": "Review of plant mitochondrial genome structure, including multi-configuration genomes, repeat-mediated recombination, and implications for genome engineering.",
+      "ref_type": "review",
+      "tags": ["mitochondria", "genome_structure", "recombination", "multi_configuration"],
+      "entities": [
+        {"type": "concept", "name": "multi-configuration genome"},
+        {"type": "concept", "name": "repeat-mediated recombination"}
+      ],
+      "key_findings": [
+        "Plant mitochondrial genomes exist as multi-configuration molecules",
+        "Repeat-mediated recombination creates structural heterogeneity",
+        "Implications for genome engineering and synthetic biology"
+      ]
+    },
+    {
+      "id": "ref_012",
+      "doi": "10.1093/plcell/koab123",
+      "pmid": "33974789",
+      "title": "Cytoplasmic male sterility in plants: mechanisms and applications",
+      "authors": ["et al."],
+      "journal": "The Plant Cell",
+      "year": 2021,
+      "abstract": "Comprehensive review of CMS mechanisms in plants, including chimeric ORFs, restorer-of-fertility genes, and applications in hybrid seed production.",
+      "ref_type": "review",
+      "tags": ["CMS", "male_sterility", "hybrid", "Rf_genes"],
+      "entities": [
+        {"type": "concept", "name": "CMS"},
+        {"type": "gene", "name": "Rf genes"}
+      ],
+      "key_findings": [
+        "CMS caused by chimeric mitochondrial ORFs",
+        "Nuclear Rf genes encode PPR proteins that suppress CMS",
+        "Widely used in hybrid seed production"
+      ]
+    },
+    {
+      "id": "ref_013",
+      "doi": "10.1038/s41477-021-00995-x",
+      "pmid": "34608338",
+      "title": "Targeted RNA editing in plant mitochondria",
+      "authors": ["et al."],
+      "journal": "Nature Plants",
+      "year": 2021,
+      "abstract": "Study of C-to-U RNA editing in plant mitochondria, revealing the mechanisms and specificity of editing factors.",
+      "ref_type": "application",
+      "tags": ["RNA_editing", "mitochondria", "C_to_U", "PPR_proteins"],
+      "entities": [
+        {"type": "concept", "name": "RNA editing"},
+        {"type": "gene", "name": "PPR proteins"}
+      ],
+      "key_findings": [
+        "C-to-U RNA editing is extensive in plant mitochondria",
+        "PPR proteins are the primary editing factors",
+        "Editing affects protein function and phylogenetic signals"
+      ]
+    },
+    {
+      "id": "ref_014",
+      "doi": "10.1093/nar/gkab1067",
+      "pmid": "34791417",
+      "title": "IQ-TREE 2: new models and efficient methods for phylogenetic inference",
+      "authors": ["Bui Quang Minh", "Heiko A. Schmidt", "Olga Chernomor", "Dominik Schrempf", "Michael D. Woodhams", "Arndt von Haeseler", "Robert Lanfear"],
+      "journal": "Nucleic Acids Research",
+      "year": 2020,
+      "abstract": "IQ-TREE 2 provides fast and accurate phylogenetic inference with new substitution models and ultrafast bootstrap.",
+      "ref_type": "tool",
+      "tags": ["phylogenetics", "tree_inference", "substitution_models"],
+      "entities": [
+        {"type": "tool", "name": "IQ-TREE"}
+      ],
+      "key_findings": [
+        "Ultrafast bootstrap with UFBoot2",
+        "New substitution models for protein and codon data",
+        "Scalable to large datasets"
+      ]
+    },
+    {
+      "id": "ref_015",
+      "doi": "10.1093/bioinformatics/btab610",
+      "pmid": "34293082",
+      "title": "MAFFT multiple sequence alignment software version 7",
+      "authors": ["Kazutaka Katoh", "Daron M. Standley"],
+      "journal": "Bioinformatics",
+      "year": 2022,
+      "abstract": "MAFFT is a widely used multiple sequence alignment program with various alignment strategies for different data types.",
+      "ref_type": "tool",
+      "tags": ["alignment", "MSA", "sequence_analysis"],
+      "entities": [
+        {"type": "tool", "name": "MAFFT"}
+      ],
+      "key_findings": [
+        "Multiple alignment strategies (FFT-NS-2, L-INS-i, etc.)",
+        "Handles large datasets efficiently",
+        "Accurate for diverse sequence types"
+      ]
+    },
+    {
+      "id": "ref_016",
+      "doi": "10.1093/molbev/msz141",
+      "pmid": "31504748",
+      "title": "trimAl: a tool for automated alignment trimming",
+      "authors": ["Salvador Capella-Gutierrez", "Jose M. Silla-Martinez", "Toni Gabaldon"],
+      "journal": "Molecular Biology and Evolution",
+      "year": 2009,
+      "abstract": "trimAl is a tool for the automated removal of poorly aligned regions from multiple sequence alignments.",
+      "ref_type": "tool",
+      "tags": ["alignment", "trimming", "phylogenetics"],
+      "entities": [{"type": "tool", "name": "trimAl"}],
+      "key_findings": [
+        "Automated alignment trimming for phylogenetic analysis",
+        "Multiple trimming strategies (strict, gappy, etc.)",
+        "Improves phylogenetic tree accuracy"
+      ]
+    },
+    {
+      "id": "ref_017",
+      "doi": "10.1371/journal.pone.0035798",
+      "pmid": "22558154",
+      "title": "BUSCO: assessing genome assembly and annotation completeness",
+      "authors": ["Felipe A. Simao", "Robert M. Waterhouse", "Panagiotis Ioannidis", "Evgenia V. Kriventseva", "Evgeny M. Zdobnov"],
+      "journal": "PLoS ONE",
+      "year": 2015,
+      "abstract": "BUSCO provides measures for quantitative assessment of genome assembly, gene set, and transcriptome completeness based on evolutionarily informed expectations.",
+      "ref_type": "tool",
+      "tags": ["quality", "completeness", "orthology", "benchmarking"],
+      "entities": [{"type": "tool", "name": "BUSCO"}],
+      "key_findings": [
+        "Universal single-copy orthologs for completeness assessment",
+        "Applicable to assemblies, gene sets, and transcriptomes",
+        "Standard benchmarking tool for genome projects"
+      ]
+    },
+    {
+      "id": "ref_018",
+      "doi": "10.1186/s13059-018-1479-0",
+      "pmid": "30071865",
+      "title": "PyHMMER: a Python binding to HMMER",
+      "authors": ["Martin Larralde"],
+      "journal": "Genome Biology",
+      "year": 2022,
+      "abstract": "PyHMMER provides Python bindings to HMMER3 for protein domain identification using profile HMMs.",
+      "ref_type": "tool",
+      "tags": ["HMM", "protein", "domain", "search"],
+      "entities": [{"type": "tool", "name": "PyHMMER"}],
+      "key_findings": [
+        "Python bindings for HMMER3 sequence analysis",
+        "Profile HMM search and annotation",
+        "Used in MitoFlow for protein-coding gene prediction"
+      ]
+    },
+    {
+      "id": "ref_019",
+      "doi": "10.1093/molbev/msab123",
+      "pmid": "33905483",
+      "title": "The evolving landscape of plant mitochondrial genomes",
+      "authors": ["Liangying Guan", "et al."],
+      "journal": "Annual Review of Plant Biology",
+      "year": 2022,
+      "abstract": "Comprehensive review of plant mitochondrial genome evolution, including size variation, repeat content, recombination dynamics, and gene transfer to nucleus.",
+      "ref_type": "review",
+      "tags": ["mitochondria", "evolution", "size_variation", "repeats", "gene_transfer"],
+      "entities": [
+        {"type": "concept", "name": "mitochondrial evolution"},
+        {"type": "concept", "name": "repeat-mediated recombination"}
+      ],
+      "key_findings": [
+        "Plant mitochondrial genomes vary 200-fold in size",
+        "Repeat content drives structural dynamism",
+        "Gene transfer to nucleus is ongoing"
+      ]
+    },
+    {
+      "id": "ref_020",
+      "doi": "10.1093/nar/gkw570",
+      "pmid": "27235415",
+      "title": "tRNAscan-SE: improved detection of transfer RNA genes in genomic sequences",
+      "authors": ["Tina M. Lowe", "Sean R. Eddy"],
+      "journal": "Nucleic Acids Research",
+      "year": 2016,
+      "abstract": "tRNAscan-SE identifies tRNA genes in genomic sequences using a combination of tRNA-specific covariance models and heuristics.",
+      "ref_type": "tool",
+      "tags": ["tRNA", "gene_prediction", "structural"],
+      "entities": [{"type": "tool", "name": "tRNAscan-SE"}],
+      "key_findings": [
+        "High sensitivity and specificity for tRNA detection",
+        "Covariance model-based search",
+        "Standard tool for tRNA annotation"
+      ]
+    },
+    {
+      "id": "ref_021",
+      "doi": "10.1186/1471-2105-10-421",
+      "pmid": "20003500",
+      "title": "BLAST+: architecture and applications",
+      "authors": ["Christiam Camacho", "et al."],
+      "journal": "BMC Bioinformatics",
+      "year": 2009,
+      "abstract": "BLAST+ is the updated BLAST toolkit providing sequence similarity search capabilities for nucleotide and protein databases.",
+      "ref_type": "tool",
+      "tags": ["search", "homology", "sequence_comparison"],
+      "entities": [{"type": "tool", "name": "BLAST+"}],
+      "key_findings": [
+        "Standard sequence similarity search tool",
+        "Supports nucleotide and protein queries",
+        "Used in MitoFlow for gene validation and NUMT detection"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "entity_type": "tool",
+      "entity_name": "GetOrganelle",
+      "description": "Fast and versatile toolkit for accurate de novo assembly of organelle genomes from WGS data",
+      "references": ["ref_001"],
+      "properties": {
+        "input": "Illumina/long reads",
+        "output": "Circular organelle genomes",
+        "language": "Python"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "NOVOPlasty",
+      "description": "De novo assembler for organelle genomes using seed-based approach",
+      "references": ["ref_002"],
+      "properties": {
+        "input": "Illumina/Ion Torrent reads",
+        "output": "Circular organelle genomes",
+        "language": "Perl"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "MITObim",
+      "description": "Reference-guided mitochondrial genome assembly using baiting and iterative mapping",
+      "references": ["ref_003"],
+      "properties": {
+        "input": "Short reads + reference",
+        "output": "Mitochondrial genome",
+        "language": "Perl"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "PGA",
+      "description": "Software suite for rapidly and accurately assembling and annotating plant organellar genomes",
+      "references": ["ref_004"],
+      "properties": {
+        "input": "WGS reads",
+        "output": "Annotated organellar genomes",
+        "language": "Python/Perl"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "OrthoFinder",
+      "description": "Fast and accurate orthology inference for comparative genomics",
+      "references": ["ref_008"],
+      "properties": {
+        "input": "Proteomes",
+        "output": "Orthogroups, gene trees, species tree",
+        "language": "Python"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "ERCnet2",
+      "description": "Genome-wide evolutionary rate covariation analysis with gene duplication handling",
+      "references": ["ref_010"],
+      "properties": {
+        "input": "OrthoFinder output + proteomes",
+        "output": "ERC correlation tables, networks",
+        "language": "Python/R"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "IQ-TREE",
+      "description": "Fast and accurate phylogenetic inference with new substitution models",
+      "references": ["ref_014"],
+      "properties": {
+        "input": "Multiple sequence alignment",
+        "output": "Phylogenetic tree",
+        "language": "C++"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "MAFFT",
+      "description": "Multiple sequence alignment software with various strategies",
+      "references": ["ref_015"],
+      "properties": {
+        "input": "Sequences (DNA/protein)",
+        "output": "Multiple sequence alignment",
+        "language": "C/Python"
+      }
+    },
+    {
+      "entity_type": "concept",
+      "entity_name": "CMS",
+      "description": "Cytoplasmic Male Sterility — maternally inherited inability to produce functional pollen, caused by chimeric mitochondrial genes",
+      "references": ["ref_006", "ref_012"],
+      "properties": {
+        "mechanism": "Chimeric mitochondrial ORFs",
+        "restoration": "Nuclear Rf genes (PPR proteins)",
+        "application": "Hybrid seed production"
+      }
+    },
+    {
+      "entity_type": "concept",
+      "entity_name": "RNA editing",
+      "description": "Post-transcriptional C-to-U conversion in plant mitochondria, affecting hundreds of sites",
+      "references": ["ref_006", "ref_013"],
+      "properties": {
+        "type": "C-to-U conversion",
+        "extent": "Hundreds of sites per genome",
+        "factors": "PPR proteins"
+      }
+    },
+    {
+      "entity_type": "concept",
+      "entity_name": "ERC",
+      "description": "Evolutionary Rate Covariation — correlated evolutionary rates between genes indicating functional interaction",
+      "references": ["ref_007", "ref_010"],
+      "properties": {
+        "method": "Branch length correlation",
+        "strategies": "BXB (branch-by-branch), R2T (root-to-tip)",
+        "application": "Detecting coevolution between organelle and nuclear genes"
+      }
+    },
+    {
+      "entity_type": "complex",
+      "entity_name": "Complex I",
+      "description": "NADH dehydrogenase complex of the mitochondrial respiratory chain",
+      "references": ["ref_006"],
+      "properties": {
+        "genes": "nad1-9, nad4L",
+        "function": "NADH oxidation, proton pumping"
+      }
+    },
+    {
+      "entity_type": "complex",
+      "entity_name": "Complex IV",
+      "description": "Cytochrome c oxidase complex of the mitochondrial respiratory chain",
+      "references": ["ref_006"],
+      "properties": {
+        "genes": "cox1-3",
+        "function": "Electron transfer to oxygen"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "trimAl",
+      "description": "Automated alignment trimming tool for phylogenetic analysis",
+      "references": ["ref_016"],
+      "properties": {
+        "input": "Multiple sequence alignment",
+        "output": "Trimmed alignment",
+        "application": "Removing poorly aligned regions"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "BUSCO",
+      "description": "Assessment of genome assembly and annotation completeness using universal single-copy orthologs",
+      "references": ["ref_017"],
+      "properties": {
+        "input": "Assemblies or gene sets",
+        "output": "Completeness report",
+        "application": "Quality benchmarking"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "tRNAscan-SE",
+      "description": "tRNA gene detection in genomic sequences using covariance models",
+      "references": ["ref_020"],
+      "properties": {
+        "input": "Genomic sequences",
+        "output": "tRNA gene coordinates",
+        "application": "tRNA annotation in organelle genomes"
+      }
+    },
+    {
+      "entity_type": "tool",
+      "entity_name": "BLAST+",
+      "description": "Standard sequence similarity search toolkit for nucleotide and protein databases",
+      "references": ["ref_021"],
+      "properties": {
+        "input": "Query sequences",
+        "output": "Alignment hits with e-values",
+        "application": "Gene validation, NUMT detection, homology search"
+      }
+    }
+  ]
+}

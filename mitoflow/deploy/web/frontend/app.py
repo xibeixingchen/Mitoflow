@@ -1,313 +1,241 @@
-"""MitoFlow Web Frontend - Streamlit."""
+"""MitoFlow AI — Plant Mitochondrial Genomics Platform.
+Inspired by ScienceClaw's professional chat UI design.
+"""
 
 from __future__ import annotations
-import os
-import time
-from pathlib import Path
+import os, json, time, requests, streamlit as st
 
-import requests
-import streamlit as st
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8002")
 
-# Configuration
-API_URL = os.getenv("API_URL", "http://localhost:8000")
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+# ── Provider presets with icons ───────────────────────────────────────
+PRESETS = [
+    {"key": "deepseek",      "name": "DeepSeek",           "icon": "🦈", "proto": "openai",    "base": "https://api.deepseek.com/v1",                       "models": ["deepseek-chat","deepseek-reasoner"],                                "desc": "高性价比推理"},
+    {"key": "deepseek_code", "name": "DeepSeek Code (Claude协议)","icon":"💻","proto":"anthropic","base":"https://api.deepseek.com/anthropic",          "models": ["deepseek-v4-pro","deepseek-v4-flash"],                             "desc": "DeepSeek Anthropic 兼容"},
+    {"key": "zhipu",         "name": "GLM (智谱)",           "icon": "🧠", "proto": "openai",    "base": "https://open.bigmodel.cn/api/paas/v4",               "models": ["glm-4-plus","glm-4-flash"],                                         "desc": "国产中文理解"},
+    {"key": "moonshot",      "name": "Kimi (月之暗面)",        "icon": "🌙", "proto": "openai",    "base": "https://api.moonshot.cn/v1",                         "models": ["moonshot-v1-8k","moonshot-v1-32k"],                                "desc": "长上下文"},
+    {"key": "kimicode",      "name": "Kimi Code",            "icon": "🔧", "proto": "anthropic", "base": "https://api.kimi.com/coding/",                       "models": ["K2.6"],                                                            "desc": "Coding 专用 Anthropic 协议"},
+    {"key": "qwen",          "name": "Qwen (通义千问)",        "icon": "☁️", "proto": "openai",    "base": "https://dashscope.aliyuncs.com/compatible-mode/v1",  "models": ["qwen-plus","qwen-max"],                                            "desc": "阿里多语言"},
+    {"key": "baichuan",      "name": "Baichuan (百川)",       "icon": "🌊", "proto": "openai",    "base": "https://api.baichuan-ai.com/v1",                     "models": ["Baichuan4","Baichuan3-Turbo"],                                     "desc": "中文推理"},
+    {"key": "openai",        "name": "OpenAI",               "icon": "⚡", "proto": "openai",    "base": "https://api.openai.com/v1",                          "models": ["gpt-4o","gpt-4o-mini"],                                            "desc": "综合能力强"},
+    {"key": "claude",        "name": "Claude (Anthropic)",   "icon": "🔮", "proto": "anthropic", "base": "",                                                  "models": ["claude-sonnet-4-20250514","claude-haiku-4-5-20251001"],            "desc": "最强推理"},
+    {"key": "openrouter",    "name": "OpenRouter",           "icon": "🌐", "proto": "openai",    "base": "https://openrouter.ai/api/v1",                       "models": ["deepseek/deepseek-chat","anthropic/claude-sonnet-4"],              "desc": "200+ 模型网关"},
+    {"key": "ollama",        "name": "Ollama (本地)",          "icon": "🏠", "proto": "openai",    "base": "http://localhost:11434/v1",                           "models": ["llama3","qwen2.5"],                                                "desc": "本地离线"},
+    {"key": "custom",        "name": "Custom / vLLM",        "icon": "⚙️", "proto": "openai",    "base": "",                                                  "models": [""],                                                                "desc": "任意兼容端点"},
+]
 
-st.set_page_config(
-    page_title="MitoFlow Web",
-    page_icon="🧬",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="MitoFlow AI", page_icon="🧬", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS
+# ── CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #1f77b4;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #666;
-    }
-    .info-box {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #1f77b4;
-    }
+#MainMenu, footer, .stDeployButton { display: none; }
+.chat-container { max-width: 880px; margin: 0 auto; }
+
+/* Welcome */
+.welcome-title { font-size: 2rem; font-weight: 700; text-align: center; margin: 1.5rem 0 0.3rem; }
+.welcome-sub { text-align: center; color: #888; margin-bottom: 1rem; font-size: 0.9rem; }
+.skill-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin: 0.8rem 0 1.5rem; }
+
+/* Tool cards */
+.tool-card { background: #f5f7fa; border-radius: 8px; padding: 0.5rem 1rem; margin: 0.3rem 0; font-size: 0.82rem; border-left: 3px solid #4A90D9; }
+
+/* Sidebar */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #f8fafb 0%, #f0f4f8 100%); }
+.sidebar-header { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem; }
+.sidebar-sub { font-size: 0.78rem; color: #999; margin-bottom: 0.8rem; }
+
+/* Model card */
+.model-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; }
+.model-card .name { font-weight: 600; font-size: 0.9rem; }
+.model-card .desc { font-size: 0.75rem; color: #888; }
+
+/* Chat messages */
+[data-testid="stChatMessage"] { border-radius: 12px; }
 </style>
 """, unsafe_allow_html=True)
 
+# ── Session State ────────────────────────────────────────────────────
+for k, v in {"session_id": None, "messages": [], "lang": "en"}.items():
+    if k not in st.session_state: st.session_state[k] = v
 
-def check_api_health():
-    """Check if API is available."""
-    try:
-        response = requests.get(f"{API_URL}/api/health", timeout=5)
-        return response.status_code == 200
-    except:
-        return False
-
-
-def upload_file(file, name, threads, skip_trna, skip_rrna, skip_qc):
-    """Upload file and create annotation task."""
-    files = {"file": file}
-    data = {
-        "name": name,
-        "threads": threads,
-        "skip_trna": skip_trna,
-        "skip_rrna": skip_rrna,
-        "skip_qc": skip_qc,
-    }
-    
-    response = requests.post(
-        f"{API_URL}/api/annotate",
-        files=files,
-        data=data,
-        timeout=30,
-    )
-    return response
-
-
-def get_task_status(task_id):
-    """Get task status."""
-    response = requests.get(f"{API_URL}/api/tasks/{task_id}", timeout=10)
-    return response
-
-
-def download_results(task_id):
-    """Download results."""
-    response = requests.get(
-        f"{API_URL}/api/results/{task_id}/download",
-        timeout=60,
-        stream=True,
-    )
-    return response
-
-
-# Sidebar
+# ── Sidebar ──────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("https://img.shields.io/badge/MitoFlow-Web-blue", width=200)
-    st.markdown("---")
-    
-    st.header("About")
-    st.info(
-        "MitoFlow is a modern plant mitochondrial genome "
-        "annotation and analysis platform."
+    st.markdown('<div class="sidebar-header">🧬 MitoFlow AI</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-sub">Plant Mitochondrial Genomics Platform</div>', unsafe_allow_html=True)
+
+    lang = st.toggle("中文", value=st.session_state.lang == "zh")
+    st.session_state.lang = "zh" if lang else "en"
+    L = st.session_state.lang
+
+    T = {
+        "en": {
+            "provider": "Provider", "model": "Model", "api_key": "API Key",
+            "api_key_help": "Leave empty to use environment variable", "base_url": "Endpoint",
+            "new_chat": "New Chat", "placeholder": "Ask any question about plant mitochondrial genomics...",
+            "thinking": "Analyzing...",
+            "error_api": "Cannot connect to backend API.",
+            "welcome_title": "Plant Mitochondrial Genomics AI",
+            "welcome_sub": "Multi-agent platform — gene annotation, QC, comparative genomics, ERC, CMS, phylogenetics, and more.",
+            "suggestions": [
+                "What does cox1 encode?",
+                "How does RNA editing work?",
+                "What is cytoplasmic male sterility?",
+                "List organelle assembly tools",
+                "Which genes are trans-spliced?",
+                "Explain ERC coevolution analysis",
+            ],
+            "api_ready": "Backend Connected", "api_down": "Backend Offline",
+            "session": "Session", "tool_calls": "Tool Calls",
+            "upload_fasta": "Upload FASTA", "sample_name": "Sample Name",
+            "threads": "Threads", "start_btn": "Start Annotation",
+            "task_id": "Task", "annotation": "Run Annotation",
+            "mitoflow_modules": "MitoFlow Modules",
+        },
+        "zh": {
+            "provider": "模型提供商", "model": "模型选择", "api_key": "API 密钥",
+            "api_key_help": "留空使用环境变量", "base_url": "接口地址",
+            "new_chat": "新对话", "placeholder": "询问植物线粒体基因组学的问题...",
+            "thinking": "思考分析中...",
+            "error_api": "无法连接后端服务",
+            "welcome_title": "植物线粒体基因组学 AI 平台",
+            "welcome_sub": "多智能体平台 — 基因注释、质控、比较基因组、ERC 协进化、CMS 检测、系统发育。",
+            "suggestions": [
+                "cox1 基因编码什么？",
+                "RNA 编辑如何影响基因注释？",
+                "什么是细胞质雄性不育（CMS）？",
+                "列出细胞器基因组组装工具",
+                "哪些基因需要反式剪接？",
+                "解释 ERC 协进化分析流程",
+            ],
+            "api_ready": "后端已连接", "api_down": "后端离线",
+            "session": "会话", "tool_calls": "工具调用",
+            "upload_fasta": "上传 FASTA 文件", "sample_name": "样本名称",
+            "threads": "线程数", "start_btn": "开始注释",
+            "task_id": "任务", "annotation": "运行注释",
+            "mitoflow_modules": "MitoFlow 模块",
+        },
+    }[L]
+
+    st.divider()
+
+    # ── Provider selection (ScienceClaw ModelSettings style) ──
+    st.caption(f"🔌 {T['provider']}")
+    preset_idx = st.selectbox(
+        T["provider"], range(len(PRESETS)),
+        format_func=lambda i: f"{PRESETS[i]['icon']} {PRESETS[i]['name']}",
+        label_visibility="collapsed",
     )
-    
-    st.markdown("---")
-    st.header("Resources")
-    st.markdown("- [Documentation](https://github.com/mitoflow/mitoflow)")
-    st.markdown("- [GitHub](https://github.com/mitoflow/mitoflow)")
-    st.markdown("- [Report Issues](https://github.com/mitoflow/mitoflow/issues)")
+    preset = PRESETS[preset_idx]
+    st.caption(f"_{preset['desc']}_")
 
+    model = st.selectbox(T["model"], preset["models"] if preset["models"][0] else [""],
+                         label_visibility="collapsed")
 
-# Main content
-st.markdown('<p class="main-header">🧬 MitoFlow Web</p>', unsafe_allow_html=True)
-st.markdown(
-    '<p class="sub-header">Plant Mitochondrial Genome Annotation Platform</p>',
-    unsafe_allow_html=True
-)
+    with st.expander("🔑 API Settings"):
+        api_key = st.text_input(T["api_key"], type="password", placeholder=T["api_key_help"])
+        base_url = st.text_input(T["base_url"], value=preset["base"],
+                                 disabled=(preset["key"] not in ("custom",)))
 
-# Check API health
-if not check_api_health():
-    st.error("⚠️ API server is not available. Please try again later.")
-    st.stop()
+    st.divider()
 
-st.success("✅ API server is ready")
+    # ── Actions ──
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button(f"✨ {T['new_chat']}", use_container_width=True):
+            st.session_state.session_id = None
+            st.session_state.messages = []
+            st.rerun()
+    with c2:
+        if st.session_state.session_id:
+            st.success(f"`{st.session_state.session_id[:8]}...`")
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🚀 New Analysis", "📊 Task Status", "ℹ️ Help"])
+    st.divider()
 
-with tab1:
-    st.header("Submit New Annotation Job")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # File upload
-        uploaded_file = st.file_uploader(
-            "Upload mitochondrial genome FASTA",
-            type=["fasta", "fa", "fas", "fna"],
-            help="Maximum file size: 100MB",
-        )
-        
-        if uploaded_file:
-            file_size = len(uploaded_file.getvalue())
-            st.info(f"File size: {file_size / 1024 / 1024:.2f} MB")
-            
-            if file_size > MAX_FILE_SIZE:
-                st.error("File too large! Maximum size is 100MB.")
-                st.stop()
-    
-    with col2:
-        # Parameters
-        st.subheader("Parameters")
-        
-        sample_name = st.text_input(
-            "Sample Name",
-            value="MyMito",
-            help="Name for this analysis",
-        )
-        
-        threads = st.slider(
-            "CPU Threads",
-            min_value=1,
-            max_value=8,
-            value=4,
-            help="Number of parallel threads",
-        )
-        
-        skip_trna = st.checkbox("Skip tRNA annotation", value=False)
-        skip_rrna = st.checkbox("Skip rRNA annotation", value=False)
-        skip_qc = st.checkbox("Skip QC checks", value=False)
-    
-    # Submit button
-    if uploaded_file is not None:
-        if st.button("🚀 Start Annotation", type="primary", use_container_width=True):
-            with st.spinner("Uploading and starting analysis..."):
-                try:
-                    response = upload_file(
-                        uploaded_file,
-                        sample_name,
-                        threads,
-                        skip_trna,
-                        skip_rrna,
-                        skip_qc,
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        task_id = result["task_id"]
-                        
-                        st.session_state["current_task_id"] = task_id
-                        st.success(f"Task created successfully! ID: {task_id[:8]}...")
-                        st.info("Go to 'Task Status' tab to monitor progress.")
-                    else:
-                        st.error(f"Error: {response.text}")
-                        
-                except Exception as e:
-                    st.error(f"Failed to submit task: {str(e)}")
+    # ── API Status ──
+    try:
+        resp = requests.get(f"{API_URL}/api/health", timeout=3)
+        st.success(f"🟢 {T['api_ready']}") if resp.status_code == 200 else st.error(f"🔴 {T['api_down']}")
+    except Exception:
+        st.error(f"🔴 {T['api_down']}")
 
-with tab2:
-    st.header("Check Task Status")
-    
-    # Task ID input
-    task_id = st.text_input(
-        "Task ID",
-        value=st.session_state.get("current_task_id", ""),
-        help="Enter your task ID to check status",
-    )
-    
-    if task_id:
-        if st.button("🔍 Check Status", use_container_width=True):
+    # ── Annotation & Modules ──
+    st.divider()
+    with st.expander(f"🔧 {T['annotation']}"):
+        uploaded_file = st.file_uploader(T["upload_fasta"], type=["fasta", "fa", "fas", "fna"])
+        sample_name = st.text_input(T["sample_name"], "MyMito")
+        threads = st.slider(T["threads"], 1, 8, 4)
+        if uploaded_file and st.button(f"🚀 {T['start_btn']}", use_container_width=True):
+            with st.spinner("Uploading..."):
+                files = {"file": uploaded_file}
+                data = {"name": sample_name, "threads": threads,
+                        "skip_trna": False, "skip_rrna": False, "skip_qc": False}
+                r = requests.post(f"{API_URL}/api/annotate", files=files, data=data, timeout=30)
+                if r.status_code == 200:
+                    st.success(f"{T['task_id']}: `{r.json()['task_id'][:8]}...`")
+
+# ── Main Chat ────────────────────────────────────────────────────────
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+
+if not st.session_state.messages:
+    st.markdown(f'<div class="welcome-title">🧬 {T["welcome_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="welcome-sub">{T["welcome_sub"]}</div>', unsafe_allow_html=True)
+    # Suggestion chips (ScienceClaw SuggestedQuestions style)
+    st.markdown('<div class="skill-chips">', unsafe_allow_html=True)
+    cols = st.columns(len(T["suggestions"]))
+    for i, s in enumerate(T["suggestions"]):
+        with cols[i]:
+            if st.button(s, key=f"sug_{i}", use_container_width=True):
+                st.session_state.messages.append({"role": "user", "content": s})
+                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Chat history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if msg.get("tools"):
+            with st.expander(T["tool_calls"]):
+                for tr in msg["tools"]:
+                    st.markdown(f'<div class="tool-card"><strong>{tr["name"]}</strong><br>{tr["content"][:300]}</div>',
+                                unsafe_allow_html=True)
+
+# Chat input
+if prompt := st.chat_input(T["placeholder"]):
+    if not st.session_state.session_id:
+        try:
+            r = requests.post(f"{API_URL}/api/ai/sessions", timeout=10)
+            if r.status_code == 200:
+                st.session_state.session_id = r.json()["session_id"]
+        except Exception:
+            st.error(T["error_api"]); st.stop()
+
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"): st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        with st.spinner(T["thinking"]):
             try:
-                response = get_task_status(task_id)
-                
-                if response.status_code == 200:
-                    task = response.json()
-                    
-                    # Status display
-                    status = task["status"]
-                    progress = task["progress"]
-                    message = task["message"]
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("Status", status.upper())
-                    
-                    with col2:
-                        st.metric("Progress", f"{progress}%")
-                    
-                    with col3:
-                        if status == "completed":
-                            st.metric("Result", "Ready ✅")
-                        elif status == "failed":
-                            st.metric("Result", "Failed ❌")
-                        else:
-                            st.metric("Result", "Pending ⏳")
-                    
-                    # Progress bar
-                    st.progress(progress / 100)
-                    st.info(message)
-                    
-                    # Download button
-                    if status == "completed":
-                        st.success("🎉 Annotation completed!")
-                        
-                        if st.button("📥 Download Results", type="primary"):
-                            with st.spinner("Downloading..."):
-                                try:
-                                    download_resp = download_results(task_id)
-                                    
-                                    if download_resp.status_code == 200:
-                                        st.download_button(
-                                            label="Save ZIP File",
-                                            data=download_resp.content,
-                                            file_name=f"mitoflow_results_{task_id[:8]}.zip",
-                                            mime="application/zip",
-                                        )
-                                    else:
-                                        st.error("Failed to download results")
-                                except Exception as e:
-                                    st.error(f"Download error: {str(e)}")
-                    
-                    elif status == "failed":
-                        st.error("Task failed. Please check the error message above.")
-                    
-                    else:
-                        # Auto-refresh for running tasks
-                        st.info("Task is running... Refresh this page to update status.")
-                        
+                payload = {"session_id": st.session_state.session_id, "message": prompt,
+                           "provider": preset["proto"], "model": model}
+                if api_key: payload["api_key"] = api_key
+                if base_url: payload["base_url"] = base_url
+
+                r = requests.post(f"{API_URL}/api/ai/chat", json=payload, timeout=180)
+                if r.status_code == 200:
+                    result = r.json()
+                    st.markdown(result["final_text"])
+                    tools = []
+                    if result.get("tool_results"):
+                        with st.expander(T["tool_calls"]):
+                            for tr in result["tool_results"]:
+                                st.markdown(f'<div class="tool-card"><strong>{tr["name"]}</strong><br>{tr["content"][:300]}</div>',
+                                            unsafe_allow_html=True)
+                                tools.append({"name": tr["name"], "content": tr["content"]})
+                    st.session_state.messages.append({
+                        "role": "assistant", "content": result["final_text"], "tools": tools})
                 else:
-                    st.error("Task not found")
-                    
+                    st.error(f"Error {r.status_code}: {r.text[:200]}")
             except Exception as e:
-                st.error(f"Error checking status: {str(e)}")
+                st.error(str(e))
 
-with tab3:
-    st.header("Help & Documentation")
-    
-    st.subheader("Input Requirements")
-    st.markdown("""
-    - **File format**: FASTA format (.fasta, .fa, .fas, .fna)
-    - **Max size**: 100 MB
-    - **Content**: Plant mitochondrial genome sequence
-    - **Contigs**: Single or multiple contigs accepted
-    """)
-    
-    st.subheader("Annotation Pipeline")
-    st.markdown("""
-    The annotation pipeline includes:
-    1. **Protein-coding genes** - HMM search against 46 mitochondrial gene profiles
-    2. **tRNA genes** - tRNAscan-SE + ARAGORN dual prediction
-    3. **rRNA genes** - Barrnap prediction
-    4. **Boundary correction** - Start/stop codon optimization
-    5. **QC checks** - Five-dimensional quality assessment (optional)
-    """)
-    
-    st.subheader("Output Files")
-    st.markdown("""
-    Results ZIP contains:
-    - `gff/` - GFF3 annotation files
-    - `genbank/` - GenBank format files
-    - `fasta/` - Extracted sequences (CDS, protein, tRNA, rRNA)
-    - `report/` - QC reports and statistics
-    """)
-    
-    st.subheader("Estimated Runtime")
-    st.markdown("""
-    | Genome Size | Runtime |
-    |-------------|---------|
-    | < 500 kb | 2-5 min |
-    | 500 kb - 1 Mb | 5-15 min |
-    | 1-5 Mb | 15-45 min |
-    | > 5 Mb | 1-2 hours |
-    """)
-
-# Footer
-st.markdown("---")
-st.caption("MitoFlow Web v0.1.0 | © 2024 MitoFlow Team")
+st.markdown('</div>', unsafe_allow_html=True)

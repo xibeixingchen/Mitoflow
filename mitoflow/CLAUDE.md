@@ -215,3 +215,53 @@ MitoFlow AI 平台开发过程中参考了以下开源项目：
 - **Web 前端**：FastAPI 直出 HTML5 单页应用，紫色→绿色渐变主题
 - **会话持久**：JSONL 消息 + JSON 元数据，重启不丢失
 - **工作空间**：每 session 独立目录，分析结果自动关联
+
+### 启动方式
+
+```bash
+# 1. 进入项目目录
+cd /home/jiazc/data16t/mito_genome/PMGA/mitoflow
+
+# 2. 激活 conda 环境 (Python 3.11 + DeepAgents)
+conda activate mitoflow-ai
+
+# 3. 启动 Web 服务 (单端口 8002, 含 HTML 前端 + API)
+python3 -m uvicorn deploy.web.backend.main:app --host 0.0.0.0 --port 8002
+
+# 4. 访问 (同网络)
+http://10.2.145.42:8002/
+
+# 5. 测试账号
+# Email: test@mitoflow.com  /  Password: 123456
+# 或注册新账号
+```
+
+### CLI 方式
+
+```bash
+# AI 对话 (交互模式)
+MITOFLOW_AI_PROVIDER=fake mitoflow ai-chat
+
+# 一键问答
+mitoflow ai-chat --prompt "cox1 基因编码什么蛋白？"
+
+# 指定 provider/model
+mitoflow ai-chat --provider openai --model deepseek-chat --prompt "..."
+```
+
+### 环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `ANTHROPIC_AUTH_TOKEN` | Anthropic 协议 API key (Kimi Code, DeepSeek Code, Claude) |
+| `ANTHROPIC_BASE_URL` | Anthropic 协议自定义端点 |
+| `OPENAI_API_KEY` | OpenAI 协议 API key (DeepSeek, GLM, Qwen 等) |
+| `OPENAI_BASE_URL` | OpenAI 协议自定义端点 |
+| `DEEPSEEK_API_KEY` | DeepSeek 专用 key |
+| `MITOFLOW_AI_PROVIDER` | 默认 provider: `fake` / `openai` / `anthropic` |
+
+### 运行测试
+
+```bash
+pytest tests/test_ai_*.py -v    # 63 个 AI 测试
+```

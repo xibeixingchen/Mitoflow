@@ -56,7 +56,7 @@ function setThemeWrapper(key: ThemeKey): void {
 
 .theme-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--surface);
   border-color: var(--accent);
 }
 

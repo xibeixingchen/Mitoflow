@@ -60,7 +60,7 @@ function select(key: string): void {
 
 .provider-card.active {
   border-color: var(--accent);
-  background: rgba(5, 150, 105, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .provider-icon {

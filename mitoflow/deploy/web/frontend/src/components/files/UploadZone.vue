@@ -208,7 +208,7 @@ function formatSize(bytes: number): string {
 }
 
 .file-delete:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
   color: var(--red);
 }
 

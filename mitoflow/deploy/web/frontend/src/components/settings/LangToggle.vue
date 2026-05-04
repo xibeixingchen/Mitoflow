@@ -58,7 +58,7 @@ function setLang(key: 'en' | 'zh'): void {
 
 .lang-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--surface);
   border-color: var(--accent);
 }
 </style>

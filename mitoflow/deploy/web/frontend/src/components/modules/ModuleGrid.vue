@@ -107,7 +107,7 @@ function onClick(item: ModuleDef | SkillDef): void {
 
 .grid-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 2px 12px rgba(5, 150, 105, 0.08);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 8%, transparent);
   transform: translateY(-1px);
 }
 
@@ -147,12 +147,12 @@ function onClick(item: ModuleDef | SkillDef): void {
 }
 
 .card-badge.job {
-  background: rgba(16, 185, 129, 0.12);
+  background: color-mix(in srgb, var(--green) 12%, transparent);
   color: var(--green);
 }
 
 .card-badge.read {
-  background: rgba(59, 130, 246, 0.12);
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
   color: var(--blue);
 }
 

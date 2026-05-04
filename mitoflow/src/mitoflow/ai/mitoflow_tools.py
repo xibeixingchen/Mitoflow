@@ -104,6 +104,28 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
 
     registry.register(
         ToolDefinition(
+            name="run_visualization",
+            description=(
+                "Generate visualization plots for a mitochondrial genome. "
+                "Supports circular genome maps (pycirclize), linear genome maps (pygenomeviz), "
+                "and OGDraw-quality maps (gbdraw). Input is an annotated GenBank file."
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "genbank_file": {"type": "string", "description": "Path to annotated GenBank (.gb) file."},
+                    "viz_type": {"type": "string", "enum": ["circular", "linear", "ogdraw", "gc"], "description": "circular/linear/ogdraw/gc"},
+                },
+                "required": ["genbank_file"],
+                "additionalProperties": False,
+            },
+            safety_level=SafetyLevel.WRITES_OUTPUT,
+            entry_points=[EntryPoint.CLI, EntryPoint.API, EntryPoint.WEB],
+        ),
+        run_visualization,
+    )
+    registry.register(
+        ToolDefinition(
             name="list_workspace_files",
             description=(
                 "List files in the current session workspace. Use this FIRST whenever "
@@ -155,6 +177,69 @@ def list_workspace_files(args: Dict[str, Any], context: ToolContext) -> Dict[str
             lines.append(f"- {f['name']} ({sz}, {f['type']})")
         content = "\n".join(lines)
     return {"content": content, "data": {"files": files[:20], "workspace": str(ws)}}
+
+
+def run_visualization(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
+    """Generate visualization plots for a mitochondrial genome."""
+    from pathlib import Path as _Path
+    input_arg = args["genbank_file"]
+    gb_path = _Path(input_arg)
+    if not gb_path.is_absolute():
+        session_ws = _Path("./mitoflow_workspace") / context.session_id
+        candidate = session_ws / input_arg
+        if candidate.exists():
+            gb_path = candidate
+        else:
+            # Check annotation artifacts
+            art_ws = _Path("./.mitoflow_ai_sessions") / context.session_id / "artifacts"
+            for cand in art_ws.rglob(input_arg):
+                gb_path = cand; break
+    if not gb_path.exists():
+        return {"content": f"GenBank file not found: {input_arg}", "data": {}}
+
+    viz_type = args.get("viz_type", "circular")
+    output_dir = _Path("./mitoflow_workspace") / context.session_id / "viz"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    results = []
+    try:
+        if viz_type == "circular":
+            from ..viz.circos_plot_v2 import plot_mito_genome
+            out = output_dir / f"{gb_path.stem}_circular.png"
+            plot_mito_genome(str(gb_path), genome_name=gb_path.stem, output_file=str(out))
+            results.append({"type": "circular", "file": str(out), "name": out.name})
+
+        elif viz_type == "linear":
+            from ..viz.linear import draw_linear_genome
+            out = output_dir / f"{gb_path.stem}_linear.png"
+            draw_linear_genome(gb_path, str(out))
+            results.append({"type": "linear", "file": str(out), "name": out.name})
+
+        elif viz_type == "ogdraw":
+            from ..viz.gbdraw_plot import check_gbdraw_available, draw_with_gbdraw
+            if check_gbdraw_available():
+                out = output_dir / f"{gb_path.stem}_ogdraw.png"
+                draw_with_gbdraw(gb_path, str(out))
+                results.append({"type": "ogdraw", "file": str(out), "name": out.name})
+            else:
+                return {"content": "gbdraw package is not available. Install with: pip install gbdraw", "data": {}}
+
+        elif viz_type == "gc":
+            from ..viz.gc_content import plot_gc_profile
+            out = output_dir / f"{gb_path.stem}_gc.png"
+            from Bio import SeqIO
+            rec = SeqIO.read(str(gb_path), "genbank")
+            plot_gc_profile(str(rec.seq), window=200, output_path=str(out), title=f"{gb_path.stem} GC Profile")
+            results.append({"type": "gc", "file": str(out), "name": out.name})
+
+        return {
+            "content": f"Generated {len(results)} visualization(s):\n" + "\n".join(
+                f"- {r['type']}: {r['name']}" for r in results
+            ),
+            "data": {"visualizations": results, "output_dir": str(output_dir)},
+        }
+    except Exception as e:
+        return {"content": f"Visualization failed: {e}", "data": {}}
 
 
 def list_mitoflow_modules(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:

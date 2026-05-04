@@ -238,7 +238,7 @@ const MODULES=[
   {id:'qc',name:'Quality Check',icon:'✅',desc:'5-D quality assessment, gold standard comparison, F1 scoring',badge:'read'},
   {id:'cms',name:'CMS Detection',icon:'🌾',desc:'Chimeric ORF detection, ML scoring, PPR binding prediction',badge:'job'},
   {id:'rna_edit',name:'RNA Editing',icon:'✏️',desc:'C-to-U site prediction, flanking context, VCF output',badge:'read'},
-  {id:'viz',name:'Visualization',icon:'📊',desc:'Circular/linear genome maps, GC plot, synteny visualization',badge:'read'},
+  {id:'viz',name:'Visualization',icon:'📊',desc:'Circular/linear/OGDraw genome maps, GC profile, synteny visualization',badge:'read',params:['genbank','type']},
   {id:'synteny',name:'Synteny',icon:'🔗',desc:'Gene order comparison, rearrangement detection',badge:'read'},
   {id:'phylo',name:'Phylogenetics',icon:'🌳',desc:'IQ-TREE/MAFFT trees, Ka/Ks analysis',badge:'job'},
   {id:'repeat',name:'Repeats & NUMTs',icon:'🔄',desc:'Repeat detection, NUMT identification',badge:'read'},

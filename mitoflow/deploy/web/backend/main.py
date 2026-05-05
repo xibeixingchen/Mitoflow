@@ -69,7 +69,7 @@ async def rate_limit_middleware(request: Request, call_next):
 UPLOAD_DIR = Path(os.getenv("MITOFLOW_UPLOAD_DIR", PROJECT_ROOT / "mitoflow_uploads"))
 RESULTS_DIR = Path(os.getenv("MITOFLOW_RESULTS_DIR", PROJECT_ROOT / "mitoflow_results"))
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500MB
+MAX_UPLOAD_SIZE = 100 * 1024 * 1024 * 1024  # 100GB
 ALLOWED_EXTENSIONS = {".fasta",".fa",".fas",".fna"}
 
 UPLOAD_DIR = UPLOAD_DIR.resolve()

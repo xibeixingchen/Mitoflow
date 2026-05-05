@@ -11,12 +11,22 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-_DB_DIR = Path(os.getenv("MITOFLOW_DATA_DIR", "./mitoflow_data"))
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_DB_DIR = Path(os.getenv("MITOFLOW_DATA_DIR", _PROJECT_ROOT / "mitoflow_data"))
 _DB_DIR.mkdir(parents=True, exist_ok=True)
 _DB_PATH = _DB_DIR / "users.db"
 
 # Simple JWT-like token using HMAC-SHA256 (no external deps)
-_SECRET = os.getenv("MITOFLOW_SECRET", hashlib.sha256(os.urandom(32)).hexdigest())
+_SECRET = os.getenv("MITOFLOW_SECRET")
+if not _SECRET:
+    import warnings
+    warnings.warn(
+        "MITOFLOW_SECRET is not set. JWT tokens will NOT survive server restarts. "
+        "Set MITOFLOW_SECRET to a persistent 64-char hex string for production.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+    _SECRET = hashlib.sha256(os.urandom(32)).hexdigest()
 
 
 def _get_db() -> sqlite3.Connection:
@@ -24,6 +34,13 @@ def _get_db() -> sqlite3.Connection:
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     return db
+
+
+def _add_column_if_missing(db: sqlite3.Connection, table: str, column: str, dtype: str) -> None:
+    """Add a column if it doesn't already exist."""
+    cols = [r[1] for r in db.execute(f"PRAGMA table_info({table})")]
+    if column not in cols:
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {dtype}")
 
 
 def init_db() -> None:
@@ -35,10 +52,17 @@ def init_db() -> None:
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             api_key TEXT DEFAULT '',
+            institution TEXT DEFAULT '',
+            role TEXT DEFAULT '',
+            degree TEXT DEFAULT '',
             created_at REAL NOT NULL,
             last_login REAL NOT NULL
         )
     """)
+    # Migrate existing tables: add new columns if missing
+    _add_column_if_missing(db, "users", "institution", "TEXT DEFAULT ''")
+    _add_column_if_missing(db, "users", "role", "TEXT DEFAULT ''")
+    _add_column_if_missing(db, "users", "degree", "TEXT DEFAULT ''")
     db.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,6 +166,9 @@ def login_user(email: str, password: str) -> Dict[str, Any]:
                 "id": row["id"],
                 "email": row["email"],
                 "username": row["username"],
+                "institution": row["institution"] or "",
+                "role": row["role"] or "",
+                "degree": row["degree"] or "",
                 "api_key": row["api_key"] or "",
             },
         }
@@ -159,7 +186,15 @@ def get_user_by_token(token: str) -> Optional[Dict[str, Any]]:
         row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
         if not row:
             return None
-        return {"id": row["id"], "email": row["email"], "username": row["username"], "api_key": row["api_key"] or ""}
+        return {
+            "id": row["id"],
+            "email": row["email"],
+            "username": row["username"],
+            "institution": row["institution"] or "",
+            "role": row["role"] or "",
+            "degree": row["degree"] or "",
+            "api_key": row["api_key"] or "",
+        }
     finally:
         db.close()
 
@@ -171,6 +206,53 @@ def update_api_key(user_id: int, api_key: str) -> bool:
         db.execute("UPDATE users SET api_key = ? WHERE id = ?", (api_key, user_id))
         db.commit()
         return True
+    finally:
+        db.close()
+
+
+def update_profile(user_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Update user profile fields. Returns updated user dict or error."""
+    allowed = {"username", "institution", "role", "degree"}
+    updates = {k: v for k, v in data.items() if k in allowed}
+    if not updates:
+        return {"error": "No valid fields to update"}
+    db = _get_db()
+    try:
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        values = list(updates.values()) + [user_id]
+        db.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)
+        db.commit()
+        row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return {
+            "id": row["id"],
+            "email": row["email"],
+            "username": row["username"],
+            "institution": row["institution"] or "",
+            "role": row["role"] or "",
+            "degree": row["degree"] or "",
+            "api_key": row["api_key"] or "",
+        }
+    except sqlite3.IntegrityError:
+        return {"error": "Username already taken"}
+    finally:
+        db.close()
+
+
+def change_password(user_id: int, old_password: str, new_password: str) -> Dict[str, Any]:
+    """Change user password after verifying old password."""
+    if len(new_password) < 6:
+        return {"error": "New password must be at least 6 characters"}
+    db = _get_db()
+    try:
+        row = db.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            return {"error": "User not found"}
+        if not _verify_password(old_password, row["password_hash"]):
+            return {"error": "Current password is incorrect"}
+        new_hash = _hash_password(new_password)
+        db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+        db.commit()
+        return {"ok": True}
     finally:
         db.close()
 

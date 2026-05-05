@@ -1,6 +1,14 @@
 <template>
   <div class="chat-input">
     <button
+      class="tool-btn"
+      type="button"
+      :disabled="loading"
+      @click="emit('tools')"
+    >
+      🔧
+    </button>
+    <button
       class="upload-btn"
       type="button"
       :disabled="loading"
@@ -11,7 +19,8 @@
     <textarea
       ref="textareaRef"
       v-model="text"
-      :placeholder="t('chatPlaceholder')"
+      :aria-label="t('chat.placeholder')"
+      :placeholder="t('chat.placeholder')"
       :disabled="loading"
       rows="1"
       @keydown="onKeydown"
@@ -21,6 +30,7 @@
       class="send-btn"
       type="button"
       :disabled="loading || !text.trim()"
+      :aria-label="loading ? 'Sending message' : 'Send message'"
       @click="handleSend"
     >
       ➤
@@ -29,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
@@ -39,6 +49,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'send', text: string): void
   (e: 'upload'): void
+  (e: 'tools'): void
 }>()
 
 const { t } = useI18n()
@@ -79,10 +90,6 @@ watch(() => props.loading, (val) => {
     nextTick(() => textareaRef.value?.focus())
   }
 })
-
-function nextTick(fn: () => void) {
-  Promise.resolve().then(fn)
-}
 </script>
 
 <style scoped>
@@ -96,6 +103,7 @@ function nextTick(fn: () => void) {
   padding: 0.4rem 0.6rem;
 }
 
+.tool-btn,
 .upload-btn {
   background: none;
   border: none;
@@ -107,10 +115,12 @@ function nextTick(fn: () => void) {
   transition: opacity 0.2s;
 }
 
+.tool-btn:hover,
 .upload-btn:hover {
   opacity: 1;
 }
 
+.tool-btn:disabled,
 .upload-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;

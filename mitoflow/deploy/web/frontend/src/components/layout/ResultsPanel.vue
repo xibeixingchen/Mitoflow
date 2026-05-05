@@ -1,5 +1,10 @@
 <template>
-  <aside class="results-panel" :class="{ open }">
+  <aside
+    class="results-panel"
+    :class="{ open }"
+    role="complementary"
+    aria-label="Results panel"
+  >
     <div class="panel-tabs">
       <button
         v-for="tab in tabs"
@@ -183,5 +188,17 @@ function onClose(): void {
 .panel-close:hover {
   background: var(--bg);
   color: var(--text);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .results-panel {
+    width: 100vw;
+    top: 44px;
+    z-index: 90;
+  }
+  .tab-label {
+    display: none;
+  }
 }
 </style>

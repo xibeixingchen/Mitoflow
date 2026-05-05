@@ -1,8 +1,18 @@
 <template>
-  <aside class="app-drawer" :class="{ open }">
+  <aside
+    class="app-drawer"
+    :class="{ open }"
+    role="complementary"
+    aria-label="Session drawer"
+    :aria-expanded="open"
+  >
     <div class="drawer-header">
       <span class="drawer-title">{{ t('chat.session') }}</span>
-      <button class="close-btn" @click="onClose">
+      <button
+        class="close-btn"
+        aria-label="Close session drawer"
+        @click="onClose"
+      >
         ✕
       </button>
     </div>
@@ -12,27 +22,57 @@
         v-model="searchQuery"
         type="text"
         class="search-input"
+        :aria-label="t('chat.searchSessions')"
         :placeholder="t('chat.searchSessions')"
       />
     </div>
 
-    <button class="new-session-btn" @click="onNewSession">
+    <button
+      class="new-session-btn"
+      :aria-label="t('chat.newChat')"
+      @click="onNewSession"
+    >
       <span>+</span>
       <span>{{ t('chat.newChat') }}</span>
     </button>
 
-    <div class="session-list">
+    <div class="session-list" role="list" aria-label="Chat sessions">
+      <!-- Skeleton loading -->
+      <template v-if="sessionStore.loading">
+        <div v-for="n in 6" :key="n" class="session-item skeleton-row">
+          <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex-shrink:0;" />
+          <div style="flex:1;display:flex;flex-direction:column;gap:0.375rem;">
+            <div class="skeleton skeleton-text" style="width:65%;" />
+            <div class="skeleton skeleton-text short" />
+          </div>
+        </div>
+      </template>
+
       <div
         v-for="session in filteredSessions"
         :key="session.id"
         class="session-item"
         :class="{ active: sessionStore.activeSessionId === session.id }"
+        role="listitem"
+        tabindex="0"
         @click="onSelect(session.id)"
-        @contextmenu.prevent="showContextMenu($event, session.id)"
+        @keydown.enter="onSelect(session.id)"
       >
-        <span class="session-pin" v-if="session.pinned">📌</span>
-        <span class="session-name">{{ session.name }}</span>
-        <span class="session-preview">{{ session.first_message }}</span>
+        <div class="session-info">
+          <span class="session-name">
+            <span v-if="session.pinned" class="pin-icon">📌</span>
+            {{ session.name }}
+          </span>
+          <span class="session-preview">{{ session.first_message || t('chat.noPreview') }}</span>
+        </div>
+        <div class="session-actions">
+          <button class="action-btn" :title="t('chat.rename')" @click.stop="onRenameInline(session.id)">✏️</button>
+          <button class="action-btn" :title="session.pinned ? t('chat.unpin') : t('chat.pin')" @click.stop="onTogglePinInline(session.id, !session.pinned)">
+            {{ session.pinned ? '📍' : '📌' }}
+          </button>
+          <button class="action-btn" :title="t('chat.export')" @click.stop="showExportMenu(session.id, $event)">⬇️</button>
+          <button class="action-btn danger" :title="t('chat.delete')" @click.stop="onDeleteInline(session.id)">🗑️</button>
+        </div>
       </div>
 
       <div v-if="filteredSessions.length === 0" class="no-sessions">
@@ -40,28 +80,22 @@
       </div>
     </div>
 
+    <!-- Export Menu -->
+    <div
+      v-if="exportMenu.visible"
+      class="export-menu"
+      :style="{ top: `${exportMenu.y}px`, left: `${exportMenu.x}px` }"
+      @click.stop
+    >
+      <button class="export-item" @click="doExport('md')">{{ t('chat.exportMd') }}</button>
+      <button class="export-item" @click="doExport('txt')">{{ t('chat.exportTxt') }}</button>
+    </div>
+
     <div class="drawer-footer">
       <span class="status-dot" :class="{ online: isOnline }" />
       <span class="status-text">{{ isOnline ? t('status.connected') : t('status.offline') }}</span>
     </div>
 
-    <!-- Context Menu -->
-    <div
-      v-if="contextMenu.visible"
-      class="context-menu"
-      :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
-      @click.stop
-    >
-      <button class="ctx-item" @click="onRename">
-        {{ t('chat.rename') }}
-      </button>
-      <button class="ctx-item" @click="onTogglePin">
-        {{ pinnedTarget ? t('chat.unpin') : t('chat.pin') }}
-      </button>
-      <button class="ctx-item ctx-danger" @click="onDelete">
-        {{ t('chat.delete') }}
-      </button>
-    </div>
   </aside>
 </template>
 
@@ -69,6 +103,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSessionStore } from '@/stores/session'
+import { fetchMessages } from '@/api/ai'
+import { apiClient } from '@/api/client'
 
 const props = defineProps<{
   open: boolean
@@ -84,18 +120,25 @@ const { t } = useI18n()
 const sessionStore = useSessionStore()
 
 const searchQuery = ref('')
-const isOnline = ref(true)
-const contextMenu = ref({ visible: false, x: 0, y: 0, sessionId: '' })
+const isOnline = ref(false)
+const exportMenu = ref({ visible: false, x: 0, y: 0, sessionId: '' })
+
+// Check backend health periodically
+async function checkHealth() {
+  try {
+    const res = await apiClient.get('/health')
+    isOnline.value = res.data?.status === 'healthy'
+  } catch {
+    isOnline.value = false
+  }
+}
+checkHealth()
+setInterval(checkHealth, 30000)  // every 30s
 
 const filteredSessions = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return sessionStore.sortedSessions
   return sessionStore.searchSessions(q)
-})
-
-const pinnedTarget = computed(() => {
-  const s = sessionStore.sessions.find((s) => s.id === contextMenu.value.sessionId)
-  return s?.pinned || false
 })
 
 function onClose(): void {
@@ -110,8 +153,31 @@ function onNewSession(): void {
   emit('newSession')
 }
 
-function showContextMenu(event: MouseEvent, sessionId: string): void {
-  contextMenu.value = {
+/* Inline actions */
+
+async function onRenameInline(id: string): Promise<void> {
+  const current = sessionStore.sessions.find((s) => s.id === id)
+  if (!current) return
+  const name = window.prompt(t('chat.renamePrompt') || 'Rename session:', current.name)
+  if (name && name !== current.name) {
+    await sessionStore.renameSession(id, name)
+  }
+}
+
+async function onTogglePinInline(id: string, pinned: boolean): Promise<void> {
+  await sessionStore.pinSession(id, pinned)
+}
+
+async function onDeleteInline(id: string): Promise<void> {
+  if (window.confirm(t('chat.deleteConfirm') || 'Delete this session?')) {
+    await sessionStore.deleteSession(id)
+  }
+}
+
+/* Export menu */
+
+function showExportMenu(sessionId: string, event: MouseEvent): void {
+  exportMenu.value = {
     visible: true,
     x: event.clientX,
     y: event.clientY,
@@ -119,45 +185,43 @@ function showContextMenu(event: MouseEvent, sessionId: string): void {
   }
 }
 
-function hideContextMenu(): void {
-  contextMenu.value.visible = false
+function hideExportMenu(): void {
+  exportMenu.value.visible = false
 }
 
-async function onRename(): Promise<void> {
-  const id = contextMenu.value.sessionId
-  const current = sessionStore.sessions.find((s) => s.id === id)
-  if (!current) return
-  const name = window.prompt('Rename session:', current.name)
-  if (name && name !== current.name) {
-    await sessionStore.renameSession(id, name)
+async function doExport(format: 'md' | 'txt'): Promise<void> {
+  const id = exportMenu.value.sessionId
+  hideExportMenu()
+  try {
+    const resp = await fetchMessages(id)
+    const messages = resp.messages || []
+    let content = ''
+    if (format === 'md') {
+      content = messages.map((m) => `**${m.role}:**\n\n${m.content}\n\n---\n`).join('\n')
+    } else {
+      content = messages.map((m) => `[${m.role}]\n${m.content}\n`).join('\n---\n\n')
+    }
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const session = sessionStore.sessions.find((s) => s.id === id)
+    const filename = `${session?.name || 'session'}_${id.slice(0, 8)}.${format}`
+    a.download = filename.replace(/[^a-zA-Z0-9\-_\.]/g, '_')
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    alert(t('chat.exportFailed') || 'Export failed')
   }
-  hideContextMenu()
-}
-
-async function onTogglePin(): Promise<void> {
-  const id = contextMenu.value.sessionId
-  const s = sessionStore.sessions.find((s) => s.id === id)
-  if (s) {
-    await sessionStore.pinSession(id, !s.pinned)
-  }
-  hideContextMenu()
-}
-
-async function onDelete(): Promise<void> {
-  const id = contextMenu.value.sessionId
-  if (window.confirm(t('chat.deleteConfirm'))) {
-    await sessionStore.deleteSession(id)
-  }
-  hideContextMenu()
 }
 
 onMounted(() => {
   sessionStore.loadSessions()
-  document.addEventListener('click', hideContextMenu)
+  document.addEventListener('click', hideExportMenu)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', hideContextMenu)
+  document.removeEventListener('click', hideExportMenu)
 })
 </script>
 
@@ -261,8 +325,8 @@ onBeforeUnmount(() => {
 
 .session-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -289,11 +353,17 @@ onBeforeUnmount(() => {
   border-radius: 0 2px 2px 0;
 }
 
-.session-pin {
+.session-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pin-icon {
   font-size: 0.625rem;
-  position: absolute;
-  right: 0.5rem;
-  top: 0.5rem;
+  margin-right: 0.25rem;
 }
 
 .session-name {
@@ -311,6 +381,42 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.session-actions {
+  display: flex;
+  gap: 0.125rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.session-item:hover .session-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sub);
+  transition: background 0.15s;
+}
+
+.action-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.action-btn.danger:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
 }
 
 .no-sessions {
@@ -341,8 +447,29 @@ onBeforeUnmount(() => {
   background: var(--green);
 }
 
-/* Context Menu */
-.context-menu {
+/* Skeleton rows */
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  pointer-events: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .app-drawer {
+    left: 0;
+    width: 100vw;
+    z-index: 100;
+  }
+  .drawer-header {
+    padding-top: env(safe-area-inset-top, 0.5rem);
+  }
+}
+
+/* Export Menu */
+.export-menu {
   position: fixed;
   z-index: 200;
   background: var(--surface);
@@ -350,10 +477,10 @@ onBeforeUnmount(() => {
   border-radius: 0.5rem;
   box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent);
   padding: 0.25rem;
-  min-width: 140px;
+  min-width: 120px;
 }
 
-.ctx-item {
+.export-item {
   width: 100%;
   text-align: left;
   padding: 0.5rem 0.75rem;
@@ -365,11 +492,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.ctx-item:hover {
+.export-item:hover {
   background: var(--bg);
-}
-
-.ctx-danger {
-  color: var(--red);
 }
 </style>

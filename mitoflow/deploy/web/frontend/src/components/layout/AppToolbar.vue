@@ -1,12 +1,20 @@
 <template>
   <header class="app-toolbar">
-    <button class="toolbar-btn hamburger" @click="onToggleDrawer">
+    <router-link to="/" class="toolbar-logo" title="MitoFlow">
+      <img src="/logo.png" alt="MitoFlow" class="logo-img" />
+    </router-link>
+    <button
+      class="toolbar-btn hamburger"
+      aria-label="Toggle session drawer"
+      @click="onToggleDrawer"
+    >
       ☰
     </button>
     <h2 class="toolbar-title">{{ title }}</h2>
     <button
       v-if="showResultsToggle"
       class="toolbar-btn"
+      aria-label="Toggle results panel"
       @click="onToggleResults"
     >
       📊
@@ -73,6 +81,20 @@ function onToggleResults(): void {
 .toolbar-btn:hover {
   background: var(--bg);
   color: var(--text);
+}
+
+.toolbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  margin-right: 0.25rem;
+}
+
+.logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.375rem;
+  object-fit: contain;
 }
 
 .toolbar-title {

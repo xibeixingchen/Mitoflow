@@ -21,12 +21,13 @@
     </div>
 
     <!-- Message List -->
-    <div v-else ref="msgListRef" class="message-list">
+    <div v-else ref="msgListRef" class="message-list" role="log" aria-live="polite" aria-label="Chat messages">
       <div
         v-for="(msg, idx) in chatStore.messages"
         :key="idx"
         class="message"
-        :class="msg.role"
+        :class="[msg.role, 'msg-appear']"
+        :style="{ animationDelay: `${idx * 0.05}s` }"
       >
         <div class="message-avatar">
           {{ msg.role === 'user' ? '👤' : '🤖' }}
@@ -42,7 +43,7 @@
         </div>
       </div>
 
-      <div v-if="chatStore.isSending" class="message assistant">
+      <div v-if="chatStore.isSending" class="message assistant msg-appear" aria-live="polite">
         <div class="message-avatar">🤖</div>
         <div class="message-body">
           <div
@@ -62,7 +63,7 @@
         </div>
       </div>
 
-      <div v-if="chatStore.error" class="chat-error">
+      <div v-if="chatStore.error" class="chat-error" role="alert" aria-live="assertive">
         {{ chatStore.error }}
       </div>
     </div>
@@ -477,5 +478,29 @@ watch(() => chatStore.messages.length, scrollToBottom)
   padding: 0.5rem 0.75rem;
   border-top: 1px solid var(--border);
   background: var(--surface);
+}
+
+/* Message appear animation */
+.msg-appear {
+  animation: slideInLeft 0.3s ease forwards;
+  opacity: 0;
+}
+
+.message.user.msg-appear {
+  animation: slideInRight 0.3s ease forwards;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .message {
+    max-width: 95%;
+  }
+  .welcome-title {
+    font-size: 1.25rem;
+  }
+  .suggestion-chip {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.625rem;
+  }
 }
 </style>

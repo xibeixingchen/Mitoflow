@@ -1,13 +1,30 @@
 <template>
-  <nav class="app-nav">
+  <nav class="app-nav" role="navigation" aria-label="Main navigation">
     <div class="nav-top">
       <router-link
-        v-for="item in navItems"
+        v-for="item in analysisItems"
         :key="item.path"
         :to="item.path"
         class="nav-btn"
         :class="{ active: isActive(item.path) }"
         :title="item.label"
+        :aria-label="item.label"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+      </router-link>
+
+      <div class="nav-divider" />
+
+      <router-link
+        v-for="item in configItems"
+        :key="item.path"
+        :to="item.path"
+        class="nav-btn"
+        :class="{ active: isActive(item.path) }"
+        :title="item.label"
+        :aria-label="item.label"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
       >
         <span class="nav-icon">{{ item.icon }}</span>
       </router-link>
@@ -17,6 +34,9 @@
       <button
         class="nav-btn avatar-btn"
         :title="auth.user?.username || 'User'"
+        :aria-label="`User menu for ${auth.user?.username || 'User'}`"
+        :aria-expanded="showUserMenu"
+        aria-haspopup="dialog"
         @click="showUserMenu = true"
       >
         <span class="avatar-letter">{{ avatarLetter }}</span>
@@ -24,7 +44,14 @@
     </div>
 
     <!-- User Menu Dialog -->
-    <div v-if="showUserMenu" class="user-menu-overlay" @click="showUserMenu = false">
+    <div
+      v-if="showUserMenu"
+      class="user-menu-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="User menu"
+      @click="showUserMenu = false"
+    >
       <div class="user-menu" @click.stop>
         <div class="user-info">
           <span class="user-avatar">{{ avatarLetter }}</span>
@@ -34,6 +61,10 @@
           </div>
         </div>
         <div class="menu-divider" />
+        <button class="menu-item" @click="onNavigate('/account')">
+          <span class="menu-icon">👤</span>
+          <span>{{ t('nav.account') }}</span>
+        </button>
         <button class="menu-item" @click="onLogout">
           <span class="menu-icon">🚪</span>
           <span>{{ t('auth.logout') }}</span>
@@ -56,13 +87,17 @@ const auth = useAuthStore()
 
 const showUserMenu = ref(false)
 
-const navItems = [
+const analysisItems = [
   { path: '/chat', icon: '💬', label: t('nav.chat') },
   { path: '/tools', icon: '🔧', label: t('nav.tools') },
   { path: '/skills', icon: '📋', label: t('nav.skills') },
   { path: '/files', icon: '📤', label: t('nav.files') },
   { path: '/results', icon: '📊', label: t('nav.results') },
+]
+
+const configItems = [
   { path: '/settings', icon: '⚙️', label: t('nav.settings') },
+  { path: '/account', icon: '👤', label: t('nav.account') },
 ]
 
 function isActive(path: string): boolean {
@@ -73,6 +108,11 @@ const avatarLetter = computed(() => {
   const name = auth.user?.username || 'U'
   return name.charAt(0).toUpperCase()
 })
+
+function onNavigate(path: string): void {
+  showUserMenu.value = false
+  router.push(path)
+}
 
 function onLogout(): void {
   auth.logout()
@@ -102,6 +142,13 @@ function onLogout(): void {
   flex-direction: column;
   align-items: center;
   gap: 0.375rem;
+}
+
+.nav-divider {
+  width: 24px;
+  height: 1px;
+  background: color-mix(in srgb, var(--surface) 20%, transparent);
+  margin: 0.25rem 0;
 }
 
 .nav-btn {
@@ -244,4 +291,50 @@ function onLogout(): void {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-</style>
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .app-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100vw;
+    height: 52px;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0;
+    z-index: 110;
+    border-top: 1px solid var(--border);
+  }
+  .nav-top,
+  .nav-bottom {
+    flex-direction: row;
+    gap: 0;
+  }
+  .nav-divider {
+    display: none;
+  }
+  .nav-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .nav-btn.active::before {
+    top: auto;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    border-radius: 2px 2px 0 0;
+  }
+  .avatar-letter {
+    font-size: 0.75rem;
+  }
+  .user-menu {
+    left: auto;
+    right: 0.5rem;
+    bottom: 60px;
+  }
+}

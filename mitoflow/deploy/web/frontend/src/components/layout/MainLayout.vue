@@ -48,8 +48,8 @@ const router = useRouter()
 const { t } = useI18n()
 const sessionStore = useSessionStore()
 
-const drawerOpen = ref(false)
-const resultsOpen = ref(false)
+const drawerOpen = ref(true)
+const resultsOpen = ref(true)
 
 const pageTitle = computed(() => {
   const path = route.path
@@ -59,6 +59,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/files')) return t('nav.files')
   if (path.startsWith('/results')) return t('nav.results')
   if (path.startsWith('/settings')) return t('nav.settings')
+  if (path.startsWith('/account')) return t('nav.account')
   return 'MitoFlow'
 })
 
@@ -74,6 +75,7 @@ function onSelectSession(id: string): void {
 
 async function onNewSession(): Promise<void> {
   const session = await sessionStore.createSession()
+  drawerOpen.value = false
   router.push(`/chat/${session.id}`)
 }
 
@@ -95,13 +97,13 @@ function onSwitchTab(tab: string): void {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 0;
+  margin-left: var(--nav-w);
   transition: margin-left 0.25s ease;
   overflow: hidden;
 }
 
 .main-body.drawer-open {
-  margin-left: var(--drawer-w);
+  margin-left: calc(var(--nav-w) + var(--drawer-w));
 }
 
 .main-content {
@@ -119,5 +121,18 @@ function onSwitchTab(tab: string): void {
 
 .center-pane.results-open {
   margin-right: var(--results-w);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .main-body {
+    margin-left: 0;
+  }
+  .main-body.drawer-open {
+    margin-left: 0;
+  }
+  .center-pane.results-open {
+    margin-right: 0;
+  }
 }
 </style>

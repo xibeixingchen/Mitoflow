@@ -78,16 +78,26 @@ def init_db() -> None:
 
 
 def _hash_password(password: str) -> str:
-    """Hash password with salt using PBKDF2-SHA256."""
+    """Hash password with salt using PBKDF2-SHA256 (600k iterations, OWASP 2023)."""
     salt = os.urandom(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
-    return salt.hex() + ":" + dk.hex()
+    iterations = 600000
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
+    return salt.hex() + ":" + str(iterations) + ":" + dk.hex()
 
 
 def _verify_password(password: str, stored: str) -> bool:
-    salt_hex, dk_hex = stored.split(":")
+    """Verify password against stored hash. Supports legacy (salt:dk) and new (salt:iterations:dk) formats."""
+    parts = stored.split(":")
+    if len(parts) == 3:
+        salt_hex, iterations_str, dk_hex = parts
+        iterations = int(iterations_str)
+    elif len(parts) == 2:
+        salt_hex, dk_hex = parts
+        iterations = 100000  # legacy fallback
+    else:
+        return False
     salt = bytes.fromhex(salt_hex)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
     return hmac.compare_digest(dk.hex(), dk_hex)
 
 

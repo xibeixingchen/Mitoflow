@@ -1,11 +1,13 @@
 """MitoFlow Web API - FastAPI Backend."""
 
 from __future__ import annotations
+
 import os
 import shutil
 import tempfile
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional
 
@@ -19,10 +21,38 @@ import uvicorn
 # Project root for absolute paths (works regardless of cwd)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
+# AI service globals — initialized in lifespan
+_ai_service = None
+_ai_sessions: dict = {}
+_ai_store = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize AI service and session store on startup."""
+    global _ai_service, _ai_store
+    sessions_dir = Path(os.getenv("MITOFLOW_SESSIONS_DIR", ".mitoflow_ai_sessions"))
+    workspace = Path(os.getenv("MITOFLOW_WORKSPACE", "."))
+    try:
+        from mitoflow.ai.sessions_sqlite import SQLiteSessionStore
+        _ai_store = SQLiteSessionStore(sessions_dir)
+        from mitoflow.ai.service import AIService
+        _ai_service = AIService(session_root=sessions_dir, workspace_root=workspace, store=_ai_store)
+    except Exception:
+        try:
+            from mitoflow.ai.service import AIService
+            _ai_service = AIService(session_root=sessions_dir, workspace_root=workspace)
+        except Exception as e:
+            print(f"Warning: AI service not available: {e}")
+    _load_sessions()
+    yield
+
+
 app = FastAPI(
     title="MitoFlow Web",
     description="Plant Mitochondrial Genome Annotation Web Service + AI Assistant",
     version="0.2.0",
+    lifespan=lifespan,
 )
 
 # CORS for frontend access
@@ -563,12 +593,6 @@ async def auth_change_password(req: ChangePasswordRequest, authorization: str = 
 
 # ── AI Chat Endpoints (/api/ai/*) ────────────────────────────────────
 
-# AI service — initialized on startup; per-request overrides support provider switching
-_ai_service = None
-_ai_sessions: dict = {}  # session_id -> created timestamp (fast lookup cache)
-_ai_store = None  # SQLiteSessionStore — source of truth for list/search/metadata
-
-
 class ChatRequest(BaseModel):
     """AI chat request — supports all OpenAI/Anthropic-compatible providers."""
     session_id: str
@@ -577,25 +601,6 @@ class ChatRequest(BaseModel):
     model: Optional[str] = None
     api_key: Optional[str] = None  # per-request API key override
     base_url: Optional[str] = None  # per-request base URL override
-
-
-@app.on_event("startup")
-def init_ai_service():
-    """Initialize default AIService and SQLite session store on server startup."""
-    global _ai_service, _ai_store
-    sessions_dir = Path(os.getenv("MITOFLOW_SESSIONS_DIR", ".mitoflow_ai_sessions"))
-    workspace = Path(os.getenv("MITOFLOW_WORKSPACE", "."))
-    try:
-        from mitoflow.ai.sessions_sqlite import SQLiteSessionStore
-        _ai_store = SQLiteSessionStore(sessions_dir)
-        from mitoflow.ai.service import AIService
-        _ai_service = AIService(session_root=sessions_dir, workspace_root=workspace, store=_ai_store)
-    except Exception:
-        try:
-            from mitoflow.ai.service import AIService
-            _ai_service = AIService(session_root=sessions_dir, workspace_root=workspace)
-        except Exception as e:
-            print(f"Warning: AI service not available: {e}")
 
 
 def _get_ai_service(provider: Optional[str] = None, model: Optional[str] = None,
@@ -661,8 +666,6 @@ def _save_sessions():
     except Exception:
         pass
 
-
-_load_sessions()
 
 
 def _persist_session(session_id: str):

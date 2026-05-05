@@ -94,10 +94,14 @@ import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
+import { streamChat } from '@/api/ai'
 import { PRESETS } from '@/constants/presets'
 import ChatInput from './ChatInput.vue'
 import ToolSelector from './ToolSelector.vue'
 import type { ToolItem } from './ToolSelector.vue'
+import DOMPurify from 'dompurify'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github-dark.css'
 
 const props = defineProps<{
   sessionId?: string
@@ -132,45 +136,106 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: ['br', 'strong', 'a', 'code', 'pre', 'span'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+}
+
 function renderMarkdown(text: string): string {
   if (!text) return ''
-  // Escape HTML first to prevent XSS, then apply markdown transforms
-  let html = escapeHtml(text)
-  // Code blocks (must come before inline code)
-  html = html.replace(/`{3}([\s\S]*?)`{3}/g, '<pre><code>$1</code></pre>')
-  // Bold
+
+  // 1. Extract code blocks and replace with placeholders
+  const codeBlocks: { lang: string; code: string }[] = []
+  let html = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
+    codeBlocks.push({ lang: lang || '', code })
+    return placeholder
+  })
+
+  // 2. Escape HTML in non-code text
+  html = escapeHtml(html)
+
+  // 3. Apply markdown transforms
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  // Inline code
   html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>')
-  // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-  // Line breaks
   html = html.replace(/\n/g, '<br>')
-  return html
+
+  // 4. Restore code blocks with syntax highlighting
+  codeBlocks.forEach(({ lang, code }, i) => {
+    const trimmed = code.replace(/\n$/, '')
+    let highlighted: string
+    if (lang && hljs.getLanguage(lang)) {
+      highlighted = hljs.highlight(trimmed, { language: lang }).value
+    } else {
+      highlighted = hljs.highlightAuto(trimmed).value
+    }
+    html = html.replace(
+      `__CODE_BLOCK_${i}__`,
+      `<pre><code class="hljs">${highlighted}</code></pre>`
+    )
+  })
+
+  // 5. Defensive sanitize
+  return DOMPurify.sanitize(html, PURIFY_CONFIG)
 }
+
+let _abortController: AbortController | null = null
 
 async function doSend(text: string): Promise<void> {
   if (!text || chatStore.isSending) return
 
-  // Ensure we have an active session
   if (!sessionStore.activeSessionId) {
     await sessionStore.createSession()
   }
 
-  try {
-    await chatStore.sendMessage({
+  // Push user message
+  chatStore.messages.push({ role: 'user', content: text })
+  chatStore.isSending = true
+  chatStore.error = null
+  chatStore.events = []
+
+  // Push empty assistant message (filled incrementally)
+  const assistantMsg = { role: 'assistant' as const, content: '', tool_calls: undefined as any }
+  chatStore.messages.push(assistantMsg)
+
+  // Cancel previous stream if any
+  if (_abortController) _abortController.abort()
+
+  _abortController = streamChat(
+    {
       session_id: sessionStore.activeSessionId!,
       message: text,
       provider: chatProtocol.value,
       model: chatModel.value,
       api_key: settings.apiKeys[settings.providerKey] || undefined,
       base_url: chatBaseUrl.value || undefined,
-    })
-  } catch (err: any) {
-    chatStore.error = err?.message || 'Failed to send'
-  } finally {
-    scrollToBottom()
-  }
+    },
+    // onToken: append to assistant message (typewriter effect)
+    (token) => {
+      assistantMsg.content += token
+      scrollToBottom()
+    },
+    // onToolCall
+    (name, args) => {
+      chatStore.events.push({ type: 'tool_call', message: `Calling ${name}`, data: { name, arguments: args } })
+    },
+    // onToolResult
+    (name, content, ok) => {
+      chatStore.events.push({ type: 'tool_result', message: ok ? content.slice(0, 100) : `Failed: ${content}`, data: { name, ok } })
+    },
+    // onDone
+    (finalText) => {
+      if (!assistantMsg.content) assistantMsg.content = finalText
+      chatStore.isSending = false
+      scrollToBottom()
+    },
+    // onError
+    (msg) => {
+      chatStore.error = msg
+      chatStore.isSending = false
+    },
+  )
 }
 
 function onSendFromInput(text: string): void {

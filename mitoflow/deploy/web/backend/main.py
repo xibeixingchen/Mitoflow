@@ -26,9 +26,14 @@ app = FastAPI(
 )
 
 # CORS for frontend access
+_CORS_ORIGINS_STR = os.getenv("MITOFLOW_CORS_ORIGINS", "")
+if _CORS_ORIGINS_STR.strip():
+    _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_STR.split(",") if o.strip()]
+else:
+    _CORS_ORIGINS = ["http://localhost:5173", "http://localhost:8000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -802,6 +807,82 @@ async def ai_chat(req: ChatRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"AI error: {str(e)[:300]}")
+
+
+@app.post("/api/ai/chat/stream")
+async def ai_chat_stream(req: ChatRequest):
+    """Stream AI response via SSE — typewriter effect + real-time tool calls."""
+    import json as _json
+    from fastapi.responses import StreamingResponse
+
+    if req.session_id not in _ai_sessions:
+        _ai_sessions[req.session_id] = time.time()
+
+    async def event_stream():
+        try:
+            svc = _get_ai_service(provider=req.provider, model=req.model, api_key=req.api_key, base_url=req.base_url)
+            from mitoflow.ai.models import EntryPoint, AIMessage, ProviderRequest, ToolCall
+            from mitoflow.ai.tools import ToolContext
+            from mitoflow.ai.prompts import MANAGER_SYSTEM_PROMPT
+
+            store = svc.store
+            sid = req.session_id
+            if not store.session_exists(sid):
+                store.create_session()
+
+            store.append_message(sid, AIMessage(role="user", content=req.message))
+
+            yield f"data: {_json.dumps({'type': 'thinking', 'message': 'Analyzing...'})}\n\n"
+
+            ctx = ToolContext(session_id=sid, workspace_root=svc.workspace_root,
+                              output_root=store.artifact_dir(sid), entry_point=EntryPoint.API)
+            tools = svc.registry.definitions(EntryPoint.API)
+            messages = [AIMessage(role="system", content=MANAGER_SYSTEM_PROMPT)] + store.load_messages(sid)
+
+            for _turn in range(8):
+                req_p = ProviderRequest(model=svc.model, messages=messages, tools=tools)
+                full_text = ""
+                tool_calls: list = []
+
+                try:
+                    for chunk in svc.provider.create_stream(req_p):
+                        if chunk["type"] == "text":
+                            full_text += chunk["content"]
+                            yield f"data: {_json.dumps({'type': 'text', 'content': chunk['content']})}\n\n"
+                        elif chunk["type"] == "tool_call":
+                            tc = ToolCall(id=chunk.get("id",""), name=chunk["name"], arguments=chunk.get("arguments",{}))
+                            tool_calls.append(tc)
+                            yield f"data: {_json.dumps({'type': 'tool_call', 'name': tc.name, 'arguments': tc.arguments})}\n\n"
+                except Exception:
+                    resp = svc.provider.create(req_p)
+                    full_text = resp.message.content
+                    tool_calls = resp.tool_calls
+                    if full_text:
+                        yield f"data: {_json.dumps({'type': 'text', 'content': full_text})}\n\n"
+
+                if not tool_calls:
+                    store.append_message(sid, AIMessage(role="assistant", content=full_text))
+                    yield f"data: {_json.dumps({'type': 'done', 'final_text': full_text})}\n\n"
+                    break
+
+                store.append_message(sid, AIMessage(role="assistant", content=full_text, tool_calls=tool_calls))
+                for tc in tool_calls:
+                    result = svc.registry.execute(tc, ctx)
+                    yield f"data: {_json.dumps({'type': 'tool_result', 'name': result.name, 'content': result.content[:500], 'ok': result.ok})}\n\n"
+                    store.append_message(sid, AIMessage(role="tool", name=result.name, tool_call_id=result.call_id, content=result.content))
+
+                messages = [AIMessage(role="system", content=MANAGER_SYSTEM_PROMPT)] + store.load_messages(sid)
+
+            if req.session_id not in _session_meta:
+                _session_meta[req.session_id] = {"name": req.message[:50], "first_message": req.message[:30], "pinned": False}
+                _persist_session(req.session_id)
+
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            yield f"data: {_json.dumps({'type': 'error', 'message': str(e)[:300]})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"})
 
 
 @app.get("/api/ai/tools")

@@ -158,28 +158,6 @@ def register_cgas_tools(registry: ToolRegistry) -> None:
         },
     )
 
-    # Run complete chloroplast pipeline
-    registry.register(
-        ToolDefinition(
-            name="chloro_run_pipeline",
-            description="Run the full chloroplast analysis pipeline (modules 1-14 in sequence). Use with caution.",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "input": {"type": "string", "description": "Input directory with raw reads or FASTA files"},
-                    "output": {"type": "string", "description": "Base output directory"},
-                    "start": {"type": "integer", "minimum": 1, "maximum": 14, "description": "Start from module N (default: 1)"},
-                },
-                "required": ["input"],
-                "additionalProperties": False,
-            },
-            safety_level=SafetyLevel.LAUNCHES_JOB,
-            entry_points=[EntryPoint.CLI, EntryPoint.API],
-        ),
-        lambda args, ctx: _run_chloro_pipeline(args, ctx),
-    )
-
-
     # Smart aggregator — auto-select chloroplast modules by input type
     registry.register(
         ToolDefinition(
@@ -393,28 +371,3 @@ def chloro_ir_boundary(args: Dict[str, Any], context: ToolContext) -> Dict[str, 
     except Exception as e:
         return {"content": f"IR boundary analysis failed: {e}", "data": {"error": str(e)}}
 
-
-def _run_chloro_pipeline(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
-    """Run the full chloroplast pipeline sequentially."""
-    import time
-    work_dir = str(context.workspace_root / context.session_id)
-    start = args.get("start", 1)
-    results = []
-    for num in range(start, 15):
-        if args.get("input"):
-            cmd_args = ["-i", str(args["input"])]
-        else:
-            cmd_args = []
-        if args.get("output"):
-            cmd_args.extend(["-o", str(args["output"])])
-        r = _run_chloro_module(num, cmd_args, work_dir, timeout=1200)
-        results.append({"module": num, "name": CHLORO_MODULES[num][0], **r})
-        if not r.get("ok"):
-            break
-        time.sleep(0.5)
-
-    ok_count = sum(1 for r in results if r.get("ok"))
-    return {
-        "content": f"Chloroplast pipeline: {ok_count}/{len(results)} modules completed.",
-        "data": {"results": results},
-    }

@@ -148,6 +148,7 @@ progress:
 | 260505-gjy | Fix P0 security vulnerabilities: path traversal, XSS, token secret persistence, SQL injection, upload size limits | 2026-05-05 | 30ee018 | [260505-gjy-fix-p0-security-vulnerabilities-path-tra](./quick/260505-gjy-fix-p0-security-vulnerabilities-path-tra/) |
 | 260505-gq6 | Harden backend security: CORS whitelist, PBKDF2 600k iterations, FastAPI lifespan migration | 2026-05-05 | d374802 | [260505-gq6-harden-backend-security-cors-whitelist-p](./quick/260505-gq6-harden-backend-security-cors-whitelist-p/) |
 | 260505-gwk | Frontend/backend modernization: highlight.js + DOMPurify, modularize main.py, remove chat_ui.py legacy | 2026-05-05 | 8a63b5b | [quick/](./quick/) |
+| 260505-gwm | Frontend beautification: animations, skeleton screens, mobile responsive, a11y | 2026-05-05 | a1cc139 | [quick/](./quick/) |
 
 ## Session Log
 

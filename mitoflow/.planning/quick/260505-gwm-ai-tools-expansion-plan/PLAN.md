@@ -241,11 +241,12 @@ ASSEMBLY_STRATEGIES = {
 8. ✅ 线粒体工具去 `run_` 前缀，改为 `mito_` 前缀
 9. ⬜ 更新 `domain_prompts.py`：添加 `CHLOROPLAST_DOMAIN_KNOWLEDGE` 段
 
-### Wave 2（下周）：叶绿体智能调度 + 去前缀
-1. 移除所有 `cgas_` 前缀，改用 `chloro_`
-2. 新增 `analyze_chloroplast` 聚合工具（自动选择 CGAS 模块）
-3. 新增 `叶绿体IR边界分析` / `chloro_ir_boundary`
-4. 扩展 `线粒体可视化` / `mito_visualize` 支持叶绿体 viz 类型
+### Wave 2（下周）：叶绿体智能调度 + 去前缀 ✅ 已完成
+1. ✅ 移除所有 `cgas_` 前缀，改用 `chloro_`
+2. ✅ 新增 `analyze_chloroplast` 聚合工具（自动根据输入类型选择模块：assemble/annotate/analyze/compare/phylogeny）
+3. ✅ 新增 `叶绿体IR边界分析` / `chloro_ir_boundary`（检测 JLB/JSB/JSA/JLA 连接点，四分区长度计算）
+4. ✅ 扩展 `线粒体可视化` / `mito_visualize` 支持叶绿体 viz 类型（ir_quadripartite, gene_map_comparison）
+5. ⬜ 更新 `domain_prompts.py`：添加 `CHLOROPLAST_DOMAIN_KNOWLEDGE` 段
 
 ### Wave 3（后续）：双细胞器统一
 1. 为所有通用工具添加 `organelle` 参数

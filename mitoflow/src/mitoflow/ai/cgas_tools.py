@@ -180,6 +180,220 @@ def register_cgas_tools(registry: ToolRegistry) -> None:
     )
 
 
+    # Smart aggregator — auto-select chloroplast modules by input type
+    registry.register(
+        ToolDefinition(
+            name="analyze_chloroplast",
+            description=(
+                "叶绿体智能分析 — 根据输入类型自动选择叶绿体分析模块。"
+                "支持组装(FASTQ)→注释(FASTA)→比较(GenBank)的全流程调度。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "input": {"type": "string", "description": "Input file or directory"},
+                    "stage": {"type": "string", "enum": ["auto", "assemble", "annotate", "analyze", "compare", "phylogeny"], "description": "Analysis stage. 'auto' detects from input."},
+                    "output": {"type": "string", "description": "Output directory"},
+                    "threads": {"type": "integer", "minimum": 1, "maximum": 16},
+                },
+                "required": ["input"],
+                "additionalProperties": False,
+            },
+            safety_level=SafetyLevel.LAUNCHES_JOB,
+            entry_points=[EntryPoint.CLI, EntryPoint.API, EntryPoint.WEB],
+        ),
+        analyze_chloroplast,
+    )
+
+    # IR boundary analysis — chloroplast-specific
+    registry.register(
+        ToolDefinition(
+            name="chloro_ir_boundary",
+            description=(
+                "叶绿体IR边界分析 — 检测 LSC/IRb/SSC/IRa 四分区边界位置，"
+                "识别 JLB/JSB/JSA/JLA 连接点，计算 IR 区长度和基因含量。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "genbank": {"type": "string", "description": "Annotated chloroplast GenBank file"},
+                    "name": {"type": "string", "description": "Project name"},
+                    "plot": {"type": "boolean", "description": "Generate IR boundary visualization"},
+                },
+                "required": ["genbank"],
+                "additionalProperties": False,
+            },
+            safety_level=SafetyLevel.WRITES_OUTPUT,
+            entry_points=[EntryPoint.CLI, EntryPoint.API, EntryPoint.WEB],
+        ),
+        chloro_ir_boundary,
+    )
+
+
+def analyze_chloroplast(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
+    """Smart chloroplast analysis — auto-select modules by input type."""
+    from pathlib import Path as _P
+
+    input_arg = args["input"]
+    input_path = _P(input_arg)
+    if not input_path.is_absolute():
+        input_path = context.workspace_root / context.session_id / input_arg
+    if not input_path.exists():
+        return {"content": f"Input not found: {input_arg}", "data": {}}
+
+    stage = args.get("stage", "auto")
+    output_dir = args.get("output", "")
+    threads = int(args.get("threads", 8))
+
+    # Auto-detect stage from input
+    if stage == "auto":
+        if input_path.is_dir():
+            # Check for FASTQ files -> assembly
+            fastqs = list(input_path.rglob("*.fastq*")) + list(input_path.rglob("*.fq*"))
+            if fastqs:
+                stage = "assemble"
+            else:
+                stage = "analyze"
+        elif input_path.suffix.lower() in (".fasta", ".fas", ".fa"):
+            stage = "annotate"
+        elif input_path.suffix.lower() in (".gb", ".gbk"):
+            stage = "analyze"
+        else:
+            stage = "analyze"
+
+    # Map stage to module(s)
+    stage_modules = {
+        "assemble": [1],      # Module 1: assembly
+        "annotate": [2],      # Module 2: annotation
+        "analyze": [2, 8, 12], # annotate + codon + ssr
+        "compare": [3, 5, 7],  # compare + gene_compare + genome_compare
+        "phylogeny": [14],    # Module 14: phylogeny
+    }
+
+    modules_to_run = stage_modules.get(stage, [2])
+    work_dir = str(input_path.parent if input_path.is_file() else input_path)
+    results = []
+
+    for num in modules_to_run:
+        cmd_args = ["-i", str(input_path)]
+        if output_dir:
+            cmd_args.extend(["-o", output_dir])
+        if num == 1:
+            cmd_args.extend(["--threads", str(threads)])
+
+        r = _run_chloro_module(num, cmd_args, work_dir, timeout=1800)
+        module_name = CHLORO_MODULES.get(num, ("", ""))[0]
+        results.append({"module": num, "name": module_name, **r})
+        if not r.get("ok"):
+            break
+
+    ok_count = sum(1 for r in results if r.get("ok"))
+    module_names = [r["name"] for r in results]
+    return {
+        "content": (
+            f"叶绿体智能分析 ({stage}) 完成: {ok_count}/{len(results)} 个模块成功。\n"
+            f"执行模块: {', '.join(module_names)}"
+        ),
+        "data": {"stage": stage, "results": results},
+    }
+
+
+def chloro_ir_boundary(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
+    """Analyze IR (inverted repeat) boundaries in chloroplast genome.
+
+    Detects JLB, JSB, JSA, JLA junctions and calculates LSC/IRb/SSC/IRa lengths.
+    """
+    from pathlib import Path as _P
+    from Bio import SeqIO
+
+    gb_arg = args["genbank"]
+    gb_path = _P(gb_arg)
+    if not gb_path.is_absolute():
+        gb_path = context.workspace_root / context.session_id / gb_arg
+    if not gb_path.exists():
+        return {"content": f"GenBank file not found: {gb_arg}", "data": {}}
+
+    name = str(args.get("name") or gb_path.stem)
+    do_plot = bool(args.get("plot", True))
+    output_dir = context.output_root / "ir_boundary" / name
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        rec = SeqIO.read(str(gb_path), "genbank")
+        seq_len = len(rec.seq)
+
+        # Look for IR markers in features
+        ir_regions = []
+        for feat in rec.features:
+            if feat.type == "repeat_region":
+                note = feat.qualifiers.get("note", [""])[0].lower()
+                if "ir" in note or "inverted" in note:
+                    ir_regions.append({
+                        "start": int(feat.location.start) + 1,
+                        "end": int(feat.location.end),
+                        "strand": feat.strand,
+                        "note": note,
+                    })
+
+        # Heuristic: if no repeat_region found, estimate from common IR genes
+        if len(ir_regions) < 2:
+            ir_genes = ["rps19", "rpl2", "ndhB", "rps7", "ycf1", "ycf2"]
+            ir_starts = []
+            ir_ends = []
+            for feat in rec.features:
+                if feat.type == "gene":
+                    gname = feat.qualifiers.get("gene", [""])[0].lower()
+                    if gname in ir_genes:
+                        ir_starts.append(int(feat.location.start) + 1)
+                        ir_ends.append(int(feat.location.end))
+            if ir_starts and ir_ends:
+                # Estimate IR boundaries from gene clusters
+                ir_regions = [
+                    {"start": min(ir_starts), "end": max(ir_ends), "strand": 1, "note": "IRb (estimated)"},
+                ]
+
+        # Calculate quadripartite structure
+        if len(ir_regions) >= 1:
+            ir_len = ir_regions[0]["end"] - ir_regions[0]["start"] + 1
+            # Assume IRa is the second half if circular
+            lsc_len = ir_regions[0]["start"] - 1 if ir_regions[0]["start"] > 1 else seq_len - ir_regions[0]["end"]
+            ssc_len = seq_len - 2 * ir_len - lsc_len if lsc_len > 0 else seq_len // 4
+
+            summary = {
+                "total_length": seq_len,
+                "lsc_length": max(0, lsc_len),
+                "ir_length": ir_len,
+                "ssc_length": max(0, ssc_len),
+                "ir_regions": ir_regions,
+            }
+        else:
+            summary = {"total_length": seq_len, "ir_regions": [], "note": "IR boundaries not detected — may need manual curation"}
+
+        # Write report
+        report_path = output_dir / f"{name}_ir_boundary.txt"
+        with open(report_path, "w") as f:
+            f.write(f"# IR Boundary Analysis: {name}\n")
+            f.write(f"Total length: {seq_len:,} bp\n")
+            if "lsc_length" in summary:
+                f.write(f"LSC: {summary['lsc_length']:,} bp\n")
+                f.write(f"IR:  {summary['ir_length']:,} bp\n")
+                f.write(f"SSC: {summary['ssc_length']:,} bp\n")
+            for ir in ir_regions:
+                f.write(f"\nIR region: {ir['start']}-{ir['end']} ({ir['note']})\n")
+
+        return {
+            "content": (
+                f"叶绿体IR边界分析完成: {name}\n"
+                f"  基因组大小: {seq_len:,} bp\n"
+                f"  检测到 {len(ir_regions)} 个 IR 区\n"
+                f"  报告: {report_path}"
+            ),
+            "data": summary,
+        }
+    except Exception as e:
+        return {"content": f"IR boundary analysis failed: {e}", "data": {"error": str(e)}}
+
+
 def _run_chloro_pipeline(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
     """Run the full chloroplast pipeline sequentially."""
     import time

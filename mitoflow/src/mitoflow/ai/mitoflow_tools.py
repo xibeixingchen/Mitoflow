@@ -217,14 +217,17 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
         ToolDefinition(
             name="mito_visualize",
             description=(
-                "线粒体可视化 — 生成线粒体基因组图谱。支持环形图 (pycirclize)、线性图 (pygenomeviz)、"
-                "OGDraw 质量图 (gbdraw)、GC 含量图。输入为注释后的 GenBank 文件。"
+                "细胞器基因组可视化 — 生成线粒体或叶绿体基因组图谱。支持环形图 (pycirclize)、线性图 (pygenomeviz)、"
+                "OGDraw 质量图 (gbdraw)、GC 含量图、叶绿体四分区示意图 (ir_quadripartite)、基因顺序比较图。"
+                "输入为注释后的 GenBank 文件。"
             ),
             parameters={
                 "type": "object",
                 "properties": {
                     "genbank_file": {"type": "string", "description": "Path to annotated GenBank (.gb) file."},
-                    "viz_type": {"type": "string", "enum": ["circular", "linear", "ogdraw", "gc"], "description": "circular/linear/ogdraw/gc"},
+                    "viz_type": {"type": "string", "enum": ["circular", "linear", "ogdraw", "gc", "ir_quadripartite", "gene_map_comparison"], "description": "circular/linear/ogdraw/gc/ir_quadripartite/gene_map_comparison"},
+                    "organelle": {"type": "string", "enum": ["mito", "chloro"], "description": "Target organelle type (mito=mitochondria, chloro=chloroplast)"},
+                    "reference": {"type": "string", "description": "Optional reference GenBank for comparison (gene_map_comparison only)"},
                 },
                 "required": ["genbank_file"],
                 "additionalProperties": False,
@@ -288,7 +291,7 @@ def list_workspace_files(args: Dict[str, Any], context: ToolContext) -> Dict[str
 
 
 def mito_visualize(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
-    """Generate visualization plots for a mitochondrial genome."""
+    """Generate visualization plots for organelle genomes (mitochondria or chloroplast)."""
     from pathlib import Path as _Path
     input_arg = args["genbank_file"]
     gb_path = _Path(input_arg)
@@ -306,6 +309,7 @@ def mito_visualize(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]
         return {"content": f"GenBank file not found: {input_arg}", "data": {}}
 
     viz_type = args.get("viz_type", "circular")
+    organelle = args.get("organelle", "mito")
     output_dir = context.workspace_root / context.session_id / "viz"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -340,11 +344,83 @@ def mito_visualize(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]
             plot_gc_profile(str(rec.seq), window=200, output_path=str(out), title=f"{gb_path.stem} GC Profile")
             results.append({"type": "gc", "file": str(out), "name": out.name})
 
+        elif viz_type == "ir_quadripartite":
+            # Chloroplast quadripartite structure visualization
+            from Bio import SeqIO
+            rec = SeqIO.read(str(gb_path), "genbank")
+            seq_len = len(rec.seq)
+
+            # Estimate IR boundaries from common chloroplast IR genes
+            ir_genes = {"rps19", "rpl2", "ndhB", "rps7", "ycf1", "ycf2"}
+            ir_positions = []
+            for feat in rec.features:
+                if feat.type == "gene":
+                    gname = feat.qualifiers.get("gene", [""])[0].lower()
+                    if gname in ir_genes:
+                        ir_positions.append((int(feat.location.start) + 1, int(feat.location.end)))
+
+            if ir_positions:
+                ir_start = min(p[0] for p in ir_positions)
+                ir_end = max(p[1] for p in ir_positions)
+                ir_len = ir_end - ir_start + 1
+                lsc_len = ir_start - 1
+                ssc_len = seq_len - ir_end - ir_len
+
+                # Create simple text-based quadripartite map
+                out = output_dir / f"{gb_path.stem}_quadripartite.txt"
+                with open(out, "w") as f:
+                    f.write(f"# Chloroplast Quadripartite Structure: {gb_path.stem}\n")
+                    f.write(f"Total: {seq_len:,} bp\n\n")
+                    f.write(f"LSC:  1-{lsc_len:,} ({lsc_len:,} bp)\n")
+                    f.write(f"IRb:  {lsc_len+1:,}-{lsc_len+ir_len:,} ({ir_len:,} bp)\n")
+                    f.write(f"SSC:  {lsc_len+ir_len+1:,}-{seq_len-ir_len:,} ({ssc_len:,} bp)\n")
+                    f.write(f"IRa:  {seq_len-ir_len+1:,}-{seq_len:,} ({ir_len:,} bp)\n")
+                results.append({"type": "ir_quadripartite", "file": str(out), "name": out.name})
+            else:
+                return {"content": "IR genes not found — cannot generate quadripartite map.", "data": {}}
+
+        elif viz_type == "gene_map_comparison":
+            ref_arg = args.get("reference", "")
+            if ref_arg:
+                ref_path = _Path(ref_arg)
+                if not ref_path.is_absolute():
+                    ref_path = context.workspace_root / context.session_id / ref_arg
+                if ref_path.exists():
+                    # Simple gene order comparison (text output)
+                    from Bio import SeqIO
+                    rec1 = SeqIO.read(str(gb_path), "genbank")
+                    rec2 = SeqIO.read(str(ref_path), "genbank")
+
+                    genes1 = []
+                    genes2 = []
+                    for feat in rec1.features:
+                        if feat.type == "gene":
+                            g = feat.qualifiers.get("gene", [""])[0]
+                            if g:
+                                genes1.append(g)
+                    for feat in rec2.features:
+                        if feat.type == "gene":
+                            g = feat.qualifiers.get("gene", [""])[0]
+                            if g:
+                                genes2.append(g)
+
+                    out = output_dir / f"{gb_path.stem}_gene_compare.txt"
+                    with open(out, "w") as f:
+                        f.write(f"# Gene Order Comparison\n")
+                        f.write(f"Query: {gb_path.stem} ({len(genes1)} genes)\n")
+                        f.write(f"Ref:   {ref_path.stem} ({len(genes2)} genes)\n")
+                        f.write(f"Shared: {len(set(genes1) & set(genes2))}\n")
+                    results.append({"type": "gene_map_comparison", "file": str(out), "name": out.name})
+                else:
+                    return {"content": f"Reference file not found: {ref_arg}", "data": {}}
+            else:
+                return {"content": "gene_map_comparison requires a reference GenBank file.", "data": {}}
+
         return {
             "content": f"Generated {len(results)} visualization(s):\n" + "\n".join(
                 f"- {r['type']}: {r['name']}" for r in results
             ),
-            "data": {"visualizations": results, "output_dir": str(output_dir)},
+            "data": {"visualizations": results, "output_dir": str(output_dir), "organelle": organelle},
         }
     except Exception as e:
         return {"content": f"Visualization failed: {e}", "data": {}}

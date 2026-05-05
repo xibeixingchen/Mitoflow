@@ -3,7 +3,7 @@
     <!-- Welcome Block -->
     <div v-if="!chatStore.hasMessages" class="chat-welcome">
       <div class="welcome-content">
-        <h2 class="welcome-title">MitoFlow AI</h2>
+        <h2 class="welcome-title">PhytoOrga AI</h2>
         <p class="welcome-subtitle">
           {{ t('chat.placeholder') }}
         </p>
@@ -22,44 +22,42 @@
 
     <!-- Message List -->
     <div v-else ref="msgListRef" class="message-list" role="log" aria-live="polite" aria-label="Chat messages">
-      <div
-        v-for="(msg, idx) in chatStore.messages"
-        :key="idx"
-        class="message"
-        :class="[msg.role, 'msg-appear']"
-        :style="{ animationDelay: `${idx * 0.05}s` }"
-      >
-        <div class="message-avatar">
-          {{ msg.role === 'user' ? '👤' : '🤖' }}
+      <template v-for="(msg, idx) in chatStore.messages" :key="idx">
+        <!-- User message -->
+        <div v-if="msg.role === 'user'" class="message user">
+          <div class="msg-bubble user-bubble">{{ msg.content }}</div>
         </div>
-        <div class="message-body">
-          <div class="message-content" v-html="renderMarkdown(msg.content)" />
-          <div v-if="msg.tool_calls" class="tool-calls">
-            <details>
-              <summary>{{ t('chat.toolCalls') }}</summary>
-              <pre>{{ JSON.stringify(msg.tool_calls, null, 2) }}</pre>
-            </details>
+        <!-- Assistant message -->
+        <div v-else class="message assistant">
+          <div class="msg-avatar">🤖</div>
+          <div class="msg-card">
+            <div class="msg-gradient-bar" />
+            <div class="msg-content" v-html="renderMarkdown(msg.content)" />
+            <!-- Tool calls for this message -->
+            <div v-if="msg.tool_calls?.length" class="tool-list">
+              <div v-for="(tc, ti) in msg.tool_calls" :key="ti" class="tool-chip">
+                <span class="tool-chip-icon">🔧</span>
+                <span class="tool-chip-name">{{ tc.name }}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
 
-      <div v-if="chatStore.isSending" class="message assistant msg-appear" aria-live="polite">
-        <div class="message-avatar">🤖</div>
-        <div class="message-body">
-          <div
-            v-if="chatStore.toolEvents.length > 0"
-            class="tool-status"
-          >
-            <span
-              v-for="(ev, i) in chatStore.toolEvents"
-              :key="i"
-              :class="['tool-badge', ev.type]"
-            >
-              {{ ev.type === 'tool_call' ? '🔧' : '✅' }}
-              {{ ev.message }}
-            </span>
+      <!-- Streaming indicator: inline under last assistant message -->
+      <div v-if="chatStore.isSending" class="streaming-bar">
+        <!-- Tool events during streaming -->
+        <div v-if="chatStore.toolEvents.length > 0" class="stream-tools">
+          <div v-for="(ev, i) in chatStore.toolEvents" :key="i" :class="['stream-chip', ev.type]">
+            <span class="chip-dot" />
+            {{ ev.message }}
           </div>
-          <div v-else class="thinking">{{ t('chat.thinking') }}</div>
+        </div>
+        <!-- Bouncing dots when thinking -->
+        <div v-else class="thinking-dots">
+          <span class="dot" />
+          <span class="dot" />
+          <span class="dot" />
         </div>
       </div>
 
@@ -247,17 +245,22 @@ function send(text: string): void {
   doSend(text)
 }
 
-function onUpload(): void {
-  // Navigate to files page or trigger upload dialog
+async function onUpload(): Promise<void> {
   const input = document.createElement('input')
   input.type = 'file'
   input.multiple = true
-  input.onchange = () => {
-    // TODO: integrate with file store
+  input.accept = '.fasta,.fa,.fas,.fna,.gb,.gbk,.gff,.gff3,.fq,.fastq'
+  input.onchange = async () => {
     const files = Array.from(input.files || [])
-    if (files.length) {
-      const names = files.map((f) => f.name).join(', ')
-      doSend(`Uploading files: ${names}`)
+    if (!files.length) return
+    if (!sessionStore.activeSessionId) await sessionStore.createSession()
+    try {
+      const { uploadFiles } = await import('@/api/files')
+      const res: any = await uploadFiles(sessionStore.activeSessionId!, files)
+      const names = res.uploaded?.map((f: any) => f.name).join(', ') || files.map(f => f.name).join(', ')
+      doSend(`I've uploaded: ${names}. Please check my workspace files and help me analyze them.`)
+    } catch (err: any) {
+      chatStore.error = 'Upload failed: ' + (err?.message || 'Unknown error')
     }
   }
   input.click()
@@ -283,10 +286,10 @@ function scrollToBottom(): void {
 }
 
 // Mount: select sessionId if provided, auto-send prompt from tools
-onMounted(() => {
+onMounted(async () => {
   if (props.sessionId) {
     sessionStore.selectSession(props.sessionId)
-    chatStore.loadMessages(props.sessionId).catch(() => {
+    await chatStore.loadMessages(props.sessionId).catch(() => {
       // ignore load errors
     })
   }
@@ -299,208 +302,96 @@ watch(() => chatStore.messages.length, scrollToBottom)
 </script>
 
 <style scoped>
-.chat-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
+.chat-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-.chat-welcome {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.welcome-content {
-  text-align: center;
-  max-width: 520px;
-}
-
-.welcome-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 0.5rem;
-}
-
-.welcome-subtitle {
-  font-size: 0.875rem;
-  color: var(--sub);
-  margin-bottom: 1.5rem;
-}
-
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
+/* Welcome */
+.chat-welcome { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.welcome-content { text-align: center; max-width: 520px; }
+.welcome-title { font-size: 1.5rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+.welcome-subtitle { font-size: 0.875rem; color: var(--sub); margin-bottom: 1.5rem; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
 .suggestion-chip {
-  padding: 0.5rem 0.875rem;
-  border-radius: 0.625rem;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition: all 0.15s;
+  padding: 0.5rem 0.875rem; border-radius: 0.625rem; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 0.8125rem; cursor: pointer; transition: all 0.15s;
+}
+.suggestion-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Message list */
+.message-list { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.message { display: flex; max-width: 85%; }
+.message.user { align-self: flex-end; }
+.message.assistant { align-self: flex-start; gap: 0.625rem; }
+
+/* User bubble */
+.user-bubble {
+  background: var(--accent); color: var(--surface);
+  padding: 0.625rem 1rem; border-radius: 1rem 1rem 0.25rem 1rem;
+  font-size: 0.875rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
 }
 
-.suggestion-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+/* Assistant avatar + card */
+.msg-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); font-size: 0.875rem;
 }
-
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.msg-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 0 0.75rem 0.75rem 0.75rem; overflow: hidden;
+  font-size: 0.875rem; line-height: 1.6; color: var(--text); min-width: 0;
 }
-
-.message {
-  display: flex;
-  gap: 0.75rem;
-  max-width: 90%;
+.msg-gradient-bar {
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
 }
+.msg-content { padding: 0.625rem 0.875rem; }
+.msg-content :deep(pre) { background: var(--bg); padding: 0.625rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.375rem 0; font-size: 0.8rem; }
+.msg-content :deep(code) { font-family: ui-monospace, monospace; font-size: 0.8rem; background: var(--bg); padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
+.msg-content :deep(a) { color: var(--accent); }
 
-.message.user {
-  align-self: flex-end;
-  flex-direction: row-reverse;
+/* Tool chips in completed message */
+.tool-list { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0 0.875rem 0.625rem; }
+.tool-chip {
+  display: flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem;
+  border-radius: 0.375rem; background: var(--bg); border: 1px solid var(--border);
+  font-size: 0.6875rem; color: var(--sub);
 }
+.tool-chip-icon { font-size: 0.625rem; }
 
-.message.assistant {
-  align-self: flex-start;
+/* Streaming indicator */
+.streaming-bar { padding: 0 0 0 2.5rem; }
+.stream-tools { display: flex; flex-direction: column; gap: 0.2rem; }
+.stream-chip {
+  display: flex; align-items: center; gap: 0.375rem;
+  font-size: 0.75rem; color: var(--sub); padding: 0.15rem 0;
 }
+.stream-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.stream-chip.tool_call .chip-dot { background: var(--accent); }
+.stream-chip.tool_result .chip-dot { background: var(--green); }
 
-.message-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  flex-shrink: 0;
-  background: var(--bg);
+/* Bouncing dots */
+.thinking-dots { display: flex; gap: 0.3rem; padding: 0.25rem 0; }
+.thinking-dots .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--sub);
+  animation: bounce 1.2s infinite ease-in-out;
 }
-
-.message-body {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--text);
-}
-
-.message.user .message-body {
-  background: var(--accent);
-  color: var(--surface);
-  border-color: var(--accent);
-}
-
-.message-content :deep(pre) {
-  background: var(--bg);
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0.5rem 0;
-}
-
-.message-content :deep(code) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.8125rem;
-  background: var(--bg);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-}
-
-.thinking {
-  color: var(--sub);
-  font-style: italic;
-}
-
-.tool-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tool-badge {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.375rem;
-  background: var(--bg);
-  color: var(--sub);
-}
-
-.tool-badge.tool_call {
-  border-left: 3px solid var(--accent);
-}
-
-.tool-badge.tool_result {
-  border-left: 3px solid color-mix(in srgb, var(--green) 70%, var(--accent));
-}
-
-.tool-calls {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--sub);
-}
-
-.tool-calls pre {
-  background: var(--bg);
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  overflow-x: auto;
-  margin-top: 0.25rem;
+.thinking-dots .dot:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dots .dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-6px); opacity: 1; }
 }
 
 .chat-error {
-  align-self: center;
-  padding: 0.75rem 1rem;
+  align-self: center; padding: 0.5rem 1rem; border-radius: 0.5rem;
   background: color-mix(in srgb, var(--red) 8%, transparent);
-  border: 1px solid var(--red);
-  border-radius: 0.5rem;
-  color: var(--red);
-  font-size: 0.8125rem;
+  border: 1px solid var(--red); color: var(--red); font-size: 0.8125rem;
 }
+.chat-input-area { padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); background: var(--surface); }
 
-.chat-input-area {
-  padding: 0.5rem 0.75rem;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-
-/* Message appear animation */
-.msg-appear {
-  animation: slideInLeft 0.3s ease forwards;
-  opacity: 0;
-}
-
-.message.user.msg-appear {
-  animation: slideInRight 0.3s ease forwards;
-}
-
-/* Mobile responsive */
 @media (max-width: 768px) {
-  .message {
-    max-width: 95%;
-  }
-  .welcome-title {
-    font-size: 1.25rem;
-  }
-  .suggestion-chip {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.625rem;
-  }
+  .message { max-width: 92%; }
+  .welcome-title { font-size: 1.25rem; }
+  .suggestion-chip { font-size: 0.75rem; padding: 0.375rem 0.625rem; }
 }
 </style>

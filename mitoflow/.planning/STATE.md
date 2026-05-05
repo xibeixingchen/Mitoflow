@@ -146,6 +146,8 @@ progress:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260505-gjy | Fix P0 security vulnerabilities: path traversal, XSS, token secret persistence, SQL injection, upload size limits | 2026-05-05 | 30ee018 | [260505-gjy-fix-p0-security-vulnerabilities-path-tra](./quick/260505-gjy-fix-p0-security-vulnerabilities-path-tra/) |
+| 260505-gq6 | Harden backend security: CORS whitelist, PBKDF2 600k iterations, FastAPI lifespan migration | 2026-05-05 | d374802 | [260505-gq6-harden-backend-security-cors-whitelist-p](./quick/260505-gq6-harden-backend-security-cors-whitelist-p/) |
+| 260505-gwk | Frontend/backend modernization: highlight.js + DOMPurify, modularize main.py, remove chat_ui.py legacy | 2026-05-05 | 8a63b5b | [quick/](./quick/) |
 
 ## Session Log
 
@@ -157,3 +159,4 @@ progress:
 | 2026-04-15 | Entered Phase 3: B/C Deep Fixes; completed circular boundary, splice-site scoring, phase tracking, and adaptive tblastn refinement |
 | 2026-04-15 | Entered Phase 4: RNA-seq Validation; committed download/alignment/validation scripts; started background SRA download for 8 high B/C error species (11 SRR runs) |
 | 2026-05-05 | Completed quick task: P0 security fixes (path traversal, XSS, token secret, SQL hardening, upload limits) |
+| 2026-05-05 | Completed quick task: highlight.js + DOMPurify markdown rendering, main.py modularization, removed chat_ui.py legacy |

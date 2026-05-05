@@ -21,7 +21,15 @@
         <div v-if="mode === 'modules'" class="card-actions">
           <button class="action-btn ai" @click.stop="onAi(item)">
             <span class="btn-icon">🤖</span>
-            <span>AI 执行</span>
+            <span>AI</span>
+          </button>
+          <button class="action-btn manual" @click.stop="onManual(item)">
+            <span class="btn-icon">🛠️</span>
+            <span>{{ t('modules.manual') || 'Manual' }}</span>
+          </button>
+          <button class="action-btn results" @click.stop="onResults(item)">
+            <span class="btn-icon">📋</span>
+            <span>{{ t('modules.results') || 'Results' }}</span>
           </button>
         </div>
       </div>

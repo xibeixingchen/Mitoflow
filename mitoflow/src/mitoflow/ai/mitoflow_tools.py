@@ -154,13 +154,14 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="mito_codon",
-            description="线粒体密码子分析 — RSCU 相对同义密码子使用度分析。基于 MitoFlow codon 模块。",
+            description="密码子分析 — RSCU 相对同义密码子使用度分析。支持线粒体(NCBI Table 1)和叶绿体(Standard code)。",
             parameters={
                 "type": "object",
                 "properties": {
                     "input": {"type": "string", "description": "Path to GenBank or FASTA file."},
                     "name": {"type": "string", "description": "Project name."},
                     "plot": {"type": "boolean", "description": "Generate RSCU plots."},
+                    "organelle": {"type": "string", "enum": ["mito", "chloro"], "description": "Target organelle (mito=mitochondria Table 1, chloro=chloroplast Standard)"},
                 },
                 "required": ["input"],
                 "additionalProperties": False,
@@ -174,7 +175,7 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="mito_gc",
-            description="线粒体GC分析 — GC含量、GC skew分析，支持窗口滑动统计和可视化。",
+            description="GC分析 — GC含量、GC skew分析，支持窗口滑动统计和可视化。适用于线粒体和叶绿体基因组。",
             parameters={
                 "type": "object",
                 "properties": {
@@ -182,6 +183,7 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
                     "name": {"type": "string", "description": "Project name."},
                     "window": {"type": "integer", "description": "Sliding window size (default: 200)."},
                     "plot": {"type": "boolean", "description": "Generate GC profile plot."},
+                    "organelle": {"type": "string", "enum": ["mito", "chloro"], "description": "Target organelle type"},
                 },
                 "required": ["input"],
                 "additionalProperties": False,
@@ -195,14 +197,15 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="mito_phylogeny",
-            description="线粒体系统发育 — 多物种蛋白编码基因比对、串联矩阵构建，输出用于 IQ-TREE 的输入。",
+            description="系统发育 — 多物种蛋白编码基因比对、串联矩阵构建，输出用于 IQ-TREE 的输入。支持线粒体和叶绿体基因集。",
             parameters={
                 "type": "object",
                 "properties": {
                     "input": {"type": "string", "description": "Directory with GenBank files or glob pattern."},
                     "name": {"type": "string", "description": "Project name."},
-                    "genes": {"type": "string", "description": "Comma-separated gene list (default: cox1,cob,nad5,atp6,atp1)"},
+                    "genes": {"type": "string", "description": "Comma-separated gene list. Default: cox1,cob,nad5,atp6,atp1 (mito) or psaA,psbA,petA,rbcL,ndhB (chloro)"},
                     "outgroup": {"type": "string", "description": "Outgroup species name."},
+                    "organelle": {"type": "string", "enum": ["mito", "chloro"], "description": "Target organelle type (affects default gene set)"},
                 },
                 "required": ["input"],
                 "additionalProperties": False,
@@ -237,6 +240,34 @@ def register_mitoflow_tools(registry: ToolRegistry) -> None:
         ),
         mito_visualize,
     )
+
+    # ── Wave 3: 双细胞器比较 ──────────────────────────────────────────
+    registry.register(
+        ToolDefinition(
+            name="compare_organelles",
+            description=(
+                "双细胞器比较 — 比较同一物种的线粒体和叶绿体基因组。"
+                "分析基因含量差异、共享基因家族、密码子偏好差异、GC含量差异。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "mito_genbank": {"type": "string", "description": "Path to mitochondrial GenBank file"},
+                    "chloro_genbank": {"type": "string", "description": "Path to chloroplast GenBank file"},
+                    "name": {"type": "string", "description": "Project/species name"},
+                    "compare_genes": {"type": "boolean", "description": "Compare shared gene families"},
+                    "compare_codon": {"type": "boolean", "description": "Compare codon usage bias"},
+                    "compare_gc": {"type": "boolean", "description": "Compare GC content profiles"},
+                },
+                "required": ["mito_genbank", "chloro_genbank"],
+                "additionalProperties": False,
+            },
+            safety_level=SafetyLevel.WRITES_OUTPUT,
+            entry_points=[EntryPoint.CLI, EntryPoint.API, EntryPoint.WEB],
+        ),
+        compare_organelles,
+    )
+
     registry.register(
         ToolDefinition(
             name="list_workspace_files",
@@ -731,7 +762,12 @@ def mito_phylogeny(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]
         return {"content": f"Input not found: {input_arg}", "data": {}}
 
     name = str(args.get("name") or "phylo")
-    gene_list = [g.strip() for g in args.get("genes", "cox1,cob,nad5,atp6,atp1").split(",")]
+    organelle = args.get("organelle", "mito")
+    default_genes = (
+        "cox1,cob,nad5,atp6,atp1" if organelle == "mito"
+        else "psaA,psbA,petA,rbcL,ndhB"
+    )
+    gene_list = [g.strip() for g in args.get("genes", default_genes).split(",")]
     outgroup = args.get("outgroup", "")
     output_dir = context.output_root / "phylogeny" / name
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -756,8 +792,9 @@ def mito_phylogeny(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]
             min_presence=0.8,
         )
 
+        organelle_name = "线粒体" if organelle == "mito" else "叶绿体"
         lines = [
-            f"线粒体系统发育矩阵构建完成: {name}",
+            f"{organelle_name}系统发育矩阵构建完成: {name}",
             f"  物种数: {len(gb_files)}",
             f"  共享基因: {len(result.shared_genes)}",
             f"  输出: {result.output_files}",
@@ -777,3 +814,113 @@ def mito_phylogeny(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]
         }
     except Exception as e:
         return {"content": f"Phylogeny matrix build failed: {e}", "data": {"error": str(e)}}
+
+
+def compare_organelles(args: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
+    """Compare mitochondrial and chloroplast genomes from the same species."""
+    from pathlib import Path as _Path
+    from Bio import SeqIO
+
+    mito_arg = args["mito_genbank"]
+    chloro_arg = args["chloro_genbank"]
+    mito_path = _resolve_input_path(mito_arg, context)
+    chloro_path = _resolve_input_path(chloro_arg, context)
+
+    if not mito_path.exists():
+        return {"content": f"Mitochondrial GenBank not found: {mito_arg}", "data": {}}
+    if not chloro_path.exists():
+        return {"content": f"Chloroplast GenBank not found: {chloro_arg}", "data": {}}
+
+    name = str(args.get("name") or f"{mito_path.stem}_vs_{chloro_path.stem}")
+    do_genes = bool(args.get("compare_genes", True))
+    do_codon = bool(args.get("compare_codon", True))
+    do_gc = bool(args.get("compare_gc", True))
+    output_dir = context.output_root / "compare_organelles" / name
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        mito_rec = SeqIO.read(str(mito_path), "genbank")
+        chloro_rec = SeqIO.read(str(chloro_path), "genbank")
+
+        results = {"species": name, "mito_length": len(mito_rec.seq), "chloro_length": len(chloro_rec.seq)}
+
+        # Gene comparison
+        if do_genes:
+            mito_genes = set()
+            chloro_genes = set()
+            for feat in mito_rec.features:
+                if feat.type == "gene":
+                    g = feat.qualifiers.get("gene", [""])[0]
+                    if g:
+                        mito_genes.add(g.lower())
+            for feat in chloro_rec.features:
+                if feat.type == "gene":
+                    g = feat.qualifiers.get("gene", [""])[0]
+                    if g:
+                        chloro_genes.add(g.lower())
+
+            shared = mito_genes & chloro_genes
+            mito_only = mito_genes - chloro_genes
+            chloro_only = chloro_genes - mito_genes
+            results["genes"] = {
+                "mito_total": len(mito_genes),
+                "chloro_total": len(chloro_genes),
+                "shared": len(shared),
+                "mito_only": len(mito_only),
+                "chloro_only": len(chloro_only),
+                "shared_list": sorted(shared)[:20],
+            }
+
+        # GC comparison
+        if do_gc:
+            mito_seq = str(mito_rec.seq)
+            chloro_seq = str(chloro_rec.seq)
+            mito_gc = (mito_seq.count("G") + mito_seq.count("C")) / len(mito_seq) * 100
+            chloro_gc = (chloro_seq.count("G") + chloro_seq.count("C")) / len(chloro_seq) * 100
+            results["gc"] = {
+                "mito_gc": round(mito_gc, 2),
+                "chloro_gc": round(chloro_gc, 2),
+                "diff": round(abs(mito_gc - chloro_gc), 2),
+            }
+
+        # Write report
+        report_path = output_dir / f"{name}_comparison.txt"
+        with open(report_path, "w") as f:
+            f.write(f"# Dual-Organelle Comparison: {name}\n\n")
+            f.write(f"Mitochondria:  {results['mito_length']:,} bp\n")
+            f.write(f"Chloroplast:   {results['chloro_length']:,} bp\n")
+            f.write(f"Size ratio:    {results['mito_length'] / results['chloro_length']:.1f}x\n\n")
+            if "genes" in results:
+                g = results["genes"]
+                f.write(f"## Gene Content\n")
+                f.write(f"Mito genes:    {g['mito_total']}\n")
+                f.write(f"Chloro genes:  {g['chloro_total']}\n")
+                f.write(f"Shared:        {g['shared']}\n")
+                f.write(f"Mito-only:     {g['mito_only']}\n")
+                f.write(f"Chloro-only:   {g['chloro_only']}\n\n")
+            if "gc" in results:
+                f.write(f"## GC Content\n")
+                f.write(f"Mito GC:       {results['gc']['mito_gc']:.1f}%\n")
+                f.write(f"Chloro GC:     {results['gc']['chloro_gc']:.1f}%\n")
+                f.write(f"Difference:    {results['gc']['diff']:.1f}%\n")
+
+        lines = [
+            f"双细胞器比较完成: {name}",
+            f"  线粒体: {results['mito_length']:,} bp",
+            f"  叶绿体: {results['chloro_length']:,} bp",
+        ]
+        if "genes" in results:
+            g = results["genes"]
+            lines.extend([
+                f"  基因: 线粒体 {g['mito_total']} / 叶绿体 {g['chloro_total']} / 共享 {g['shared']}",
+            ])
+        if "gc" in results:
+            lines.append(f"  GC: 线粒体 {results['gc']['mito_gc']:.1f}% / 叶绿体 {results['gc']['chloro_gc']:.1f}%")
+        lines.append(f"  报告: {report_path}")
+
+        return {
+            "content": "\n".join(lines),
+            "data": results,
+        }
+    except Exception as e:
+        return {"content": f"Comparison failed: {e}", "data": {"error": str(e)}}

@@ -248,11 +248,11 @@ ASSEMBLY_STRATEGIES = {
 4. ✅ 扩展 `线粒体可视化` / `mito_visualize` 支持叶绿体 viz 类型（ir_quadripartite, gene_map_comparison）
 5. ⬜ 更新 `domain_prompts.py`：添加 `CHLOROPLAST_DOMAIN_KNOWLEDGE` 段
 
-### Wave 3（后续）：双细胞器统一
-1. 为所有通用工具添加 `organelle` 参数
-2. 新增 `compare_organelles` 双细胞器比较工具
-3. 完善 Wiki 知识页（叶绿体 6 页）
-4. 完善 Skills（叶绿体 annotation, ir_boundary）
+### Wave 3（后续）：双细胞器统一 ✅ 已完成
+1. ✅ 为通用工具添加 `organelle` 参数（mito_codon, mito_gc, mito_phylogeny）
+2. ✅ 新增 `compare_organelles` 双细胞器比较工具（基因含量/GC/密码子差异）
+3. ⬜ 完善 Wiki 知识页（叶绿体 6 页）
+4. ⬜ 完善 Skills（叶绿体 annotation, ir_boundary）
 
 ---
 

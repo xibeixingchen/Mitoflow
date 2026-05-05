@@ -141,6 +141,12 @@ progress:
 - `src/mitoflow/models/gene.py`: `ExonRecord.phase` field
 - `scripts/validate_against_gold_standard.py`: multi-accession GenBank merge fix
 
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260505-gjy | Fix P0 security vulnerabilities: path traversal, XSS, token secret persistence, SQL injection, upload size limits | 2026-05-05 | 30ee018 | [260505-gjy-fix-p0-security-vulnerabilities-path-tra](./quick/260505-gjy-fix-p0-security-vulnerabilities-path-tra/) |
+
 ## Session Log
 
 | Date | Event |
@@ -150,3 +156,4 @@ progress:
 | 2026-04-15 | Completed Wave 1 & 2 implementation; discovered and fixed validation multi-accession bug; full 27-species batch run complete |
 | 2026-04-15 | Entered Phase 3: B/C Deep Fixes; completed circular boundary, splice-site scoring, phase tracking, and adaptive tblastn refinement |
 | 2026-04-15 | Entered Phase 4: RNA-seq Validation; committed download/alignment/validation scripts; started background SRA download for 8 high B/C error species (11 SRR runs) |
+| 2026-05-05 | Completed quick task: P0 security fixes (path traversal, XSS, token secret, SQL hardening, upload limits) |

@@ -6,6 +6,9 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import pytest
+
+sklearn = pytest.importorskip("sklearn")
 
 from mitoflow.cms.ml.scorer import LIGHTGBM_AVAILABLE, MLCMSScorer
 

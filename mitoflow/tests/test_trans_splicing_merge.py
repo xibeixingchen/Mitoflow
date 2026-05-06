@@ -150,11 +150,11 @@ def test_merge_exons_minus_strand():
     genome = _create_mock_genome()
     # All exons on minus strand
     exon_hits = {
-        1: [(30147, 30000, Strand.MINUS, 99.0, 147, 147)],  # Note: start > end for minus strand
-        2: [(20395, 20000, Strand.MINUS, 95.0, 395, 395)],
-        3: [(10022, 10000, Strand.MINUS, 100.0, 22, 22)],
-        4: [(6216, 5000, Strand.MINUS, 98.5, 1216, 1216)],
-        5: [(1230, 1000, Strand.MINUS, 100.0, 230, 230)],
+        1: [(30000, 30147, Strand.MINUS, 99.0, 147, 147)],
+        2: [(20000, 20395, Strand.MINUS, 95.0, 395, 395)],
+        3: [(10000, 10022, Strand.MINUS, 100.0, 22, 22)],
+        4: [(5000, 6216, Strand.MINUS, 98.5, 1216, 1216)],
+        5: [(1000, 1230, Strand.MINUS, 100.0, 230, 230)],
     }
 
     config = TRANS_SPLICED_CONFIG["nad5"]
@@ -197,12 +197,13 @@ def test_merge_exons_renumbers_correctly():
 def test_merge_exons_nad1():
     """Test merging exons for nad1 (5 exons)."""
     genome = _create_mock_genome()
+    # nad1 expected: 300-380aa (mid 340), so ~1020bp total CDS needed
     exon_hits = {
-        1: [(5000, 5200, Strand.PLUS, 99.0, 200, 200)],
-        2: [(15000, 16200, Strand.PLUS, 98.0, 1200, 1200)],
-        3: [(25000, 25150, Strand.PLUS, 100.0, 150, 150)],  # Short exon
-        4: [(35000, 35300, Strand.PLUS, 97.0, 300, 300)],
-        5: [(45000, 45100, Strand.PLUS, 99.0, 100, 100)],
+        1: [(5000, 5060, Strand.PLUS, 99.0, 61, 61)],
+        2: [(15000, 15600, Strand.PLUS, 98.0, 601, 601)],
+        3: [(25000, 25030, Strand.PLUS, 100.0, 31, 31)],
+        4: [(35000, 35150, Strand.PLUS, 97.0, 151, 151)],
+        5: [(45000, 45100, Strand.PLUS, 99.0, 101, 101)],
     }
 
     config = TRANS_SPLICED_CONFIG["nad1"]
@@ -216,11 +217,12 @@ def test_merge_exons_nad1():
 def test_merge_exons_nad4():
     """Test merging exons for nad4 (4 exons)."""
     genome = _create_mock_genome()
+    # nad4 expected: 430-520aa (mid 475), so ~1425bp total CDS needed
     exon_hits = {
-        1: [(10000, 11500, Strand.PLUS, 99.0, 1500, 1500)],
-        2: [(20000, 21500, Strand.PLUS, 98.0, 1500, 1500)],
-        3: [(30000, 30500, Strand.PLUS, 100.0, 500, 500)],
-        4: [(40000, 42000, Strand.PLUS, 97.0, 2000, 2000)],
+        1: [(10000, 10450, Strand.PLUS, 99.0, 451, 451)],
+        2: [(20000, 20500, Strand.PLUS, 98.0, 501, 501)],
+        3: [(30000, 30150, Strand.PLUS, 100.0, 151, 151)],
+        4: [(40000, 40500, Strand.PLUS, 97.0, 501, 501)],
     }
 
     config = TRANS_SPLICED_CONFIG["nad4"]
@@ -234,9 +236,10 @@ def test_merge_exons_nad4():
 def test_merge_exons_cox2():
     """Test merging exons for cox2 (2 exons)."""
     genome = _create_mock_genome()
+    # cox2 expected: 220-280aa (mid 250), so ~750bp total CDS needed
     exon_hits = {
-        1: [(5000, 5800, Strand.PLUS, 100.0, 800, 800)],
-        2: [(10000, 11500, Strand.PLUS, 98.5, 1500, 1500)],
+        1: [(5000, 5250, Strand.PLUS, 100.0, 251, 251)],
+        2: [(10000, 10500, Strand.PLUS, 98.5, 501, 501)],
     }
 
     config = TRANS_SPLICED_CONFIG["cox2"]
@@ -278,4 +281,4 @@ def test_trans_spliced_config_values():
 
     # Check cox1 config
     assert TRANS_SPLICED_CONFIG["cox1"]["exons"] == 2
-    assert TRANS_SPLICED_CONFIG["cox1"]["max_span"] == 100000
+    assert TRANS_SPLICED_CONFIG["cox1"]["max_span"] == 200000

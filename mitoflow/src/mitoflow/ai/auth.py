@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -17,16 +18,33 @@ _DB_DIR.mkdir(parents=True, exist_ok=True)
 _DB_PATH = _DB_DIR / "users.db"
 
 # Simple JWT-like token using HMAC-SHA256 (no external deps)
+_SECRET_FILE = _DB_DIR / ".jwt_secret"
 _SECRET = os.getenv("MITOFLOW_SECRET")
 if not _SECRET:
-    import warnings
-    warnings.warn(
-        "MITOFLOW_SECRET is not set. JWT tokens will NOT survive server restarts. "
-        "Set MITOFLOW_SECRET to a persistent 64-char hex string for production.",
-        RuntimeWarning,
-        stacklevel=2,
-    )
-    _SECRET = hashlib.sha256(os.urandom(32)).hexdigest()
+    # Try file-based persistent fallback
+    try:
+        if _SECRET_FILE.exists():
+            _SECRET = _SECRET_FILE.read_text().strip()
+        if not _SECRET:
+            _SECRET = os.urandom(32).hex()
+            _SECRET_FILE.write_text(_SECRET)
+            os.chmod(_SECRET_FILE, 0o600)
+        import warnings
+        warnings.warn(
+            "MITOFLOW_SECRET is not set. Using file-based fallback for JWT secret. "
+            "Set MITOFLOW_SECRET to a persistent 64-char hex string for production.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    except OSError:
+        import warnings
+        warnings.warn(
+            "MITOFLOW_SECRET is not set and file-based fallback failed. "
+            "JWT tokens will NOT survive server restarts.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        _SECRET = hashlib.sha256(os.urandom(32)).hexdigest()
 
 
 def _get_db() -> sqlite3.Connection:
@@ -123,27 +141,62 @@ def _verify_token(token: str) -> Optional[int]:
         return None
 
 
-def register_user(email: str, username: str, password: str) -> Dict[str, Any]:
+def register_user(
+    email: str,
+    username: str,
+    password: str,
+    institution: str = "",
+    role: str = "",
+    degree: str = "",
+) -> Dict[str, Any]:
     """Register a new user. Returns user dict or error."""
-    if len(password) < 6:
-        return {"error": "Password must be at least 6 characters"}
+    if len(password) < 8:
+        return {"error": "Password must be at least 8 characters"}
+    if not re.search(r"[a-zA-Z]", password) or not re.search(r"\d", password):
+        return {"error": "Password must contain at least one letter and one digit"}
     if "@" not in email or "." not in email:
         return {"error": "Invalid email address"}
 
     db = _get_db()
     try:
+        # Pre-check email existence for a friendly error message
+        row = db.execute("SELECT id FROM users WHERE email = ?", (email.strip().lower(),)).fetchone()
+        if row:
+            return {
+                "error": "This email is already registered. Please log in or use 'Forgot Password' to reset your password."
+            }
+
         ph = _hash_password(password)
         now = time.time()
         db.execute(
-            "INSERT INTO users (email, username, password_hash, created_at, last_login) VALUES (?, ?, ?, ?, ?)",
-            (email.strip().lower(), username.strip(), ph, now, now),
+            "INSERT INTO users (email, username, password_hash, institution, role, degree, created_at, last_login) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                email.strip().lower(),
+                username.strip(),
+                ph,
+                institution.strip(),
+                role.strip(),
+                degree.strip(),
+                now,
+                now,
+            ),
         )
         db.commit()
         user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-        return {"id": user_id, "email": email, "username": username}
+        return {
+            "id": user_id,
+            "email": email,
+            "username": username,
+            "institution": institution,
+            "role": role,
+            "degree": degree,
+        }
     except sqlite3.IntegrityError as e:
         if "email" in str(e):
-            return {"error": "Email already registered"}
+            return {
+                "error": "This email is already registered. Please log in or use 'Forgot Password' to reset your password."
+            }
         return {"error": "Username already taken"}
     finally:
         db.close()
@@ -250,8 +303,10 @@ def update_profile(user_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
 
 def change_password(user_id: int, old_password: str, new_password: str) -> Dict[str, Any]:
     """Change user password after verifying old password."""
-    if len(new_password) < 6:
-        return {"error": "New password must be at least 6 characters"}
+    if len(new_password) < 8:
+        return {"error": "New password must be at least 8 characters"}
+    if not re.search(r"[a-zA-Z]", new_password) or not re.search(r"\d", new_password):
+        return {"error": "New password must contain at least one letter and one digit"}
     db = _get_db()
     try:
         row = db.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()

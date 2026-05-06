@@ -14,6 +14,10 @@ class RegisterRequest(BaseModel):
     email: str
     username: str
     password: str
+    verification_code: str
+    institution: Optional[str] = None
+    role: Optional[str] = None
+    degree: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -76,13 +80,21 @@ async def auth_register(req: RegisterRequest):
     from mitoflow.ai.auth import register_user
     from mitoflow.ai.email_verification import verify_code as check_verification
 
-    code = getattr(req, "verification_code", None)
-    if code:
-        result = check_verification(req.email, code, "register")
-        if "error" in result:
-            raise HTTPException(status_code=400, detail=result["error"])
+    if not req.verification_code:
+        raise HTTPException(status_code=400, detail="Verification code is required")
 
-    result = register_user(req.email, req.username, req.password)
+    result = check_verification(req.email, req.verification_code, "register")
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    result = register_user(
+        req.email,
+        req.username,
+        req.password,
+        institution=req.institution or "",
+        role=req.role or "",
+        degree=req.degree or "",
+    )
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     return result
@@ -122,6 +134,8 @@ async def auth_test_connection(req: TestConnectionRequest):
     if not req.api_key:
         result["error"] = "API key is required"
         return result
+
+    print(f"[test-connection] provider={req.provider} model={req.model} base_url={req.base_url} key_len={len(req.api_key)}")
 
     try:
         if req.provider == "anthropic":

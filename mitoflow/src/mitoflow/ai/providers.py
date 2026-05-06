@@ -70,6 +70,49 @@ class OpenAIChatAdapter:
         )
         return self.parse_response(raw)
 
+    def create_stream(self, request: ProviderRequest):
+        """Stream response chunks from the provider. Yields dicts: {type: 'text'|'tool_call'|'done', ...}."""
+        import json as _json
+        stream = self.client.chat.completions.create(
+            model=request.model or self.model,
+            messages=self.format_messages(request.messages),
+            tools=self.format_tools(request.tools) if request.tools else None,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            stream=True,
+        )
+        tool_calls_acc: Dict[int, Dict[str, Any]] = {}
+        for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta is None:
+                continue
+            # Text content
+            if delta.content:
+                yield {"type": "text", "content": delta.content}
+            # Tool calls (may be partial)
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    idx = tc.index
+                    if idx not in tool_calls_acc:
+                        tool_calls_acc[idx] = {"id": tc.id or "", "name": "", "arguments": ""}
+                    if tc.id:
+                        tool_calls_acc[idx]["id"] = tc.id
+                    if tc.function:
+                        if tc.function.name:
+                            tool_calls_acc[idx]["name"] += tc.function.name
+                        if tc.function.arguments:
+                            tool_calls_acc[idx]["arguments"] += tc.function.arguments
+            # Finish reason
+            if chunk.choices[0].finish_reason == "tool_calls":
+                for tc_data in tool_calls_acc.values():
+                    try:
+                        args = _json.loads(tc_data["arguments"])
+                    except _json.JSONDecodeError:
+                        args = {}
+                    yield {"type": "tool_call", "id": tc_data["id"], "name": tc_data["name"], "arguments": args}
+            elif chunk.choices[0].finish_reason == "stop":
+                yield {"type": "done", "stop_reason": "stop"}
+
     def format_messages(self, messages: List[AIMessage]) -> List[Dict[str, Any]]:
         formatted: List[Dict[str, Any]] = []
         for message in messages:
@@ -164,6 +207,50 @@ class AnthropicAdapter:
             kwargs["tools"] = self.format_tools(request.tools)
         raw = self.client.messages.create(**kwargs)
         return self.parse_response(raw)
+
+    def create_stream(self, request: ProviderRequest):
+        """Stream response blocks from Anthropic. Yields dicts: {type: 'text'|'tool_use'|'done', ...}."""
+        system, messages = self.format_messages(request.messages)
+        kwargs: Dict[str, Any] = {
+            "model": request.model or self.model,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "messages": messages,
+        }
+        if system:
+            kwargs["system"] = system
+        if request.tools:
+            kwargs["tools"] = self.format_tools(request.tools)
+        with self.client.messages.stream(**kwargs) as stream:
+            _tool_blocks: Dict[int, Dict[str, Any]] = {}
+            _tool_args: Dict[int, str] = {}
+            for event in stream:
+                if event.type == "content_block_start":
+                    block = event.content_block
+                    if block.type == "tool_use":
+                        idx = event.index
+                        _tool_blocks[idx] = {"id": block.id, "name": block.name}
+                        _tool_args[idx] = ""
+                elif event.type == "content_block_delta":
+                    delta = event.delta
+                    if delta.type == "text_delta":
+                        yield {"type": "text", "content": delta.text}
+                    elif delta.type == "input_json_delta":
+                        idx = event.index
+                        _tool_args[idx] = _tool_args.get(idx, "") + delta.partial_json
+                elif event.type == "content_block_stop":
+                    idx = event.index
+                    if idx in _tool_blocks:
+                        args_raw = _tool_args.get(idx, "")
+                        try:
+                            args = json.loads(args_raw) if args_raw.strip() else {}
+                        except json.JSONDecodeError:
+                            args = {}
+                        tb = _tool_blocks.pop(idx)
+                        yield {"type": "tool_call", "id": tb["id"], "name": tb["name"], "arguments": args}
+                        _tool_args.pop(idx, None)
+                elif event.type == "message_stop":
+                    yield {"type": "done", "stop_reason": "stop"}
 
     def format_messages(self, messages: List[AIMessage]) -> tuple:
         system_parts: List[str] = []

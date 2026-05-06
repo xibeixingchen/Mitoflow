@@ -12,7 +12,7 @@ RESULTS_DIR = Path(os.getenv("MITOFLOW_RESULTS_DIR", PROJECT_ROOT / "mitoflow_re
 WORKSPACE_ROOT = Path(os.getenv("MITOFLOW_WORKSPACE", PROJECT_ROOT / "mitoflow_workspace"))
 
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-MAX_UPLOAD_SIZE = 100 * 1024 * 1024 * 1024  # 100GB
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
 ALLOWED_EXTENSIONS = {".fasta", ".fa", ".fas", ".fna"}
 ALLOWED_EXTENSIONS_UPLOAD = {
     ".fasta", ".fa", ".fas", ".fna", ".fq", ".fastq", ".fq.gz", ".fastq.gz",
